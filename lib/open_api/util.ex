@@ -14,8 +14,7 @@ defmodule OpenAPI.Util do
 
     parsed_value =
       Enum.into(parsed_value, %{}, fn {k, v} ->
-        key = to_string(k) |> Macro.underscore()
-        {key, v}
+        {Macro.underscore(k), v}
       end)
 
     fields =

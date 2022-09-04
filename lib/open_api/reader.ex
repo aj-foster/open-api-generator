@@ -4,7 +4,7 @@ defmodule OpenAPI.Reader do
   """
 
   def read(filename) do
-    [parsed_yaml] = :yamerl.decode_file(filename)
+    [parsed_yaml] = :yamerl.decode_file(filename, str_node_as_binary: true)
     OpenAPI.Util.decode(OpenAPI.Spec, parsed_yaml)
   end
 
