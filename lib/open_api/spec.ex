@@ -9,11 +9,11 @@ defmodule OpenAPI.Spec do
           openapi: String.t(),
           info: Spec.Info.t(),
           servers: [Spec.Server.t()],
-          paths: term,
+          paths: %{optional(:string) => nil},
           components: term,
           security: [term],
           tags: [term],
-          external_docs: term
+          external_docs: Spec.ExternalDocumentation.t() | nil
         }
 
   defstruct [
@@ -31,11 +31,11 @@ defmodule OpenAPI.Spec do
     openapi: :string,
     info: Spec.Info,
     servers: {[Spec.Server], default: [%Spec.Server{url: "/"}]},
-    paths: nil,
+    paths: {%{:string => Spec.Path.Item}, default: %{}},
     components: nil,
     security: nil,
-    tags: nil,
-    external_docs: nil
+    tags: {[Spec.Tag], default: []},
+    external_docs: Spec.ExternalDocumentation
   }
 
   def decoders, do: @decoders
