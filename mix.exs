@@ -18,6 +18,8 @@ defmodule OpenAPI.MixProject do
   end
 
   defp deps do
-    []
+    [
+      {:yamerl, "~> 0.10.0"}
+    ]
   end
 end
