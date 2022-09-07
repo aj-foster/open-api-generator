@@ -5,7 +5,7 @@ defmodule OpenAPI.Spec.Schema.Media do
   alias OpenAPI.Spec
 
   @type t :: %__MODULE__{
-          schema: Spec.Schema.t(),
+          schema: Spec.Ref.t() | Spec.Schema.t(),
           example: any,
           examples: %{optional(String.t()) => Spec.Schema.Example.t() | Spec.Ref.t()},
           encoding: %{optional(String.t()) => Spec.Schema.Encoding.t()}
@@ -19,7 +19,7 @@ defmodule OpenAPI.Spec.Schema.Media do
   ]
 
   @decoders %{
-    schema: Spec.Schema,
+    schema: [Spec.Ref, Spec.Schema],
     example: :any,
     examples: %{:string => [Spec.Ref, Spec.Schema.Example]},
     encoding: %{:string => Spec.Schema.Encoding}
