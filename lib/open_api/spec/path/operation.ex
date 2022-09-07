@@ -1,5 +1,7 @@
 defmodule OpenAPI.Spec.Path.Operation do
   @moduledoc false
+  use OpenAPI.Spec.Helper
+
   alias OpenAPI.Spec
 
   @type t :: %__MODULE__{
@@ -46,6 +48,4 @@ defmodule OpenAPI.Spec.Path.Operation do
     security: nil,
     servers: {[Spec.Server], default: []}
   }
-
-  def decoders, do: @decoders
 end

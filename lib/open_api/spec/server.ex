@@ -1,5 +1,7 @@
 defmodule OpenAPI.Spec.Server do
   @moduledoc false
+  use OpenAPI.Spec.Helper
+
   alias OpenAPI.Spec.Server
 
   @type t :: %__MODULE__{
@@ -19,6 +21,4 @@ defmodule OpenAPI.Spec.Server do
     description: :string,
     variables: {[Server.Variable], default: []}
   }
-
-  def decoders, do: @decoders
 end

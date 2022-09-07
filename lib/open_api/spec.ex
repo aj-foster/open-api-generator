@@ -2,6 +2,8 @@ defmodule OpenAPI.Spec do
   @moduledoc """
   Open API specification expressed using Elixir structs.
   """
+  use OpenAPI.Spec.Helper
+
   alias OpenAPI.Spec
 
   @typedoc "Open API specification"
@@ -37,6 +39,4 @@ defmodule OpenAPI.Spec do
     tags: {[Spec.Tag], default: []},
     external_docs: Spec.ExternalDocumentation
   }
-
-  def decoders, do: @decoders
 end

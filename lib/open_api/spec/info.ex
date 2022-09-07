@@ -1,5 +1,7 @@
 defmodule OpenAPI.Spec.Info do
   @moduledoc false
+  use OpenAPI.Spec.Helper
+
   alias OpenAPI.Spec.Info
 
   @type t :: %__MODULE__{
@@ -28,6 +30,4 @@ defmodule OpenAPI.Spec.Info do
     license: Info.License,
     version: :string
   }
-
-  def decoders, do: @decoders
 end

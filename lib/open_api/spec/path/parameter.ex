@@ -1,5 +1,6 @@
 defmodule OpenAPI.Spec.Path.Parameter do
   @moduledoc false
+  use OpenAPI.Spec.Helper
 
   @type t :: %__MODULE__{
           name: String.t(),
@@ -27,8 +28,6 @@ defmodule OpenAPI.Spec.Path.Parameter do
     deprecated: {:boolean, default: false},
     allow_empty_value: {:boolean, default: false}
   }
-
-  def decoders, do: @decoders
 
   def matches?(value) do
     match?(%{"name" => _, "in" => _}, Enum.into(value, %{}))

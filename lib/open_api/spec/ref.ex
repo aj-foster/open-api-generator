@@ -1,5 +1,6 @@
 defmodule OpenAPI.Spec.Ref do
   @moduledoc false
+  use OpenAPI.Spec.Helper
 
   @type t :: %__MODULE__{
           "$ref": String.t()
@@ -12,8 +13,6 @@ defmodule OpenAPI.Spec.Ref do
   @decoders %{
     "$ref": :string
   }
-
-  def decoders, do: @decoders
 
   def matches?(value) do
     match?(%{"$ref" => _}, Enum.into(value, %{}))

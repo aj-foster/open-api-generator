@@ -1,5 +1,6 @@
 defmodule OpenAPI.Spec.Server.Variable do
   @moduledoc false
+  use OpenAPI.Spec.Helper
 
   @type t :: %__MODULE__{
           enum: [String.t()],
@@ -18,6 +19,4 @@ defmodule OpenAPI.Spec.Server.Variable do
     default: :string,
     description: :string
   }
-
-  def decoders, do: @decoders
 end

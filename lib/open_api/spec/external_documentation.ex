@@ -1,5 +1,6 @@
 defmodule OpenAPI.Spec.ExternalDocumentation do
   @moduledoc false
+  use OpenAPI.Spec.Helper
 
   @type t :: %__MODULE__{
           description: String.t() | nil,
@@ -15,6 +16,4 @@ defmodule OpenAPI.Spec.ExternalDocumentation do
     description: :string,
     url: :string
   }
-
-  def decoders, do: @decoders
 end

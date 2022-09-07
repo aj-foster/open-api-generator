@@ -1,5 +1,6 @@
 defmodule OpenAPI.Spec.Info.Contact do
   @moduledoc false
+  use OpenAPI.Spec.Helper
 
   @type t :: %__MODULE__{
           name: String.t() | nil,
@@ -18,6 +19,4 @@ defmodule OpenAPI.Spec.Info.Contact do
     url: :string,
     email: :string
   }
-
-  def decoders, do: @decoders
 end

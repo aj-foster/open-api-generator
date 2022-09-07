@@ -1,5 +1,7 @@
 defmodule OpenAPI.Spec.Tag do
   @moduledoc false
+  use OpenAPI.Spec.Helper
+
   alias OpenAPI.Spec
 
   @typedoc "Open API specification"
@@ -20,6 +22,4 @@ defmodule OpenAPI.Spec.Tag do
     description: :string,
     external_docs: Spec.ExternalDocumentation
   }
-
-  def decoders, do: @decoders
 end

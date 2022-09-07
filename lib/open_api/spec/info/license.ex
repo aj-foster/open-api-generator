@@ -1,5 +1,6 @@
 defmodule OpenAPI.Spec.Info.License do
   @moduledoc false
+  use OpenAPI.Spec.Helper
 
   @type t :: %__MODULE__{
           name: String.t() | nil,
@@ -15,6 +16,4 @@ defmodule OpenAPI.Spec.Info.License do
     name: :string,
     url: :string
   }
-
-  def decoders, do: @decoders
 end
