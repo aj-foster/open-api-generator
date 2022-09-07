@@ -6,44 +6,78 @@ defmodule OpenAPI.Reader do
   def read(filename) do
     [parsed_yaml] = :yamerl.decode_file(filename, str_node_as_binary: true)
 
-    OpenAPI.Util.decode(OpenAPI.Spec, parsed_yaml)
+    decode(OpenAPI.Spec, parsed_yaml)
     |> IO.inspect(pretty: true, syntax_colors: IO.ANSI.syntax_colors())
   end
 
-  #   #
-  #   # Schema
-  #   #
+  def decode({type, opts}, parsed_value) when is_list(opts) do
+    for option <- opts, reduce: parsed_value do
+      parsed_value -> handle_option(type, option, parsed_value)
+    end
+  end
 
-  #   defp decode(parsed_yaml) do
-  #     do_decode(parsed_yaml, %{})
-  #   end
+  def decode(type, parsed_value) when is_map(type) do
+    Enum.map(parsed_value, fn {key, value} ->
+      case Enum.find(type, fn {key_type, _value_type} -> matches_type?(key_type, key) end) do
+        {key_type, value_type} ->
+          {decode(key_type, key), decode(value_type, value)}
 
-  #   @spec do_decode(:yamerl_constr.yamerl_simple_doc(), map) :: map
-  #   defp do_decode(parsed_yaml, result)
-  #   defp do_decode([], result), do: result
+        nil ->
+          raise "Unknown type for #{inspect(parsed_value)}, decoder #{inspect(type)}"
+      end
+    end)
+    |> Enum.into(%{})
+  end
 
-  #   defp do_decode([{'openapi', version} | rest], result) do
-  #     result = Map.put(result, "openapi", to_string(version))
-  #     do_decode(rest, result)
-  #   end
+  def decode([_type], nil), do: nil
+  def decode([type], parsed_value), do: Enum.map(parsed_value, &decode(type, &1))
 
-  #   defp do_decode([{'info', info} | rest], result) do
-  #     do_decode(rest, Map.put(result, "info", decode_info(info)))
-  #   end
+  def decode(types, parsed_value) when is_list(types) do
+    case Enum.find(types, fn type -> matches_type?(type, parsed_value) end) do
+      nil ->
+        raise "Unknown type for #{inspect(parsed_value)}, decoder #{inspect(types)}"
 
-  #   #
-  #   # Info
-  #   #
+      type ->
+        decode(type, parsed_value)
+    end
+  end
 
-  #   defp decode_info(info_yaml) do
-  #     do_decode_info(info_yaml, %{})
-  #   end
+  def decode(:any, parsed_value), do: parsed_value
+  def decode(:boolean, parsed_value) when is_boolean(parsed_value), do: parsed_value
+  def decode(:integer, parsed_value) when is_integer(parsed_value), do: parsed_value
+  def decode(:string, parsed_value) when is_binary(parsed_value), do: parsed_value
+  def decode(literal, literal) when is_binary(literal), do: literal
+  def decode(nil, _parsed_value), do: nil
+  def decode(_type, nil), do: nil
 
-  #   @spec do_decode_info(:yamerl_constr.yamerl_simple_doc(), map) :: map
-  #   defp do_decode_info(parsed_yaml, result)
-  #   defp do_decode_info([], result), do: result
+  def decode(module, parsed_value) when is_atom(module) do
+    decoders = module.decoders()
 
-  #   defp do_decode_info([{'title', title} | rest], result) do
-  #     do_decode(rest, Map.put(result, "title", to_string(title)))
-  #   end
+    parsed_value =
+      Enum.into(parsed_value, %{}, fn {k, v} ->
+        {Macro.underscore(k), v}
+      end)
+
+    fields =
+      for {key, decoder} <- decoders do
+        parsed_key = to_string(key)
+        value = decode(decoder, parsed_value[parsed_key])
+
+        {key, value}
+      end
+
+    struct!(module, fields)
+  end
+
+  defp handle_option(type, option, value)
+  defp handle_option(_type, {:default, default}, nil), do: default
+  defp handle_option(type, {:default, _default}, value), do: decode(type, value)
+  defp handle_option(_type, option, _value), do: raise("Unknown option #{inspect(option)}")
+
+  defp matches_type?(:any, _value), do: true
+  defp matches_type?(:boolean, value), do: is_boolean(value)
+  defp matches_type?(:integer, value), do: is_integer(value)
+  defp matches_type?(:string, value), do: is_binary(value)
+  defp matches_type?(literal, value) when is_binary(literal), do: value == literal
+  defp matches_type?(module, value) when is_atom(module), do: module.matches?(value)
 end
