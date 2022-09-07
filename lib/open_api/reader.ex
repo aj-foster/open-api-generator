@@ -35,9 +35,12 @@ defmodule OpenAPI.Reader do
   def decode([type], parsed_value), do: Enum.map(parsed_value, &decode(type, &1))
 
   def decode(types, parsed_value) when is_list(types) do
-    case Enum.find(types, fn type -> matches_type?(type, parsed_value) end) do
-      nil ->
+    case Enum.find(types, :not_found, fn type -> matches_type?(type, parsed_value) end) do
+      :not_found ->
         raise "Unknown type for #{inspect(parsed_value)}, decoder #{inspect(types)}"
+
+      nil ->
+        nil
 
       type ->
         decode(type, parsed_value)
@@ -76,6 +79,8 @@ defmodule OpenAPI.Reader do
   defp handle_option(type, {:default, _default}, value), do: decode(type, value)
   defp handle_option(_type, option, _value), do: raise("Unknown option #{inspect(option)}")
 
+  defp matches_type?(nil, _value), do: true
+  defp matches_type?(_type, nil), do: true
   defp matches_type?(:any, _value), do: true
   defp matches_type?(:boolean, value), do: is_boolean(value)
   defp matches_type?(:integer, value), do: is_integer(value)

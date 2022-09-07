@@ -47,4 +47,6 @@ defmodule OpenAPI.Spec.Path.Header do
     examples: %{:string => [Spec.Ref, Spec.Schema.Example]},
     content: %{:string => Spec.Schema.Media}
   }
+
+  def matches?(_value), do: true
 end

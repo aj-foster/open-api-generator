@@ -22,4 +22,9 @@ defmodule OpenAPI.Spec.Schema.Example do
     value: :any,
     external_value: :string
   }
+
+  def matches?(value) do
+    value = Enum.into(value, %{})
+    match?(%{"value" => _}, value) or match?(%{"externalValue" => _}, value)
+  end
 end

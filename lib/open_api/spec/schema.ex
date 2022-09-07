@@ -118,7 +118,5 @@ defmodule OpenAPI.Spec.Schema do
     deprecated: {:boolean, default: false}
   }
 
-  def matches?(value) do
-    match?(%{"type" => _}, Enum.into(value, %{}))
-  end
+  def matches?(_value), do: true
 end

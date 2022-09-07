@@ -12,7 +12,7 @@ defmodule OpenAPI.Spec do
           info: Spec.Info.t(),
           servers: [Spec.Server.t()],
           paths: %{optional(:string) => nil},
-          components: term,
+          components: Spec.Components.t(),
           security: [term],
           tags: [term],
           external_docs: Spec.ExternalDocumentation.t() | nil
@@ -34,7 +34,7 @@ defmodule OpenAPI.Spec do
     info: Spec.Info,
     servers: {[Spec.Server], default: [%Spec.Server{url: "/"}]},
     paths: {%{:string => Spec.Path.Item}, default: %{}},
-    components: nil,
+    components: Spec.Components,
     security: nil,
     tags: {[Spec.Tag], default: []},
     external_docs: Spec.ExternalDocumentation
