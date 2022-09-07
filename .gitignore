@@ -24,3 +24,6 @@ open_api-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Test output files
+/lib/example

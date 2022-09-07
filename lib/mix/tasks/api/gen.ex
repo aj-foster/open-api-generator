@@ -17,6 +17,8 @@ defmodule Mix.Tasks.Api.Gen do
 
       true ->
         OpenAPI.Reader.read(List.first(args))
+        |> OpenAPI.Schema.write_all()
+        |> IO.inspect(pretty: true, syntax_colors: IO.ANSI.syntax_colors())
     end
   end
 end

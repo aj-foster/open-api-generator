@@ -5,9 +5,7 @@ defmodule OpenAPI.Reader do
 
   def read(filename) do
     [parsed_yaml] = :yamerl.decode_file(filename, str_node_as_binary: true)
-
     decode(OpenAPI.Spec, parsed_yaml)
-    |> IO.inspect(pretty: true, syntax_colors: IO.ANSI.syntax_colors())
   end
 
   def decode({type, opts}, parsed_value) when is_list(opts) do

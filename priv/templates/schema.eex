@@ -1,0 +1,2 @@
+defmodule <%= @base %>.<%= @schema %> do
+end
