@@ -12,7 +12,7 @@ defmodule OpenAPI.Util do
           {decode(key_type, key), decode(value_type, value)}
 
         nil ->
-          raise "Unknown type for #{parsed_value}, decoder #{type}"
+          raise "Unknown type for #{inspect(parsed_value)}, decoder #{inspect(type)}"
       end
     end)
     |> Enum.into(%{})
@@ -23,7 +23,7 @@ defmodule OpenAPI.Util do
   def decode(types, parsed_value) when is_list(types) do
     case Enum.find(types, fn type -> matches_type?(type, parsed_value) end) do
       nil ->
-        raise "Unknown type for #{parsed_value}, decoder #{types}"
+        raise "Unknown type for #{inspect(parsed_value)}, decoder #{inspect(types)}"
 
       type ->
         decode(type, parsed_value)
@@ -32,6 +32,7 @@ defmodule OpenAPI.Util do
 
   def decode(:boolean, parsed_value), do: parsed_value
   def decode(:string, parsed_value), do: parsed_value
+  def decode(literal, literal) when is_binary(literal), do: literal
   def decode(nil, _parsed_value), do: nil
   def decode(_type, nil), do: nil
 
@@ -60,5 +61,6 @@ defmodule OpenAPI.Util do
   defp handle_option(_type, option, _value), do: raise("Unknown option #{inspect(option)}")
 
   defp matches_type?(:string, value), do: is_binary(value)
+  defp matches_type?(literal, value) when is_binary(literal), do: value == literal
   defp matches_type?(module, value) when is_atom(module), do: module.matches?(value)
 end

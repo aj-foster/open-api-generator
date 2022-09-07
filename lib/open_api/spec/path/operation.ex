@@ -38,7 +38,7 @@ defmodule OpenAPI.Spec.Path.Operation do
     description: :string,
     external_docs: Spec.ExternalDocumentation,
     operation_id: :string,
-    parameters: nil,
+    parameters: {[[Spec.Ref, Spec.Path.Parameter]], default: []},
     request_body: nil,
     responses: nil,
     callbacks: nil,
