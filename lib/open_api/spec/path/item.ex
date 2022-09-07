@@ -17,7 +17,7 @@ defmodule OpenAPI.Spec.Path.Item do
           patch: Spec.Path.Operation.t() | nil,
           trace: Spec.Path.Operation.t() | nil,
           servers: [Spec.Server.t()],
-          parameters: nil
+          parameters: [Spec.Ref.t() | Spec.Path.Parameter.t()]
         }
 
   defstruct [
@@ -49,6 +49,6 @@ defmodule OpenAPI.Spec.Path.Item do
     patch: Spec.Path.Operation,
     trace: Spec.Path.Operation,
     servers: {[Spec.Server], default: []},
-    parameters: nil
+    parameters: {[Spec.Ref, Spec.Path.Parameter], default: []}
   }
 end

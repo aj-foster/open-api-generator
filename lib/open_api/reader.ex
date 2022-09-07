@@ -16,6 +16,8 @@ defmodule OpenAPI.Reader do
     end
   end
 
+  def decode(type, nil) when is_map(type), do: nil
+
   def decode(type, parsed_value) when is_map(type) do
     Enum.map(parsed_value, fn {key, value} ->
       case Enum.find(type, fn {key_type, _value_type} -> matches_type?(key_type, key) end) do
