@@ -7,20 +7,26 @@ defmodule Mix.Tasks.Api.Gen do
   use Mix.Task
 
   @impl Mix.Task
-  def run(args) do
-    cond do
-      length(args) != 1 ->
-        Mix.shell().error("Usage: mix api.gen path/to/spec.yaml")
+  def run([profile, spec_file]) do
+    profile = String.to_atom(profile)
+    config = Application.get_env(:open_api, profile)
 
-      not File.exists?(List.first(args)) ->
+    cond do
+      is_nil(config) ->
+        Mix.shell().error("Profile #{profile} not found in configuration")
+
+      not File.exists?(spec_file) ->
         Mix.shell().error("Error: file not found")
 
       true ->
-        File.rm_rf!("lib/example")
-
-        OpenAPI.Reader.read(List.first(args))
-        |> OpenAPI.Schema.write_all()
-        |> IO.inspect(pretty: true, syntax_colors: IO.ANSI.syntax_colors())
+        OpenAPI.Reader.read(spec_file)
+        |> OpenAPI.Generator.run(config)
+        # |> OpenAPI.Schema.write_all()
+        |> IO.inspect(pretty: true, syntax_colors: IO.ANSI.syntax_colors(), limit: :infinity)
     end
+  end
+
+  def run(_args) do
+    Mix.shell().error("Usage: mix api.gen [profile] [path/to/spec.yaml]")
   end
 end
