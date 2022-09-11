@@ -1,2 +1,26 @@
-defmodule <%= @base %>.<%= @schema %> do
+defmodule <%= inspect(@module) %> do
+  @moduledoc """
+  <%= @docstring %>
+  """
+
+  @type t :: %__MODULE__{
+    <%= for {name, type} <- @types do %>
+      <%= name %>: <%= type %>,
+    <% end %>
+  }
+
+  defstruct [
+    <%= for field <- @fields do %>
+      :<%= field %>,
+    <% end %>
+  ]
+
+  @doc false
+  def decode(value) do
+    %__MODULE__{
+      <%= for {name, decoder} <- @decoders do %>
+        <%= name %>: <%= decoder %>,
+      <% end %>
+    }
+  end
 end
