@@ -1,4 +1,4 @@
-defmodule OpenAPI.Render do
+defmodule OpenAPI.Generator.Render do
   @moduledoc false
   require EEx
 

@@ -11,9 +11,7 @@ defmodule OpenAPI.Generator do
     %State{}
     |> process_options(opts)
     |> collect_schemas(spec)
-    |> Map.get(:schemas)
-    |> Enum.map(fn {name, module, _spec} -> {name, module} end)
-    |> Enum.sort_by(fn {_name, module} -> module end)
+    |> OpenAPI.Generator.Schema.write_all()
   end
 
   @spec process_options(pre_state, keyword) :: pre_state
