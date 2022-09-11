@@ -1,6 +1,5 @@
 defmodule OpenAPI.Schema do
-  require EEx
-
+  alias OpenAPI.Render
   alias OpenAPI.Spec
 
   @file_base "lib/example/schemas"
@@ -76,7 +75,7 @@ defmodule OpenAPI.Schema do
     decoders = decoders(schema)
 
     file =
-      render(
+      Render.schema(
         module: module,
         docstring: docstring,
         types: types,
@@ -202,7 +201,4 @@ defmodule OpenAPI.Schema do
       unquote(mod).decode(value[unquote(name)])
     end
   end
-
-  path = :code.priv_dir(:open_api) |> Path.join("templates/schema.eex")
-  EEx.function_from_file(:defp, :render, path, [:assigns])
 end
