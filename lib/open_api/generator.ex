@@ -1,5 +1,7 @@
 defmodule OpenAPI.Generator do
   alias OpenAPI.Generator.Options
+  alias OpenAPI.Generator.Render
+  alias OpenAPI.Generator.Schema
   alias OpenAPI.Generator.State
   alias OpenAPI.Spec
 
@@ -11,14 +13,26 @@ defmodule OpenAPI.Generator do
     %State{}
     |> process_options(opts)
     |> collect_schemas(spec)
-    |> OpenAPI.Generator.Schema.write_all()
+    |> process_schemas()
+    |> collect_paths(spec)
+    |> process_paths()
+    |> reconcile_files()
+    |> write()
   end
+
+  #
+  # Options
+  #
 
   @spec process_options(pre_state, keyword) :: pre_state
   defp process_options(state, opts) do
     options = Options.new(opts)
     %{state | options: options}
   end
+
+  #
+  # Schemas
+  #
 
   @spec collect_schemas(pre_state, Spec.t()) :: pre_state
   defp collect_schemas(state, spec) do
@@ -71,5 +85,60 @@ defmodule OpenAPI.Generator do
         true -> name
       end
     end)
+  end
+
+  @spec process_schemas(pre_state) :: pre_state
+  defp process_schemas(state) do
+    files = Schema.process(state) |> Enum.into(%{})
+    %{state | schema_files: files}
+  end
+
+  #
+  # Paths
+  #
+
+  @spec collect_paths(pre_state, Spec.t()) :: pre_state
+  defp collect_paths(state, _spec) do
+    %{state | paths: []}
+  end
+
+  @spec process_paths(pre_state) :: pre_state()
+  defp process_paths(state) do
+    files = Enum.map(state.paths, & &1) |> Enum.into(%{})
+    %{state | path_files: files}
+  end
+
+  #
+  # Write
+  #
+
+  @spec reconcile_files(pre_state) :: state
+  defp reconcile_files(state) do
+    files =
+      Map.merge(state.schema_files, state.path_files, fn _module, schema_file, path_file ->
+        Map.merge(schema_file, path_file)
+      end)
+
+    %{state | files: files}
+  end
+
+  @spec write(state) :: :ok
+  defp write(state) do
+    File.mkdir_p!(state.options.base_location)
+
+    for {module, file} <- state.files do
+      %{name: filename, docstring: docstring, fields: fields} = file
+
+      file =
+        Render.schema(
+          module: module,
+          docstring: docstring,
+          fields: fields
+        )
+        |> Code.format_string!()
+
+      File.mkdir_p!(Path.dirname(filename))
+      File.write!(filename, [file, "\n"])
+    end
   end
 end

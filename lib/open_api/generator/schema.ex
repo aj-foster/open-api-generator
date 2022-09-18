@@ -1,9 +1,8 @@
 defmodule OpenAPI.Generator.Schema do
-  alias OpenAPI.Generator.Render
   alias OpenAPI.Spec
 
-  @spec write_all(OpenAPI.Generator.State.t()) :: [{module, String.t()}]
-  def write_all(state) do
+  @spec process(%OpenAPI.Generator.State{}) :: [{module, OpenAPI.Generator.State.file()}]
+  def process(state) do
     File.mkdir_p!(state.options.base_location)
 
     for {_name, {module, spec}} <- state.schemas, complex_type?(spec) do
@@ -18,17 +17,7 @@ defmodule OpenAPI.Generator.Schema do
       docstring = docstring(spec)
       fields = fields(state, spec)
 
-      file =
-        Render.schema(
-          module: module,
-          docstring: docstring,
-          fields: fields
-        )
-        |> Code.format_string!()
-
-      File.mkdir_p!(Path.dirname(filename))
-      File.write!(filename, [file, "\n"])
-      {module, filename}
+      {module, %{name: filename, docstring: docstring, fields: fields}}
     end
   end
 
