@@ -47,5 +47,6 @@ config :open_api,
       {~r/^Simple(.*)/, "\\1.Simple"},
       {~r/^Ssh/, "SSH"},
       {~r/^Workflow/, "Actions.Workflow"}
-    ]
+    ],
+    schema_location: "schemas/"
   ]

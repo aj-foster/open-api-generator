@@ -10,7 +10,8 @@ defmodule OpenAPI.Generator.Options do
           base_module: module,
           group: [module],
           ignore: [ignore_pattern],
-          replace: [{replace_pattern, replace_action}]
+          replace: [{replace_pattern, replace_action}],
+          schema_location: String.t()
         }
 
   defstruct [
@@ -18,7 +19,8 @@ defmodule OpenAPI.Generator.Options do
     :base_module,
     :group,
     :ignore,
-    :replace
+    :replace,
+    :schema_location
   ]
 
   @spec new(keyword) :: t
@@ -28,7 +30,8 @@ defmodule OpenAPI.Generator.Options do
       base_module: get_base_module(opts[:base_module]),
       group: get_group(opts[:group]),
       ignore: get_ignore(opts[:ignore]),
-      replace: get_replace(opts[:replace])
+      replace: get_replace(opts[:replace]),
+      schema_location: get_schema_location(opts[:schema_location])
     }
   end
 
@@ -91,4 +94,11 @@ defmodule OpenAPI.Generator.Options do
             "Option :replace expects a list of tuples with patterns and replacements"
     end
   end
+
+  @spec get_schema_location(any) :: String.t() | no_return
+  defp get_schema_location(nil), do: ""
+  defp get_schema_location(value) when is_binary(value), do: value
+
+  defp get_schema_location(value),
+    do: raise(ArgumentError, "Option :schema_location expects a string, got #{inspect(value)}")
 end

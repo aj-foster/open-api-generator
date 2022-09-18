@@ -7,8 +7,14 @@ defmodule OpenAPI.Generator.Schema do
     File.mkdir_p!(state.options.base_location)
 
     for {_name, {module, spec}} <- state.schemas, complex_type?(spec) do
+      filename =
+        Path.join([
+          state.options.base_location,
+          state.options.schema_location,
+          Macro.underscore(module) <> ".ex"
+        ])
+
       module = Module.concat(state.options.base_module, module)
-      filename = Path.join(state.options.base_location, Macro.underscore(module) <> ".ex")
       docstring = docstring(spec)
       fields = fields(state, spec)
 
