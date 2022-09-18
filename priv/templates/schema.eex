@@ -3,24 +3,18 @@ defmodule <%= inspect(@module) %> do
   <%= @docstring %>
   """
 
-  @type t :: %__MODULE__{
-    <%= for {name, type} <- @types do %>
-      <%= name %>: <%= type %>,
-    <% end %>
-  }
-
   defstruct [
-    <%= for field <- @fields do %>
-      :<%= field %>,
+    <%= for {name, _type} <- @fields do %>
+      :<%= inspect(name) %>,
     <% end %>
   ]
 
   @doc false
-  def decode(value) do
-    %__MODULE__{
-      <%= for {name, decoder} <- @decoders do %>
-        <%= name %>: <%= decoder %>,
-      <% end %>
-    }
+  def __fields__ do
+    [
+    <%= for {name, type} <- @fields do %>
+      <%= inspect(name) %>: <%= inspect(type) %>,
+    <% end %>
+    ]
   end
 end

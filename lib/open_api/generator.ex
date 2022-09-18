@@ -25,9 +25,10 @@ defmodule OpenAPI.Generator do
     schemas =
       Enum.map(spec.components.schemas, fn {name, schema} ->
         module = process_name(state, name)
-        {name, module, schema}
+        {name, {module, schema}}
       end)
-      |> Enum.reject(fn {name, module, _schema} -> ignored?(state, name, module) end)
+      |> Enum.reject(fn {name, {module, _schema}} -> ignored?(state, name, module) end)
+      |> Enum.into(%{})
 
     %{state | schemas: schemas}
   end

@@ -40,6 +40,7 @@ config :open_api,
     ],
     replace: [
       {~r/^Codespaces/, "Codespace"},
+      {~r/^Nullable(.*)/, "\\1"},
       {~r/Oidc/, "OIDC"},
       {~r/^Runner/, "Actions.Runner"},
       {~r/^Scim/, "SCIM"},
