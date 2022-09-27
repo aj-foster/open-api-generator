@@ -20,6 +20,9 @@ defmodule OpenAPI.Generator.PathTest do
 
       assert [{["Other", "ModName"], "example_op"}] =
                Path.names(%Operation{operation_id: "other/modName/exampleOp", tags: []})
+
+      assert [{["ModName"], "example_op"}] =
+               Path.names(%Operation{operation_id: "mod-name/example-op", tags: []})
     end
 
     test "names a tagged operation" do
@@ -46,6 +49,9 @@ defmodule OpenAPI.Generator.PathTest do
 
       assert [{["Other"], "mod_name_example_op"}] =
                Path.names(%Operation{operation_id: "other/modName/exampleOp", tags: ["other"]})
+
+      assert [{["ModName"], "example_op"}] =
+               Path.names(%Operation{operation_id: "example-op", tags: ["mod-name"]})
     end
 
     test "names an operation with multiple tags" do
