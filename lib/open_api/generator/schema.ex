@@ -3,8 +3,6 @@ defmodule OpenAPI.Generator.Schema do
 
   @spec process(%OpenAPI.Generator.State{}) :: [{module, OpenAPI.Generator.State.file()}]
   def process(state) do
-    File.mkdir_p!(state.options.base_location)
-
     for {_name, {module, spec}} <- state.schemas, complex_type?(spec) do
       filename =
         Path.join([
@@ -17,7 +15,7 @@ defmodule OpenAPI.Generator.Schema do
       docstring = docstring(spec)
       fields = fields(state, spec)
 
-      {module, %{name: filename, docstring: docstring, fields: fields}}
+      {module, %{name: filename, docstring: docstring, fields: fields, operations: []}}
     end
   end
 

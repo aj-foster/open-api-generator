@@ -8,6 +8,7 @@ defmodule OpenAPI.Generator.Options do
   @type t :: %__MODULE__{
           base_location: String.t(),
           base_module: module,
+          default_client: module,
           group: [module],
           ignore: [ignore_pattern],
           operation_location: String.t(),
@@ -18,6 +19,7 @@ defmodule OpenAPI.Generator.Options do
   defstruct [
     :base_location,
     :base_module,
+    :default_client,
     :group,
     :ignore,
     :operation_location,
@@ -27,9 +29,12 @@ defmodule OpenAPI.Generator.Options do
 
   @spec new(keyword) :: t
   def new(opts) do
+    base_module = get_base_module(opts[:base_module])
+
     %__MODULE__{
       base_location: get_base_location(opts[:base_location]),
-      base_module: get_base_module(opts[:base_module]),
+      base_module: base_module,
+      default_client: get_default_client(opts[:default_client], base_module),
       group: get_group(opts[:group]),
       ignore: get_ignore(opts[:ignore]),
       operation_location: get_operation_location(opts[:operation_location]),
@@ -51,6 +56,10 @@ defmodule OpenAPI.Generator.Options do
 
   defp get_base_module(value),
     do: raise(ArgumentError, "Option :base_module expects a module, got #{inspect(value)}")
+
+  @spec get_default_client(any, module) :: module | no_return
+  defp get_default_client(nil, base_module), do: Module.concat([base_module, Client])
+  defp get_default_client(value, _base_module) when is_atom(value), do: value
 
   @spec get_group(any) :: [module] | no_return
   defp get_group(nil), do: []

@@ -11,7 +11,7 @@ defmodule OpenAPI.Spec do
           openapi: String.t(),
           info: Spec.Info.t(),
           servers: [Spec.Server.t()],
-          paths: %{optional(:string) => nil},
+          paths: %{optional(:string) => Spec.Path.Item.t()},
           components: Spec.Components.t(),
           security: [term],
           tags: [term],

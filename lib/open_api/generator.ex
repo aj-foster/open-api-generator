@@ -1,5 +1,6 @@
 defmodule OpenAPI.Generator do
   alias OpenAPI.Generator.Options
+  alias OpenAPI.Generator.Operation
   alias OpenAPI.Generator.Render
   alias OpenAPI.Generator.Schema
   alias OpenAPI.Generator.State
@@ -10,12 +11,11 @@ defmodule OpenAPI.Generator do
 
   @spec run(Spec.t(), keyword) :: any
   def run(spec, opts) do
-    %State{}
+    %State{spec: spec}
     |> process_options(opts)
     |> collect_schemas(spec)
     |> process_schemas()
-    |> collect_paths(spec)
-    |> process_paths()
+    |> collect_operations(spec)
     |> reconcile_files()
     |> write()
   end
@@ -94,51 +94,72 @@ defmodule OpenAPI.Generator do
   end
 
   #
-  # Paths
+  # Operations
   #
 
-  @spec collect_paths(pre_state, Spec.t()) :: pre_state
-  defp collect_paths(state, _spec) do
-    %{state | paths: []}
-  end
+  @methods [:get, :put, :post, :delete, :options, :head, :patch, :trace]
 
-  @spec process_paths(pre_state) :: pre_state()
-  defp process_paths(state) do
-    files = Enum.map(state.paths, & &1) |> Enum.into(%{})
-    %{state | path_files: files}
+  @spec collect_operations(pre_state, Spec.t()) :: pre_state
+  defp collect_operations(state, spec) do
+    operations =
+      for {path, item} <- spec.paths,
+          method <- @methods,
+          not is_nil(Map.get(item, method)) do
+        Operation.process(state, {path, method, Map.get(item, method)})
+      end
+      |> List.flatten()
+      |> Enum.reduce(%{}, fn {module, file}, acc ->
+        Map.update(acc, module, file, fn existing_file ->
+          %{
+            existing_file
+            | fields: file.fields ++ existing_file.fields,
+              name: file.name,
+              operations: file.operations ++ existing_file.operations
+          }
+        end)
+      end)
+
+    %{state | operation_files: operations}
   end
 
   #
   # Write
   #
 
-  @spec reconcile_files(pre_state) :: state
+  # @spec reconcile_files(pre_state) :: state
   defp reconcile_files(state) do
     files =
-      Map.merge(state.schema_files, state.path_files, fn _module, schema_file, path_file ->
-        Map.merge(schema_file, path_file)
+      Map.merge(state.schema_files, state.operation_files, fn _module,
+                                                              schema_file,
+                                                              operation_file ->
+        Map.merge(schema_file, operation_file)
       end)
 
     %{state | files: files}
   end
 
-  @spec write(state) :: :ok
   defp write(state) do
     File.mkdir_p!(state.options.base_location)
 
     for {module, file} <- state.files do
-      %{name: filename, docstring: docstring, fields: fields} = file
+      %{name: filename, docstring: docstring, fields: fields, operations: operations} = file
+
+      operations = Enum.sort_by(operations, & &1.name)
 
       file =
         Render.schema(
           module: module,
+          default_client: state.options.default_client,
           docstring: docstring,
-          fields: fields
+          fields: fields,
+          operations: operations
         )
         |> Code.format_string!()
 
       File.mkdir_p!(Path.dirname(filename))
       File.write!(filename, [file, "\n"])
     end
+
+    :ok
   end
 end

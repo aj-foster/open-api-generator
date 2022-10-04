@@ -3,18 +3,36 @@ defmodule <%= inspect(@module) %> do
   <%= @docstring %>
   """
 
-  defstruct [
-    <%= for {name, _type} <- @fields do %>
-      :<%= inspect(name) %>,
-    <% end %>
-  ]
-
-  @doc false
-  def __fields__ do
-    [
-    <%= for {name, type} <- @fields do %>
-      <%= inspect(name) %>: <%= inspect(type) %>,
-    <% end %>
+  <%= if length(@fields) > 0 do %>
+    defstruct [
+      <%= for {name, _type} <- @fields do %>
+        :<%= inspect(name) %>,
+      <% end %>
     ]
-  end
+
+    @doc false
+    @spec __fields__ :: keyword
+    def __fields__ do
+      [
+      <%= for {name, type} <- @fields do %>
+        <%= inspect(name) %>: <%= inspect(type) %>,
+      <% end %>
+      ]
+    end
+  <% end %>
+  
+  <%= for operation <- @operations do %>
+@doc """
+<%= operation.summary %><%= if operation.description do %>
+
+<%= String.replace(operation.description, "\"\"\"", "\\\"\\\"\\\"") %><% end %>
+"""
+    @spec <%= operation.name %>(<%= inspect(@default_client) %>.t(), keyword) :: {:ok, term} | {:error, term}
+    def <%= operation.name %>(client \\ <%= inspect(@default_client) %>, <%= for {name, _} <- operation.path_params, do: "#{name}, " %> _opts \\ []) do
+      client.request(%{
+        url: "<%= String.replace(operation.path, ~r/\{([[:word:]]+)\}/, "#\{\\1\}") %>",
+        method: <%= inspect(operation.method) %>
+      })
+    end
+  <% end %>
 end
