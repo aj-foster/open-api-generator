@@ -21,7 +21,7 @@ defmodule OpenAPI.Spec.Schema.Media do
   @decoders %{
     schema: [Spec.Ref, Spec.Schema],
     example: :any,
-    examples: %{:string => [Spec.Ref, Spec.Schema.Example]},
+    examples: nil,
     encoding: %{:string => Spec.Schema.Encoding}
   }
 end

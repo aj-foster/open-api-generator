@@ -1,5 +1,10 @@
 defmodule OpenAPI.Generator.Operation do
   alias OpenAPI.Spec.Path.Operation
+  alias OpenAPI.Spec.Path.Parameter
+  alias OpenAPI.Spec.RequestBody
+  alias OpenAPI.Spec.Schema.Media
+  alias OpenAPI.Spec.Ref
+  alias OpenAPI.Spec.Response
 
   def process(state, {path, method, operation_spec}) do
     for {modules, function} <- names(operation_spec) do
@@ -15,11 +20,15 @@ defmodule OpenAPI.Generator.Operation do
       module = Module.concat(state.options.base_module, module)
 
       operation = %{
+        body: body(state, operation_spec),
         description: operation_spec.description,
+        docs: operation_spec.external_docs,
         method: method,
         name: function,
         path: path,
         path_params: path_params(state, path, operation_spec),
+        query_params: query_params(state, operation_spec),
+        responses: responses(state, operation_spec),
         summary: operation_spec.summary
       }
 
@@ -61,15 +70,74 @@ defmodule OpenAPI.Generator.Operation do
       |> Enum.into(%{})
 
     String.split(path, ~r/(^|\})[^\{\}]*(\{|$)/, trim: true)
-    |> Enum.map(fn name -> {name, all_params[name].schema} end)
+    |> Enum.map(fn name ->
+      schema = all_params[name].schema
+      typespec = OpenAPI.Generator.Schema.typespec(state, schema, name)
+      {name, schema, typespec}
+    end)
   end
 
-  defp parameter(_state, %OpenAPI.Spec.Path.Parameter{name: name} = param), do: {name, param}
+  defp query_params(state, %Operation{parameters: parameters}) do
+    parameters
+    |> Enum.map(&parameter(state, &1))
+    |> Enum.filter(fn
+      {_name, %Parameter{in: "query"}} -> true
+      _ -> false
+    end)
+    |> Enum.map(fn {name, param} ->
+      typespec = OpenAPI.Generator.Schema.typespec(state, param.schema, name)
+      {name, param.description, typespec}
+    end)
+  end
 
-  defp parameter(state, %OpenAPI.Spec.Ref{"$ref": "#/components/parameters/" <> loc}) do
-    %OpenAPI.Spec.Path.Parameter{name: name} =
-      param = Map.fetch!(state.spec.components.parameters, loc)
+  defp parameter(_state, %Parameter{name: name} = param), do: {name, param}
 
+  defp parameter(state, %Ref{"$ref": "#/components/parameters/" <> loc}) do
+    %Parameter{name: name} = param = Map.fetch!(state.spec.components.parameters, loc)
     {name, param}
+  end
+
+  defp body(_state, %Operation{request_body: nil}), do: nil
+
+  defp body(state, %Operation{request_body: %RequestBody{content: content}}) do
+    content
+    |> Enum.sort_by(fn {content_type, _media} -> content_type end)
+    |> Enum.map(fn {_content_type, media} -> media_to_typespec(state, media) end)
+    |> Enum.uniq()
+  end
+
+  defp media_to_typespec(state, %Media{schema: %Ref{"$ref": "#/components/schemas/" <> name}}) do
+    schema = Map.fetch!(state.spec.components.schemas, name)
+    OpenAPI.Generator.Schema.typespec(state, schema, name)
+  end
+
+  defp media_to_typespec(_state, %Media{schema: %OpenAPI.Spec.Schema{type: "object"}}) do
+    "map"
+  end
+
+  defp media_to_typespec(_state, _operation) do
+    "term"
+  end
+
+  defp responses(_state, %Operation{responses: nil}), do: nil
+
+  defp responses(state, %Operation{responses: responses}) do
+    Enum.map(responses, fn {status, response} -> {status, parse_response(state, response)} end)
+  end
+
+  defp parse_response(_state, %Response{content: nil}), do: nil
+  defp parse_response(_state, %Response{content: c}) when map_size(c) == 0, do: nil
+
+  defp parse_response(state, %Ref{"$ref": "#/components/responses/" <> name}) do
+    response = Map.fetch!(state.spec.components.responses, name)
+    parse_response(state, response)
+  end
+
+  defp parse_response(state, %Response{content: %{"application/json" => %Media{schema: schema}}}) do
+    OpenAPI.Generator.Schema.type(state, schema)
+  end
+
+  defp parse_response(_state, _response) do
+    :string
   end
 end

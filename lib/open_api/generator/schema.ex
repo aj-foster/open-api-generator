@@ -43,18 +43,18 @@ defmodule OpenAPI.Generator.Schema do
     |> Enum.sort_by(fn {name, _type} -> name end)
   end
 
-  defp type(state, spec, name \\ nil)
+  def type(state, spec, name \\ nil)
 
-  defp type(state, %Spec.Schema{type: "array", items: items}, _name) do
+  def type(state, %Spec.Schema{type: "array", items: items}, _name) do
     {:array, type(state, items)}
   end
 
-  defp type(_state, %Spec.Schema{type: "boolean"}, _name), do: :boolean
-  defp type(_state, %Spec.Schema{type: "integer"}, _name), do: :integer
-  defp type(_state, %Spec.Schema{type: "number"}, _name), do: :number
-  defp type(_state, %Spec.Schema{type: "string"}, _name), do: :string
+  def type(_state, %Spec.Schema{type: "boolean"}, _name), do: :boolean
+  def type(_state, %Spec.Schema{type: "integer"}, _name), do: :integer
+  def type(_state, %Spec.Schema{type: "number"}, _name), do: :number
+  def type(_state, %Spec.Schema{type: "string"}, _name), do: :string
 
-  defp type(state, %Spec.Schema{type: "object"}, name) do
+  def type(state, %Spec.Schema{type: "object"}, name) do
     if name do
       Module.concat(state.options.base_module, name)
     else
@@ -62,15 +62,46 @@ defmodule OpenAPI.Generator.Schema do
     end
   end
 
-  defp type(_state, %Spec.Schema{any_of: any_of}, _name) when is_list(any_of), do: :unknown
-  defp type(_state, %Spec.Schema{one_of: one_of}, _name) when is_list(one_of), do: :unknown
-  defp type(_state, %Spec.Schema{type: nil}, _name), do: :unknown
+  def type(_state, %Spec.Schema{any_of: any_of}, _name) when is_list(any_of), do: :unknown
+  def type(_state, %Spec.Schema{one_of: one_of}, _name) when is_list(one_of), do: :unknown
+  def type(_state, %Spec.Schema{type: nil}, _name), do: :unknown
 
-  defp type(state, %Spec.Ref{"$ref": "#/components/schemas/" <> schema_name}, _name) do
+  def type(state, %Spec.Ref{"$ref": "#/components/schemas/" <> schema_name}, _name) do
     # TODO: ignored schemas -> map
     case Map.get(state.schemas, schema_name) do
       {module, spec} -> type(state, spec, module)
       nil -> :map
+    end
+  end
+
+  def typespec(state, spec, name \\ nil)
+
+  def typespec(state, %Spec.Schema{type: "array", items: items}, _name) do
+    "[#{typespec(state, items)}]"
+  end
+
+  def typespec(_state, %Spec.Schema{type: "boolean"}, _name), do: "boolean"
+  def typespec(_state, %Spec.Schema{type: "integer"}, _name), do: "integer"
+  def typespec(_state, %Spec.Schema{type: "number"}, _name), do: "number"
+  def typespec(_state, %Spec.Schema{type: "string"}, _name), do: "String.t()"
+
+  def typespec(state, %Spec.Schema{type: "object"}, name) do
+    if name do
+      inspect(Module.concat(state.options.base_module, name)) <> ".t()"
+    else
+      "map"
+    end
+  end
+
+  def typespec(_state, %Spec.Schema{any_of: any_of}, _name) when is_list(any_of), do: :unknown
+  def typespec(_state, %Spec.Schema{one_of: one_of}, _name) when is_list(one_of), do: :unknown
+  def typespec(_state, %Spec.Schema{type: nil}, _name), do: :unknown
+
+  def typespec(state, %Spec.Ref{"$ref": "#/components/schemas/" <> schema_name}, _name) do
+    # TODO: ignored schemas -> map
+    case Map.get(state.schemas, schema_name) do
+      {module, spec} -> typespec(state, spec, module)
+      nil -> "map"
     end
   end
 end
