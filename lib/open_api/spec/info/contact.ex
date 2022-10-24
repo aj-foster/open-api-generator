@@ -1,6 +1,9 @@
 defmodule OpenAPI.Spec.Info.Contact do
   @moduledoc false
-  use OpenAPI.Spec.Helper
+
+  #
+  # Definition
+  #
 
   @type t :: %__MODULE__{
           name: String.t() | nil,
@@ -14,9 +17,18 @@ defmodule OpenAPI.Spec.Info.Contact do
     :email
   ]
 
-  @decoders %{
-    name: :string,
-    url: :string,
-    email: :string
-  }
+  #
+  # Decoder
+  #
+
+  @spec decode(map, map, map) :: {map, t}
+  def decode(state, _spec, yaml) do
+    contact = %__MODULE__{
+      name: Map.get(yaml, "name"),
+      url: Map.get(yaml, "url"),
+      email: Map.get(yaml, "email")
+    }
+
+    {state, contact}
+  end
 end

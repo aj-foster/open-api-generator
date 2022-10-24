@@ -1,6 +1,9 @@
 defmodule OpenAPI.Spec.Info.License do
   @moduledoc false
-  use OpenAPI.Spec.Helper
+
+  #
+  # Definition
+  #
 
   @type t :: %__MODULE__{
           name: String.t() | nil,
@@ -12,8 +15,17 @@ defmodule OpenAPI.Spec.Info.License do
     :url
   ]
 
-  @decoders %{
-    name: :string,
-    url: :string
-  }
+  #
+  # Decoder
+  #
+
+  @spec decode(map, map, map) :: {map, t}
+  def decode(state, _spec, yaml) do
+    license = %__MODULE__{
+      name: Map.get(yaml, "name"),
+      url: Map.get(yaml, "url")
+    }
+
+    {state, license}
+  end
 end

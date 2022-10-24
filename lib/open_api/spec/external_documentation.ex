@@ -1,6 +1,9 @@
 defmodule OpenAPI.Spec.ExternalDocumentation do
   @moduledoc false
-  use OpenAPI.Spec.Helper
+
+  #
+  # Definition
+  #
 
   @type t :: %__MODULE__{
           description: String.t() | nil,
@@ -12,8 +15,17 @@ defmodule OpenAPI.Spec.ExternalDocumentation do
     :url
   ]
 
-  @decoders %{
-    description: :string,
-    url: :string
-  }
+  #
+  # Decoder
+  #
+
+  @spec decode(map, map, map) :: {map, t}
+  def decode(state, _spec, yaml) do
+    external_doc = %__MODULE__{
+      url: Map.fetch!(yaml, "url"),
+      description: Map.get(yaml, "description")
+    }
+
+    {state, external_doc}
+  end
 end

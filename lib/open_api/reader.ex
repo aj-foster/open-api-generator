@@ -4,8 +4,20 @@ defmodule OpenAPI.Reader do
   """
 
   def read(filename) do
-    [parsed_yaml] = :yamerl.decode_file(filename, str_node_as_binary: true)
-    decode(OpenAPI.Spec, parsed_yaml)
+    absolute_path_of_base_file = Path.absname(filename, File.cwd!())
+
+    %{
+      base_file: absolute_path_of_base_file,
+      files: %{}
+    }
+    |> read("")
+  end
+
+  def read(state, relative_filename) do
+    filename = Path.join(state.base_file, relative_filename)
+    parsed_file = YamlElixir.read_from_file!(filename)
+
+    put_in(state, [:files, relative_filename], parsed_file)
   end
 
   def decode({type, opts}, parsed_value) when is_list(opts) do

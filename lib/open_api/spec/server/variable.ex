@@ -1,6 +1,9 @@
 defmodule OpenAPI.Spec.Server.Variable do
   @moduledoc false
-  use OpenAPI.Spec.Helper
+
+  #
+  # Definition
+  #
 
   @type t :: %__MODULE__{
           enum: [String.t()],
@@ -14,9 +17,18 @@ defmodule OpenAPI.Spec.Server.Variable do
     :description
   ]
 
-  @decoders %{
-    enum: [:string],
-    default: :string,
-    description: :string
-  }
+  #
+  # Decoder
+  #
+
+  @spec decode(map, map, map) :: {map, t}
+  def decode(state, _spec, yaml) do
+    variable = %__MODULE__{
+      enum: Map.fetch!(yaml, "enum"),
+      default: Map.fetch!(yaml, "default"),
+      description: Map.get(yaml, "description")
+    }
+
+    {state, variable}
+  end
 end
