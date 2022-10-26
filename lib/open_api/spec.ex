@@ -5,6 +5,7 @@ defmodule OpenAPI.Spec do
   use OpenAPI.Spec.Helper
 
   alias OpenAPI.Spec
+  alias OpenAPI.Spec.Components
   alias OpenAPI.Spec.ExternalDocumentation
   alias OpenAPI.Spec.Info
   alias OpenAPI.Spec.Server
@@ -58,9 +59,11 @@ defmodule OpenAPI.Spec do
   def decode(state) do
     spec = %__MODULE__{}
     yaml = state.files[""]
+    # TODO: don't return modified spec, instead return value, then construct spec.
     {state, spec} = decode_openapi(state, spec, yaml)
     {state, spec} = decode_info(state, spec, yaml)
     {state, spec} = decode_servers(state, spec, yaml)
+    {state, spec} = decode_components(state, spec, yaml)
     {state, spec} = decode_tags(state, spec, yaml)
     {_state, spec} = decode_external_docs(state, spec, yaml)
 
@@ -91,6 +94,12 @@ defmodule OpenAPI.Spec do
 
   defp decode_servers(state, spec, _yaml),
     do: {state, %{spec | servers: [%Spec.Server{url: "/"}]}}
+
+  @spec decode_components(map, pre_spec, map) :: {map, pre_spec}
+  defp decode_components(state, spec, %{"components" => components}) do
+    {state, components} = Components.decode(state, spec, components)
+    {state, %{spec | components: components}}
+  end
 
   @spec decode_tags(map, pre_spec, map) :: {map, pre_spec}
   defp decode_tags(state, spec, %{"tags" => tags}) do

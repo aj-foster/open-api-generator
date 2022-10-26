@@ -1,6 +1,9 @@
 defmodule OpenAPI.Spec.Schema.Discriminator do
   @moduledoc false
-  use OpenAPI.Spec.Helper
+
+  #
+  # Definition
+  #
 
   @type t :: %__MODULE__{
           property_name: String.t(),
@@ -12,8 +15,17 @@ defmodule OpenAPI.Spec.Schema.Discriminator do
     :mapping
   ]
 
-  @decoders %{
-    property_name: :string,
-    mapping: %{:string => :string}
-  }
+  #
+  # Decoder
+  #
+
+  @spec decode(map, map, map) :: {map, t}
+  def decode(state, _spec, yaml) do
+    discriminator = %__MODULE__{
+      property_name: Map.fetch!(yaml, "property_name"),
+      mapping: Map.fetch!(yaml, "mapping")
+    }
+
+    {state, discriminator}
+  end
 end

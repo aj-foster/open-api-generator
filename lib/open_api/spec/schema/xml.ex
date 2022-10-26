@@ -1,6 +1,9 @@
 defmodule OpenAPI.Spec.Schema.XML do
   @moduledoc false
-  use OpenAPI.Spec.Helper
+
+  #
+  # Definition
+  #
 
   @type t :: %__MODULE__{
           name: String.t() | nil,
@@ -18,11 +21,20 @@ defmodule OpenAPI.Spec.Schema.XML do
     :wrapped
   ]
 
-  @decoders %{
-    name: :string,
-    namespace: :string,
-    prefix: :string,
-    attribute: :boolean,
-    wrapped: :boolean
-  }
+  #
+  # Decoder
+  #
+
+  @spec decode(map, map, map) :: {map, t}
+  def decode(state, _spec, yaml) do
+    xml = %__MODULE__{
+      name: Map.get(yaml, "name"),
+      namespace: Map.get(yaml, "namespace"),
+      prefix: Map.get(yaml, "prefix"),
+      attribute: Map.get(yaml, "attribute"),
+      wrapped: Map.get(yaml, "wrapped")
+    }
+
+    {state, xml}
+  end
 end

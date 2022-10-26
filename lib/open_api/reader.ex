@@ -13,6 +13,7 @@ defmodule OpenAPI.Reader do
     |> read("")
   end
 
+  # TODO: should look relative to calling file, not base file
   def read(state, relative_filename) do
     filename = Path.join(state.base_file, relative_filename)
     parsed_file = YamlElixir.read_from_file!(filename)
