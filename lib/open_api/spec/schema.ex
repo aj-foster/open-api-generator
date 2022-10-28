@@ -1,6 +1,5 @@
 defmodule OpenAPI.Spec.Schema do
   @moduledoc false
-  use OpenAPI.Spec.Helper
 
   alias OpenAPI.Spec
   alias OpenAPI.Spec.ExternalDocumentation
@@ -91,52 +90,18 @@ defmodule OpenAPI.Spec.Schema do
   # Decoder
   #
 
-  @decoders %{
-    title: :string,
-    multiple_of: :integer,
-    maximum: :integer,
-    exclusive_maximum: {:boolean, default: false},
-    minimum: :integer,
-    exclusive_minimum: {:boolean, default: false},
-    max_length: :integer,
-    min_length: :integer,
-    pattern: :string,
-    max_items: :integer,
-    min_items: :integer,
-    unique_items: {:boolean, default: false},
-    max_properties: :integer,
-    min_properties: :integer,
-    required: [:string],
-    enum: [:any],
-    type: :string,
-    all_of: [[Spec.Ref, __MODULE__]],
-    one_of: [[Spec.Ref, __MODULE__]],
-    any_of: [[Spec.Ref, __MODULE__]],
-    not: [Spec.Ref, __MODULE__],
-    items: [Spec.Ref, __MODULE__],
-    properties: {%{:string => [Spec.Ref, __MODULE__]}, default: %{}},
-    additional_properties: {[:boolean, Spec.Ref, __MODULE__], default: true},
-    description: :string,
-    format: :string,
-    default: :any,
-    nullable: {:boolean, default: false},
-    discriminator: Spec.Schema.Discriminator,
-    read_only: {:boolean, default: false},
-    write_only: {:boolean, default: false},
-    xml: Spec.Schema.XML,
-    external_docs: Spec.ExternalDocumentation,
-    example: :any,
-    deprecated: {:boolean, default: false}
-  }
-
-  def matches?(_value), do: true
-
-  @spec decode(map, map, map) :: {map, t}
-  def decode(state, spec, yaml) do
-    {state, discriminator} = decode_discriminator(state, spec, yaml)
-    {state, docs} = decode_external_docs(state, spec, yaml)
-    {state, xml} = decode_xml(state, spec, yaml)
-    {state, not_schema} = decode_not(state, spec, yaml)
+  @spec decode(map, map) :: {map, t}
+  def decode(state, yaml) do
+    {state, all_of} = decode_all_of(state, yaml)
+    {state, one_of} = decode_one_of(state, yaml)
+    {state, any_of} = decode_any_of(state, yaml)
+    {state, discriminator} = decode_discriminator(state, yaml)
+    {state, docs} = decode_external_docs(state, yaml)
+    {state, xml} = decode_xml(state, yaml)
+    {state, not_schema} = decode_not(state, yaml)
+    {state, items} = decode_items(state, yaml)
+    {state, properties} = decode_properties(state, yaml)
+    {state, additional_properties} = decode_additional_properties(state, yaml)
 
     schema = %__MODULE__{
       title: Map.get(yaml, "title"),
@@ -156,9 +121,13 @@ defmodule OpenAPI.Spec.Schema do
       required: Map.get(yaml, "required"),
       enum: Map.get(yaml, "enum"),
       type: Map.get(yaml, "type"),
-
-      # More stuff here...
+      all_of: all_of,
+      one_of: one_of,
+      any_of: any_of,
       not: not_schema,
+      items: items,
+      properties: properties,
+      additional_properties: additional_properties,
       description: Map.get(yaml, "description"),
       format: Map.get(yaml, "format"),
       default: Map.get(yaml, "default"),
@@ -175,39 +144,122 @@ defmodule OpenAPI.Spec.Schema do
     {state, schema}
   end
 
-  @spec decode_discriminator(map, map, map) :: {map, Discriminator.t() | nil}
-  defp decode_discriminator(state, spec, %{"discriminator" => discriminator}),
-    do: Discriminator.decode(state, spec, discriminator)
+  @spec decode_discriminator(map, map) :: {map, Discriminator.t() | nil}
+  defp decode_discriminator(state, %{"discriminator" => discriminator}),
+    do: Discriminator.decode(state, discriminator)
 
-  defp decode_discriminator(state, _spec, _discriminator), do: {state, nil}
+  defp decode_discriminator(state, _discriminator), do: {state, nil}
 
-  @spec decode_external_docs(map, map, map) :: {map, ExternalDocumentation.t() | nil}
-  defp decode_external_docs(state, spec, %{"external_docs" => docs}),
-    do: ExternalDocumentation.decode(state, spec, docs)
+  @spec decode_external_docs(map, map) :: {map, ExternalDocumentation.t() | nil}
+  defp decode_external_docs(state, %{"external_docs" => docs}),
+    do: ExternalDocumentation.decode(state, docs)
 
-  defp decode_external_docs(state, _spec, _docs), do: {state, nil}
+  defp decode_external_docs(state, _docs), do: {state, nil}
 
-  @spec decode_xml(map, map, map) :: {map, XML.t() | nil}
-  defp decode_xml(state, spec, %{"xml" => xml}),
-    do: XML.decode(state, spec, xml)
+  @spec decode_xml(map, map) :: {map, XML.t() | nil}
+  defp decode_xml(state, %{"xml" => xml}),
+    do: XML.decode(state, xml)
 
-  defp decode_xml(state, _spec, _xml), do: {state, nil}
+  defp decode_xml(state, _xml), do: {state, nil}
 
-  @spec decode_not(map, map, map) :: {map, t | nil}
-  defp decode_not(state, spec, %{"not" => %{"$ref" => r}}), do: ensure_schema(state, spec, r)
-  defp decode_not(state, spec, %{"not" => schema}), do: decode(state, spec, schema)
-  defp decode_not(state, _spec, _schema), do: {state, nil}
+  @spec decode_all_of(map, map) :: {map, t | nil}
+  defp decode_all_of(state, %{"all_of" => all_of}) do
+    Enum.reverse(all_of)
+    |> Enum.reduce({state, []}, fn
+      %{"$ref" => r}, {state, list} ->
+        {state, element} = ensure_schema(state, r)
+        {state, [element | list]}
 
-  @spec ensure_schema(map, map, String.t()) :: {map, t}
-  defp ensure_schema(state, spec, schema_ref) do
+      schema, {state, list} ->
+        {state, element} = decode(state, schema)
+        {state, [element | list]}
+    end)
+  end
+
+  defp decode_all_of(state, _schema), do: {state, nil}
+
+  @spec decode_one_of(map, map) :: {map, t | nil}
+  defp decode_one_of(state, %{"one_of" => one_of}) do
+    Enum.reverse(one_of)
+    |> Enum.reduce({state, []}, fn
+      %{"$ref" => r}, {state, list} ->
+        {state, element} = ensure_schema(state, r)
+        {state, [element | list]}
+
+      schema, {state, list} ->
+        {state, element} = decode(state, schema)
+        {state, [element | list]}
+    end)
+  end
+
+  defp decode_one_of(state, _schema), do: {state, nil}
+
+  @spec decode_any_of(map, map) :: {map, t | nil}
+  defp decode_any_of(state, %{"any_of" => any_of}) do
+    Enum.reverse(any_of)
+    |> Enum.reduce({state, []}, fn
+      %{"$ref" => r}, {state, list} ->
+        {state, element} = ensure_schema(state, r)
+        {state, [element | list]}
+
+      schema, {state, list} ->
+        {state, element} = decode(state, schema)
+        {state, [element | list]}
+    end)
+  end
+
+  defp decode_any_of(state, _schema), do: {state, nil}
+
+  @spec decode_not(map, map) :: {map, t | nil}
+  defp decode_not(state, %{"not" => %{"$ref" => r}}), do: ensure_schema(state, r)
+  defp decode_not(state, %{"not" => schema}), do: decode(state, schema)
+  defp decode_not(state, _schema), do: {state, nil}
+
+  @spec decode_items(map, map) :: {map, t | nil}
+  defp decode_items(state, %{"items" => %{"$ref" => r}}), do: ensure_schema(state, r)
+  defp decode_items(state, %{"items" => schema}), do: decode(state, schema)
+  defp decode_items(state, _schema), do: {state, nil}
+
+  @spec decode_properties(map, map) :: {map, %{optional(String.t()) => t}}
+  defp decode_properties(state, %{"properties" => properties}) do
+    Enum.reduce(properties, {state, %{}}, fn
+      {key, %{"$ref" => r}}, {state, properties} ->
+        {state, property} = ensure_schema(state, r)
+        {state, Map.put(properties, key, property)}
+
+      {key, schema}, {state, properties} ->
+        {state, property} = decode(state, schema)
+        {state, Map.put(properties, key, property)}
+    end)
+  end
+
+  defp decode_properties(state, _schema), do: {state, %{}}
+
+  @spec decode_additional_properties(map, map) :: {map, t | boolean}
+  defp decode_additional_properties(state, %{"additional_properties" => %{"$ref" => r}}),
+    do: ensure_schema(state, r)
+
+  defp decode_additional_properties(state, %{"additional_properties" => value})
+       when is_boolean(value),
+       do: {state, value}
+
+  defp decode_additional_properties(state, %{"additional_properties" => schema}),
+    do: decode(state, schema)
+
+  defp decode_additional_properties(state, _schema), do: {state, true}
+
+  @spec ensure_schema(map, String.t()) :: {map, t}
+  defp ensure_schema(state, schema_ref) do
     if Map.has_key?(state.schemas, schema_ref) do
-      state
+      {state, state.schemas[schema_ref]}
     else
       [file, path] = String.split(schema_ref, "#")
       state = ensure_file(state, file)
-      yaml = get_in(state.files[file], String.split(path, "/"))
+      # IO.inspect(state.files[file], label: "FILE")
+      # IO.inspect(String.split(path, "/", trim: true))
+      yaml = get_in(state.files[file], String.split(path, "/", trim: true))
 
-      decode(state, spec, yaml)
+      decode(state, yaml)
     end
   end
 

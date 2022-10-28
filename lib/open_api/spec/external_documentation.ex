@@ -19,8 +19,8 @@ defmodule OpenAPI.Spec.ExternalDocumentation do
   # Decoder
   #
 
-  @spec decode(map, map, map) :: {map, t}
-  def decode(state, _spec, yaml) do
+  @spec decode(map, map) :: {map, t}
+  def decode(state, yaml) do
     external_doc = %__MODULE__{
       url: Map.fetch!(yaml, "url"),
       description: Map.get(yaml, "description")

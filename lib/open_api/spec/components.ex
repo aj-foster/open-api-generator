@@ -40,26 +40,26 @@ defmodule OpenAPI.Spec.Components do
     callbacks: {%{:string => [Spec.Ref, nil]}, default: %{}}
   }
 
-  @spec decode(map, map, map) :: {map, t}
-  def decode(state, spec, yaml) do
-    {state, schemas} = decode_schemas(state, spec, yaml)
+  @spec decode(map, map) :: {map, t}
+  def decode(state, yaml) do
+    {state, schemas} = decode_schemas(state, yaml)
     components = %__MODULE__{schemas: schemas}
     {state, components}
   end
 
-  defp decode_schemas(state, spec, %{"schemas" => yaml}) do
+  defp decode_schemas(state, %{"schemas" => yaml}) do
     Enum.reduce(yaml, {state, %{}}, fn {name, schema_or_ref}, {state, schemas} ->
-      {state, schema} = decode_schema(state, spec, schema_or_ref)
+      {state, schema} = decode_schema(state, schema_or_ref)
       {state, Map.put(schemas, name, schema)}
     end)
   end
 
-  @spec decode_schema(map, map, map) :: {map, OpenAPI.Spec.Schema.t() | nil}
-  defp decode_schema(state, spec, %{"$ref" => r}), do: ensure_schema(state, spec, r)
-  defp decode_schema(state, spec, schema), do: OpenAPI.Spec.Schema.decode(state, spec, schema)
+  @spec decode_schema(map, map) :: {map, OpenAPI.Spec.Schema.t() | nil}
+  defp decode_schema(state, %{"$ref" => r}), do: ensure_schema(state, r)
+  defp decode_schema(state, schema), do: OpenAPI.Spec.Schema.decode(state, schema)
 
-  @spec ensure_schema(map, map, String.t()) :: {map, OpenAPI.Spec.Schema.t()}
-  defp ensure_schema(state, spec, schema_ref) do
+  @spec ensure_schema(map, String.t()) :: {map, OpenAPI.Spec.Schema.t()}
+  defp ensure_schema(state, schema_ref) do
     if Map.has_key?(state.schemas, schema_ref) do
       state
     else
@@ -67,7 +67,7 @@ defmodule OpenAPI.Spec.Components do
       state = ensure_file(state, file)
       yaml = get_in(state.files[file], String.split(path, "/"))
 
-      decode(state, spec, yaml)
+      decode(state, yaml)
     end
   end
 

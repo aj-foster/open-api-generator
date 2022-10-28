@@ -27,8 +27,6 @@ defmodule OpenAPI.Spec do
           external_docs: Spec.ExternalDocumentation.t() | nil
         }
 
-  @typep pre_spec :: %__MODULE__{}
-
   defstruct [
     :openapi,
     :info,
@@ -57,66 +55,69 @@ defmodule OpenAPI.Spec do
 
   @spec decode(map) :: t
   def decode(state) do
-    spec = %__MODULE__{}
     yaml = state.files[""]
-    # TODO: don't return modified spec, instead return value, then construct spec.
-    {state, spec} = decode_openapi(state, spec, yaml)
-    {state, spec} = decode_info(state, spec, yaml)
-    {state, spec} = decode_servers(state, spec, yaml)
-    {state, spec} = decode_components(state, spec, yaml)
-    {state, spec} = decode_tags(state, spec, yaml)
-    {_state, spec} = decode_external_docs(state, spec, yaml)
 
-    spec
+    {state, openapi} = decode_openapi(state, yaml)
+    {state, info} = decode_info(state, yaml)
+    {state, servers} = decode_servers(state, yaml)
+    {state, components} = decode_components(state, yaml)
+    {state, tags} = decode_tags(state, yaml)
+    {_state, external_docs} = decode_external_docs(state, yaml)
+
+    %__MODULE__{
+      openapi: openapi,
+      info: info,
+      servers: servers,
+      components: components,
+      tags: tags,
+      external_docs: external_docs
+    }
   end
 
-  @spec decode_openapi(map, pre_spec, map) :: {map, pre_spec}
-  defp decode_openapi(state, spec, %{"openapi" => openapi}) do
-    {state, %{spec | openapi: openapi}}
+  @spec decode_openapi(map, map) :: {map, String.t()}
+  defp decode_openapi(state, %{"openapi" => openapi}) do
+    {state, openapi}
   end
 
-  @spec decode_info(map, pre_spec, map) :: {map, pre_spec}
-  defp decode_info(state, spec, %{"info" => info}) do
-    {state, info} = Info.decode(state, spec, info)
-    {state, %{spec | info: info}}
+  @spec decode_info(map, map) :: {map, Info.t()}
+  defp decode_info(state, %{"info" => info}) do
+    Info.decode(state, info)
   end
 
-  @spec decode_servers(map, pre_spec, map) :: {map, pre_spec}
-  defp decode_servers(state, spec, %{"servers" => servers}) when is_list(servers) do
+  @spec decode_servers(map, map) :: {map, [Server.t()]}
+  defp decode_servers(state, %{"servers" => servers}) when is_list(servers) do
     {state, servers} =
       Enum.reduce(servers, {state, []}, fn server, {state, servers} ->
-        {state, server} = Server.decode(state, spec, server)
+        {state, server} = Server.decode(state, server)
         {state, [server | servers]}
       end)
 
-    {state, %{spec | servers: Enum.reverse(servers)}}
+    {state, Enum.reverse(servers)}
   end
 
-  defp decode_servers(state, spec, _yaml),
-    do: {state, %{spec | servers: [%Spec.Server{url: "/"}]}}
+  defp decode_servers(state, _yaml),
+    do: {state, [%Spec.Server{url: "/"}]}
 
-  @spec decode_components(map, pre_spec, map) :: {map, pre_spec}
-  defp decode_components(state, spec, %{"components" => components}) do
-    {state, components} = Components.decode(state, spec, components)
-    {state, %{spec | components: components}}
+  @spec decode_components(map, map) :: {map, Components.t()}
+  defp decode_components(state, %{"components" => components}) do
+    Components.decode(state, components)
   end
 
-  @spec decode_tags(map, pre_spec, map) :: {map, pre_spec}
-  defp decode_tags(state, spec, %{"tags" => tags}) do
+  @spec decode_tags(map, map) :: {map, [Tag.t()]}
+  defp decode_tags(state, %{"tags" => tags}) do
     {state, tags} =
       Enum.reduce(tags, {state, []}, fn tag, {state, tags} ->
-        {state, tag} = Tag.decode(state, spec, tag)
+        {state, tag} = Tag.decode(state, tag)
         {state, [tag | tags]}
       end)
 
-    {state, %{spec | tags: Enum.reverse(tags)}}
+    {state, Enum.reverse(tags)}
   end
 
-  @spec decode_external_docs(map, pre_spec, map) :: {map, pre_spec}
-  defp decode_external_docs(state, spec, %{"external_docs" => docs}) do
-    {state, docs} = ExternalDocumentation.decode(state, spec, docs)
-    {state, %{spec | external_docs: docs}}
+  @spec decode_external_docs(map, map) :: {map, ExternalDocumentation.t()}
+  defp decode_external_docs(state, %{"external_docs" => docs}) do
+    ExternalDocumentation.decode(state, docs)
   end
 
-  defp decode_external_docs(state, spec, _docs), do: {state, spec}
+  defp decode_external_docs(state, _docs), do: {state, nil}
 end

@@ -30,10 +30,10 @@ defmodule OpenAPI.Spec.Info do
   # Decoder
   #
 
-  @spec decode(map, map, map) :: {map, t}
-  def decode(state, spec, yaml) do
-    {state, contact} = decode_contact(state, spec, yaml)
-    {state, license} = decode_license(state, spec, yaml)
+  @spec decode(map, map) :: {map, t}
+  def decode(state, yaml) do
+    {state, contact} = decode_contact(state, yaml)
+    {state, license} = decode_license(state, yaml)
 
     info = %__MODULE__{
       title: Map.fetch!(yaml, "title"),
@@ -47,15 +47,15 @@ defmodule OpenAPI.Spec.Info do
     {state, info}
   end
 
-  @spec decode_contact(map, map, map) :: {map, Contact.t() | nil}
-  defp decode_contact(state, spec, %{"contact" => contact}),
-    do: Contact.decode(state, spec, contact)
+  @spec decode_contact(map, map) :: {map, Contact.t() | nil}
+  defp decode_contact(state, %{"contact" => contact}),
+    do: Contact.decode(state, contact)
 
-  defp decode_contact(state, _spec, _yaml), do: {state, nil}
+  defp decode_contact(state, _yaml), do: {state, nil}
 
-  @spec decode_license(map, map, map) :: {map, License.t() | nil}
-  defp decode_license(state, spec, %{"license" => license}),
-    do: License.decode(state, spec, license)
+  @spec decode_license(map, map) :: {map, License.t() | nil}
+  defp decode_license(state, %{"license" => license}),
+    do: License.decode(state, license)
 
-  defp decode_license(state, _spec, _yaml), do: {state, nil}
+  defp decode_license(state, _yaml), do: {state, nil}
 end

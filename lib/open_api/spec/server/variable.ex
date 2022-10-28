@@ -21,8 +21,8 @@ defmodule OpenAPI.Spec.Server.Variable do
   # Decoder
   #
 
-  @spec decode(map, map, map) :: {map, t}
-  def decode(state, _spec, yaml) do
+  @spec decode(map, map) :: {map, t}
+  def decode(state, yaml) do
     variable = %__MODULE__{
       enum: Map.fetch!(yaml, "enum"),
       default: Map.fetch!(yaml, "default"),

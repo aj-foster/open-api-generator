@@ -22,9 +22,9 @@ defmodule OpenAPI.Spec.Server do
   # Decoder
   #
 
-  @spec decode(map, map, map) :: {map, t}
-  def decode(state, spec, yaml) do
-    {state, variables} = decode_variables(state, spec, yaml)
+  @spec decode(map, map) :: {map, t}
+  def decode(state, yaml) do
+    {state, variables} = decode_variables(state, yaml)
 
     server = %__MODULE__{
       url: Map.fetch!(yaml, "url"),
@@ -35,13 +35,13 @@ defmodule OpenAPI.Spec.Server do
     {state, server}
   end
 
-  @spec decode_variables(map, map, map) :: {map, %{optional(String.t()) => Variable.t()}}
-  defp decode_variables(state, spec, %{"variables" => %{} = vars}) do
+  @spec decode_variables(map, map) :: {map, %{optional(String.t()) => Variable.t()}}
+  defp decode_variables(state, %{"variables" => %{} = vars}) do
     Enum.reduce(vars, {state, %{}}, fn {name, var}, {state, vars} ->
-      var = Variable.decode(state, spec, var)
+      var = Variable.decode(state, var)
       {state, Map.put(vars, name, var)}
     end)
   end
 
-  defp decode_variables(state, _spec, _yaml), do: {state, %{}}
+  defp decode_variables(state, _yaml), do: {state, %{}}
 end

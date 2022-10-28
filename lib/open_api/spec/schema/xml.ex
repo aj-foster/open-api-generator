@@ -25,8 +25,8 @@ defmodule OpenAPI.Spec.Schema.XML do
   # Decoder
   #
 
-  @spec decode(map, map, map) :: {map, t}
-  def decode(state, _spec, yaml) do
+  @spec decode(map, map) :: {map, t}
+  def decode(state, yaml) do
     xml = %__MODULE__{
       name: Map.get(yaml, "name"),
       namespace: Map.get(yaml, "namespace"),
