@@ -2,6 +2,7 @@ defmodule OpenAPI.Spec do
   @moduledoc """
   Open API specification expressed using Elixir structs.
   """
+  import OpenAPI.Spec.Helper
 
   alias OpenAPI.Spec
   alias OpenAPI.Spec.Components
@@ -64,13 +65,15 @@ defmodule OpenAPI.Spec do
   end
 
   @spec decode_info(map, map) :: {map, Info.t()}
-  defp decode_info(state, %{"info" => info}), do: Info.decode(state, info)
+  defp decode_info(state, %{"info" => info}), do: with_path(state, info, "info", &Info.decode/2)
 
   @spec decode_servers(map, map) :: {map, [Server.t()]}
   defp decode_servers(state, %{"servers" => servers}) when is_list(servers) do
     {state, servers} =
-      Enum.reduce(servers, {state, []}, fn server, {state, servers} ->
-        {state, server} = Server.decode(state, server)
+      servers
+      |> Enum.with_index()
+      |> Enum.reduce({state, []}, fn {server, index}, {state, servers} ->
+        {state, server} = with_path(state, server, [index, "servers"], &Server.decode/2)
         {state, [server | servers]}
       end)
 
@@ -81,14 +84,16 @@ defmodule OpenAPI.Spec do
 
   @spec decode_components(map, map) :: {map, Components.t()}
   defp decode_components(state, %{"components" => components}) do
-    Components.decode(state, components)
+    with_path(state, components, "components", &Components.decode/2)
   end
 
   @spec decode_tags(map, map) :: {map, [Tag.t()]}
   defp decode_tags(state, %{"tags" => tags}) do
     {state, tags} =
-      Enum.reduce(tags, {state, []}, fn tag, {state, tags} ->
-        {state, tag} = Tag.decode(state, tag)
+      tags
+      |> Enum.with_index()
+      |> Enum.reduce({state, []}, fn {tag, index}, {state, tags} ->
+        {state, tag} = with_path(state, tag, [index, "tags"], &Tag.decode/2)
         {state, [tag | tags]}
       end)
 
@@ -97,7 +102,7 @@ defmodule OpenAPI.Spec do
 
   @spec decode_external_docs(map, map) :: {map, ExternalDocumentation.t()}
   defp decode_external_docs(state, %{"external_docs" => docs}) do
-    ExternalDocumentation.decode(state, docs)
+    with_path(state, docs, "external_docs", &ExternalDocumentation.decode/2)
   end
 
   defp decode_external_docs(state, _docs), do: {state, nil}

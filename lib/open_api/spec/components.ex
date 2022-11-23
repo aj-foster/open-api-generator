@@ -1,6 +1,6 @@
 defmodule OpenAPI.Spec.Components do
   @moduledoc false
-  use OpenAPI.Spec.Helper
+  import OpenAPI.Spec.Helper
 
   alias OpenAPI.Spec
   alias OpenAPI.Spec.Schema
@@ -63,7 +63,7 @@ defmodule OpenAPI.Spec.Components do
   @spec decode_schemas(map, map) :: {map, %{optional(String.t()) => Schema.t()}}
   defp decode_schemas(state, %{"schemas" => yaml}) do
     Enum.reduce(yaml, {state, %{}}, fn {name, schema_or_ref}, {state, schemas} ->
-      {state, schema} = decode_schema(state, schema_or_ref)
+      {state, schema} = with_path(state, schema_or_ref, [name, "schemas"], &decode_schema/2)
       {state, Map.put(schemas, name, schema)}
     end)
   end
@@ -80,19 +80,10 @@ defmodule OpenAPI.Spec.Components do
       {state, stored_ref}
     else
       [file, path] = String.split(schema_ref, "#")
-      state = ensure_file(state, file)
+      state = OpenAPI.Reader.ensure_file(state, file)
       yaml = get_in(state.files[file], String.split(path, "/", trim: true))
 
       decode(state, yaml)
-    end
-  end
-
-  @spec ensure_file(map, String.t()) :: map
-  defp ensure_file(state, file) do
-    if Map.has_key?(state.files, file) do
-      state
-    else
-      OpenAPI.Reader.read(state, file)
     end
   end
 end

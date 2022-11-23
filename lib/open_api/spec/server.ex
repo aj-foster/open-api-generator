@@ -1,5 +1,7 @@
 defmodule OpenAPI.Spec.Server do
   @moduledoc false
+  import OpenAPI.Spec.Helper
+
   alias OpenAPI.Spec.Server.Variable
 
   #
@@ -38,7 +40,7 @@ defmodule OpenAPI.Spec.Server do
   @spec decode_variables(map, map) :: {map, %{optional(String.t()) => Variable.t()}}
   defp decode_variables(state, %{"variables" => %{} = vars}) do
     Enum.reduce(vars, {state, %{}}, fn {name, var}, {state, vars} ->
-      var = Variable.decode(state, var)
+      var = with_path(state, var, [name, "variables"], &Variable.decode/2)
       {state, Map.put(vars, name, var)}
     end)
   end

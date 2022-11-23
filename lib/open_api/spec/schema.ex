@@ -1,5 +1,6 @@
 defmodule OpenAPI.Spec.Schema do
   @moduledoc false
+  import OpenAPI.Spec.Helper
 
   alias OpenAPI.Spec
   alias OpenAPI.Spec.ExternalDocumentation
@@ -146,32 +147,34 @@ defmodule OpenAPI.Spec.Schema do
 
   @spec decode_discriminator(map, map) :: {map, Discriminator.t() | nil}
   defp decode_discriminator(state, %{"discriminator" => discriminator}),
-    do: Discriminator.decode(state, discriminator)
+    do: with_path(state, discriminator, "discriminator", &Discriminator.decode/2)
 
   defp decode_discriminator(state, _discriminator), do: {state, nil}
 
   @spec decode_external_docs(map, map) :: {map, ExternalDocumentation.t() | nil}
   defp decode_external_docs(state, %{"external_docs" => docs}),
-    do: ExternalDocumentation.decode(state, docs)
+    do: with_path(state, docs, "external_docs", &ExternalDocumentation.decode/2)
 
   defp decode_external_docs(state, _docs), do: {state, nil}
 
   @spec decode_xml(map, map) :: {map, XML.t() | nil}
   defp decode_xml(state, %{"xml" => xml}),
-    do: XML.decode(state, xml)
+    do: with_path(state, xml, "xml", &XML.decode/2)
 
   defp decode_xml(state, _xml), do: {state, nil}
 
   @spec decode_all_of(map, map) :: {map, t | nil}
   defp decode_all_of(state, %{"all_of" => all_of}) do
-    Enum.reverse(all_of)
+    all_of
+    |> Enum.with_index()
+    |> Enum.reverse()
     |> Enum.reduce({state, []}, fn
-      %{"$ref" => r}, {state, list} ->
+      {%{"$ref" => r}, _index}, {state, list} ->
         {state, element} = ensure_schema(state, r)
         {state, [element | list]}
 
-      schema, {state, list} ->
-        {state, element} = decode(state, schema)
+      {schema, index}, {state, list} ->
+        {state, element} = with_path(state, schema, [index, "all_of"], &decode/2)
         {state, [element | list]}
     end)
   end
@@ -180,14 +183,16 @@ defmodule OpenAPI.Spec.Schema do
 
   @spec decode_one_of(map, map) :: {map, t | nil}
   defp decode_one_of(state, %{"one_of" => one_of}) do
-    Enum.reverse(one_of)
+    one_of
+    |> Enum.with_index()
+    |> Enum.reverse()
     |> Enum.reduce({state, []}, fn
-      %{"$ref" => r}, {state, list} ->
+      {%{"$ref" => r}, _index}, {state, list} ->
         {state, element} = ensure_schema(state, r)
         {state, [element | list]}
 
-      schema, {state, list} ->
-        {state, element} = decode(state, schema)
+      {schema, index}, {state, list} ->
+        {state, element} = with_path(state, schema, [index, "one_of"], &decode/2)
         {state, [element | list]}
     end)
   end
@@ -196,14 +201,16 @@ defmodule OpenAPI.Spec.Schema do
 
   @spec decode_any_of(map, map) :: {map, t | nil}
   defp decode_any_of(state, %{"any_of" => any_of}) do
-    Enum.reverse(any_of)
+    any_of
+    |> Enum.with_index()
+    |> Enum.reverse()
     |> Enum.reduce({state, []}, fn
-      %{"$ref" => r}, {state, list} ->
+      {%{"$ref" => r}, _index}, {state, list} ->
         {state, element} = ensure_schema(state, r)
         {state, [element | list]}
 
-      schema, {state, list} ->
-        {state, element} = decode(state, schema)
+      {schema, index}, {state, list} ->
+        {state, element} = with_path(state, schema, [index, "any_of"], &decode/2)
         {state, [element | list]}
     end)
   end
@@ -212,12 +219,12 @@ defmodule OpenAPI.Spec.Schema do
 
   @spec decode_not(map, map) :: {map, t | nil}
   defp decode_not(state, %{"not" => %{"$ref" => r}}), do: ensure_schema(state, r)
-  defp decode_not(state, %{"not" => schema}), do: decode(state, schema)
+  defp decode_not(state, %{"not" => schema}), do: with_path(state, schema, "not", &decode/2)
   defp decode_not(state, _schema), do: {state, nil}
 
   @spec decode_items(map, map) :: {map, t | nil}
   defp decode_items(state, %{"items" => %{"$ref" => r}}), do: ensure_schema(state, r)
-  defp decode_items(state, %{"items" => schema}), do: decode(state, schema)
+  defp decode_items(state, %{"items" => schema}), do: with_path(state, schema, "items", &decode/2)
   defp decode_items(state, _schema), do: {state, nil}
 
   @spec decode_properties(map, map) :: {map, %{optional(String.t()) => t}}
@@ -228,7 +235,7 @@ defmodule OpenAPI.Spec.Schema do
         {state, Map.put(properties, key, property)}
 
       {key, schema}, {state, properties} ->
-        {state, property} = decode(state, schema)
+        {state, property} = with_path(state, schema, [key, "properties"], &decode/2)
         {state, Map.put(properties, key, property)}
     end)
   end
@@ -244,7 +251,7 @@ defmodule OpenAPI.Spec.Schema do
        do: {state, value}
 
   defp decode_additional_properties(state, %{"additional_properties" => schema}),
-    do: decode(state, schema)
+    do: with_path(state, schema, "additional_properties", &decode/2)
 
   defp decode_additional_properties(state, _schema), do: {state, true}
 
@@ -256,19 +263,10 @@ defmodule OpenAPI.Spec.Schema do
       {state, stored_ref}
     else
       [file, path] = String.split(schema_ref, "#")
-      state = ensure_file(state, file)
+      state = OpenAPI.Reader.ensure_file(state, file)
       yaml = get_in(state.files[file], String.split(path, "/", trim: true))
 
       decode(state, yaml)
-    end
-  end
-
-  @spec ensure_file(map, String.t()) :: map
-  defp ensure_file(state, file) do
-    if Map.has_key?(state.files, file) do
-      state
-    else
-      OpenAPI.Reader.read(state, file)
     end
   end
 end
