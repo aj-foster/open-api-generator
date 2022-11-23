@@ -69,15 +69,17 @@ defmodule OpenAPI.Spec do
 
   @spec decode_servers(map, map) :: {map, [Server.t()]}
   defp decode_servers(state, %{"servers" => servers}) when is_list(servers) do
-    {state, servers} =
-      servers
-      |> Enum.with_index()
-      |> Enum.reduce({state, []}, fn {server, index}, {state, servers} ->
-        {state, server} = with_path(state, server, [index, "servers"], &Server.decode/2)
-        {state, [server | servers]}
-      end)
+    with_path(state, servers, "servers", fn state, servers ->
+      {state, servers} =
+        servers
+        |> Enum.with_index()
+        |> Enum.reduce({state, []}, fn {server, index}, {state, servers} ->
+          {state, server} = with_path(state, server, index, &Server.decode/2)
+          {state, [server | servers]}
+        end)
 
-    {state, Enum.reverse(servers)}
+      {state, Enum.reverse(servers)}
+    end)
   end
 
   defp decode_servers(state, _yaml), do: {state, [%Spec.Server{url: "/"}]}
@@ -89,15 +91,17 @@ defmodule OpenAPI.Spec do
 
   @spec decode_tags(map, map) :: {map, [Tag.t()]}
   defp decode_tags(state, %{"tags" => tags}) do
-    {state, tags} =
-      tags
-      |> Enum.with_index()
-      |> Enum.reduce({state, []}, fn {tag, index}, {state, tags} ->
-        {state, tag} = with_path(state, tag, [index, "tags"], &Tag.decode/2)
-        {state, [tag | tags]}
-      end)
+    with_path(state, tags, "tags", fn state, tags ->
+      {state, tags} =
+        tags
+        |> Enum.with_index()
+        |> Enum.reduce({state, []}, fn {tag, index}, {state, tags} ->
+          {state, tag} = with_path(state, tag, index, &Tag.decode/2)
+          {state, [tag | tags]}
+        end)
 
-    {state, Enum.reverse(tags)}
+      {state, Enum.reverse(tags)}
+    end)
   end
 
   @spec decode_external_docs(map, map) :: {map, ExternalDocumentation.t()}

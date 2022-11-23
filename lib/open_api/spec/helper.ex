@@ -34,19 +34,12 @@ defmodule OpenAPI.Spec.Helper do
   end
 
   @type path_segment :: String.t() | integer
-  @type path :: [path_segment]
-  @type decoder :: (map, map -> {map, term})
+  @type decoder :: (map, term -> {map, term})
 
-  @spec with_path(map, map, path_segment | path, decoder) :: {map, term}
+  @spec with_path(map, term, path_segment, decoder) :: {map, term}
   def with_path(state, yaml, path_segment, decoder) do
     original_path = state.current_path
-
-    state =
-      if is_list(path_segment) do
-        Map.put(state, :current_path, path_segment ++ original_path)
-      else
-        Map.put(state, :current_path, [path_segment | original_path])
-      end
+    state = Map.put(state, :current_path, [path_segment | original_path])
 
     {state, result} = decoder.(state, yaml)
 
@@ -54,7 +47,7 @@ defmodule OpenAPI.Spec.Helper do
     {state, result}
   end
 
-  @spec with_ref(map, map, (map, map -> {map, term})) :: {map, term}
+  @spec with_ref(map, term, (map, map -> {map, term})) :: {map, term}
   def with_ref(state, %{"$ref" => ref}, decoder) do
     {state, yaml} = resolve_ref(state, ref)
     decoder.(state, yaml)

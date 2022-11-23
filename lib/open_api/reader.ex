@@ -8,11 +8,12 @@ defmodule OpenAPI.Reader do
 
     %{
       base_file: absolute_path_of_base_file,
-      files: %{},
-      schemas: %{},
       current_file: absolute_path_of_base_file,
       current_path: [],
-      refs: %{}
+      current_ref: nil,
+      files: %{},
+      refs: %{},
+      schemas: %{}
     }
     |> read("")
   end

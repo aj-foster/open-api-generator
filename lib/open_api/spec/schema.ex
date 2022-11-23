@@ -165,16 +165,18 @@ defmodule OpenAPI.Spec.Schema do
 
   @spec decode_all_of(map, map) :: {map, t | nil}
   defp decode_all_of(state, %{"all_of" => all_of}) do
-    all_of
-    |> Enum.with_index()
-    |> Enum.reverse()
-    |> Enum.reduce({state, []}, fn {schema_or_ref, index}, {state, list} ->
-      {state, element} =
-        with_path(state, schema_or_ref, [index, "all_of"], fn state, schema_or_ref ->
-          with_ref(state, schema_or_ref, &decode/2)
-        end)
+    with_path(state, all_of, "all_of", fn state, all_of ->
+      all_of
+      |> Enum.with_index()
+      |> Enum.reverse()
+      |> Enum.reduce({state, []}, fn {schema_or_ref, index}, {state, list} ->
+        {state, element} =
+          with_path(state, schema_or_ref, index, fn state, schema_or_ref ->
+            with_ref(state, schema_or_ref, &decode/2)
+          end)
 
-      {state, [element | list]}
+        {state, [element | list]}
+      end)
     end)
   end
 
@@ -182,16 +184,18 @@ defmodule OpenAPI.Spec.Schema do
 
   @spec decode_one_of(map, map) :: {map, t | nil}
   defp decode_one_of(state, %{"one_of" => one_of}) do
-    one_of
-    |> Enum.with_index()
-    |> Enum.reverse()
-    |> Enum.reduce({state, []}, fn {schema_or_ref, index}, {state, list} ->
-      {state, element} =
-        with_path(state, schema_or_ref, [index, "one_of"], fn state, schema_or_ref ->
-          with_ref(state, schema_or_ref, &decode/2)
-        end)
+    with_path(state, one_of, "one_of", fn state, one_of ->
+      one_of
+      |> Enum.with_index()
+      |> Enum.reverse()
+      |> Enum.reduce({state, []}, fn {schema_or_ref, index}, {state, list} ->
+        {state, element} =
+          with_path(state, schema_or_ref, index, fn state, schema_or_ref ->
+            with_ref(state, schema_or_ref, &decode/2)
+          end)
 
-      {state, [element | list]}
+        {state, [element | list]}
+      end)
     end)
   end
 
@@ -199,16 +203,18 @@ defmodule OpenAPI.Spec.Schema do
 
   @spec decode_any_of(map, map) :: {map, t | nil}
   defp decode_any_of(state, %{"any_of" => any_of}) do
-    any_of
-    |> Enum.with_index()
-    |> Enum.reverse()
-    |> Enum.reduce({state, []}, fn {schema_or_ref, index}, {state, list} ->
-      {state, element} =
-        with_path(state, schema_or_ref, [index, "any_of"], fn state, schema_or_ref ->
-          with_ref(state, schema_or_ref, &decode/2)
-        end)
+    with_path(state, any_of, "any_of", fn state, any_of ->
+      any_of
+      |> Enum.with_index()
+      |> Enum.reverse()
+      |> Enum.reduce({state, []}, fn {schema_or_ref, index}, {state, list} ->
+        {state, element} =
+          with_path(state, schema_or_ref, index, fn state, schema_or_ref ->
+            with_ref(state, schema_or_ref, &decode/2)
+          end)
 
-      {state, [element | list]}
+        {state, [element | list]}
+      end)
     end)
   end
 
@@ -234,14 +240,16 @@ defmodule OpenAPI.Spec.Schema do
 
   @spec decode_properties(map, map) :: {map, %{optional(String.t()) => t}}
   defp decode_properties(state, %{"properties" => properties}) do
-    Enum.reduce(properties, {state, %{}}, fn
-      {key, schema}, {state, properties} ->
-        {state, property} =
-          with_path(state, schema, [key, "properties"], fn state, schema ->
-            with_ref(state, schema, &decode/2)
-          end)
+    with_path(state, properties, "properties", fn state, properties ->
+      Enum.reduce(properties, {state, %{}}, fn
+        {key, schema}, {state, properties} ->
+          {state, property} =
+            with_path(state, schema, key, fn state, schema ->
+              with_ref(state, schema, &decode/2)
+            end)
 
-        {state, Map.put(properties, key, property)}
+          {state, Map.put(properties, key, property)}
+      end)
     end)
   end
 
