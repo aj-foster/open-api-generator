@@ -39,18 +39,27 @@ defmodule OpenAPI.Spec.Helper do
   @spec with_path(map, term, path_segment, decoder) :: {map, term}
   def with_path(state, yaml, path_segment, decoder) do
     original_path = state.current_path
+    original_ref = state.current_ref
     state = Map.put(state, :current_path, [path_segment | original_path])
+    new_ref = if original_ref, do: "#{original_ref}/#{path_segment}"
+    state = Map.put(state, :current_ref, new_ref)
 
     {state, result} = decoder.(state, yaml)
 
-    state = Map.put(state, :current_path, original_path)
+    state = Map.merge(state, %{current_path: original_path, current_ref: original_ref})
     {state, result}
   end
 
   @spec with_ref(map, term, (map, map -> {map, term})) :: {map, term}
   def with_ref(state, %{"$ref" => ref}, decoder) do
+    original_ref = state.current_ref
+    state = Map.put(state, :current_ref, ref)
+
     {state, yaml} = resolve_ref(state, ref)
-    decoder.(state, yaml)
+    {state, result} = decoder.(state, yaml)
+
+    state = Map.put(state, :current_ref, original_ref)
+    {state, result}
   end
 
   def with_ref(state, yaml, decoder), do: decoder.(state, yaml)
