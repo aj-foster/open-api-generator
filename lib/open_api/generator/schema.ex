@@ -54,6 +54,21 @@ defmodule OpenAPI.Generator.Schema do
   def type(_state, %Spec.Schema{type: "number"}, _name), do: :number
   def type(_state, %Spec.Schema{type: "string"}, _name), do: :string
 
+  def type(
+        state,
+        %Spec.Schema{
+          type: "object",
+          "$oag_referenced_as": "#/components/schemas/" <> schema_name
+        },
+        nil
+      ) do
+    # TODO: ignored schemas -> map
+    case Map.get(state.schemas, schema_name) do
+      {module, spec} -> type(state, spec, module)
+      nil -> :map
+    end
+  end
+
   def type(state, %Spec.Schema{type: "object"}, name) do
     if name do
       Module.concat(state.options.base_module, name)
@@ -65,14 +80,6 @@ defmodule OpenAPI.Generator.Schema do
   def type(_state, %Spec.Schema{any_of: any_of}, _name) when is_list(any_of), do: :unknown
   def type(_state, %Spec.Schema{one_of: one_of}, _name) when is_list(one_of), do: :unknown
   def type(_state, %Spec.Schema{type: nil}, _name), do: :unknown
-
-  def type(state, %Spec.Ref{"$ref": "#/components/schemas/" <> schema_name}, _name) do
-    # TODO: ignored schemas -> map
-    case Map.get(state.schemas, schema_name) do
-      {module, spec} -> type(state, spec, module)
-      nil -> :map
-    end
-  end
 
   def typespec(state, spec, name \\ nil)
 
@@ -96,12 +103,4 @@ defmodule OpenAPI.Generator.Schema do
   def typespec(_state, %Spec.Schema{any_of: any_of}, _name) when is_list(any_of), do: :unknown
   def typespec(_state, %Spec.Schema{one_of: one_of}, _name) when is_list(one_of), do: :unknown
   def typespec(_state, %Spec.Schema{type: nil}, _name), do: :unknown
-
-  def typespec(state, %Spec.Ref{"$ref": "#/components/schemas/" <> schema_name}, _name) do
-    # TODO: ignored schemas -> map
-    case Map.get(state.schemas, schema_name) do
-      {module, spec} -> typespec(state, spec, module)
-      nil -> "map"
-    end
-  end
 end

@@ -45,7 +45,7 @@ defmodule OpenAPI.Spec do
 
   @spec decode(map) :: t
   def decode(state) do
-    yaml = state.files[""]
+    yaml = state.files[state.base_file]
 
     {state, info} = decode_info(state, yaml)
     {state, servers} = decode_servers(state, yaml)

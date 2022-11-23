@@ -12,7 +12,7 @@ defmodule OpenAPI.Spec.Schema do
   #
 
   @type t :: %__MODULE__{
-          "$oag_location": String.t(),
+          "$oag_location": [String.t() | integer],
           "$oag_referenced_as": String.t() | nil,
           title: String.t() | nil,
           multiple_of: pos_integer | nil,
@@ -109,8 +109,8 @@ defmodule OpenAPI.Spec.Schema do
     {state, additional_properties} = decode_additional_properties(state, yaml)
 
     schema = %__MODULE__{
-      "$oag_location": Map.fetch!(state, :current_path) |> Enum.reverse() |> Enum.join("/"),
-      "$oag_referenced_as": Map.fetch!(state, :current_ref),
+      "$oag_location": Map.fetch!(state, :current_file_path) |> Enum.reverse(),
+      "$oag_referenced_as": Map.fetch!(state, :last_ref),
       title: Map.get(yaml, "title"),
       multiple_of: Map.get(yaml, "multipleOf"),
       maximum: Map.get(yaml, "maximum"),

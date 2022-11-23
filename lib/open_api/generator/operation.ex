@@ -2,8 +2,8 @@ defmodule OpenAPI.Generator.Operation do
   alias OpenAPI.Spec.Path.Operation
   alias OpenAPI.Spec.Path.Parameter
   alias OpenAPI.Spec.RequestBody
+  alias OpenAPI.Spec.Schema
   alias OpenAPI.Spec.Schema.Media
-  alias OpenAPI.Spec.Ref
   alias OpenAPI.Spec.Response
 
   def process(state, {path, method, operation_spec}) do
@@ -92,11 +92,6 @@ defmodule OpenAPI.Generator.Operation do
 
   defp parameter(_state, %Parameter{name: name} = param), do: {name, param}
 
-  defp parameter(state, %Ref{"$ref": "#/components/parameters/" <> loc}) do
-    %Parameter{name: name} = param = Map.fetch!(state.spec.components.parameters, loc)
-    {name, param}
-  end
-
   defp body(_state, %Operation{request_body: nil}), do: nil
 
   defp body(state, %Operation{request_body: %RequestBody{content: content}}) do
@@ -106,20 +101,13 @@ defmodule OpenAPI.Generator.Operation do
     |> Enum.uniq()
   end
 
-  defp media_to_typespec(state, %Media{schema: %Ref{"$ref": "#/components/schemas/" <> name}}) do
-    schema = Map.fetch!(state.spec.components.schemas, name)
-    OpenAPI.Generator.Schema.typespec(state, schema, name)
-  end
-
-  defp media_to_typespec(_state, %Media{schema: %OpenAPI.Spec.Schema{type: "object"}}) do
-    "map"
+  defp media_to_typespec(state, %Media{schema: %Schema{type: "object"} = schema}) do
+    OpenAPI.Generator.Schema.typespec(state, schema)
   end
 
   defp media_to_typespec(_state, _operation) do
     "term"
   end
-
-  defp responses(_state, %Operation{responses: nil}), do: nil
 
   defp responses(state, %Operation{responses: responses}) do
     Enum.map(responses, fn {status, response} -> {status, parse_response(state, response)} end)
@@ -127,11 +115,6 @@ defmodule OpenAPI.Generator.Operation do
 
   defp parse_response(_state, %Response{content: nil}), do: nil
   defp parse_response(_state, %Response{content: c}) when map_size(c) == 0, do: nil
-
-  defp parse_response(state, %Ref{"$ref": "#/components/responses/" <> name}) do
-    response = Map.fetch!(state.spec.components.responses, name)
-    parse_response(state, response)
-  end
 
   defp parse_response(state, %Response{content: %{"application/json" => %Media{schema: schema}}}) do
     OpenAPI.Generator.Schema.type(state, schema)
