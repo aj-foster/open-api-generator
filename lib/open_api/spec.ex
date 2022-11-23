@@ -8,6 +8,7 @@ defmodule OpenAPI.Spec do
   alias OpenAPI.Spec.Components
   alias OpenAPI.Spec.ExternalDocumentation
   alias OpenAPI.Spec.Info
+  alias OpenAPI.Spec.Path.Item
   alias OpenAPI.Spec.Server
   alias OpenAPI.Spec.Tag
 
@@ -18,13 +19,13 @@ defmodule OpenAPI.Spec do
   @typedoc "Open API specification"
   @type t :: %__MODULE__{
           openapi: String.t(),
-          info: Spec.Info.t(),
-          servers: [Spec.Server.t()],
-          paths: %{optional(:string) => Spec.Path.Item.t()},
-          components: Spec.Components.t(),
+          info: Info.t(),
+          servers: [Server.t()],
+          paths: %{optional(:string) => Item.t()},
+          components: Components.t(),
           security: [term],
           tags: [term],
-          external_docs: Spec.ExternalDocumentation.t() | nil
+          external_docs: ExternalDocumentation.t() | nil
         }
 
   defstruct [
@@ -49,6 +50,7 @@ defmodule OpenAPI.Spec do
     {state, info} = decode_info(state, yaml)
     {state, servers} = decode_servers(state, yaml)
     {state, components} = decode_components(state, yaml)
+    {state, paths} = decode_paths(state, yaml)
     {state, tags} = decode_tags(state, yaml)
     {_state, external_docs} = decode_external_docs(state, yaml)
 
@@ -56,7 +58,7 @@ defmodule OpenAPI.Spec do
       openapi: Map.fetch!(yaml, "openapi"),
       info: info,
       servers: servers,
-      paths: %{},
+      paths: paths,
       components: components,
       security: [],
       tags: tags,
@@ -110,4 +112,14 @@ defmodule OpenAPI.Spec do
   end
 
   defp decode_external_docs(state, _docs), do: {state, nil}
+
+  @spec decode_paths(map, map) :: {map, %{optional(String.t()) => Item.t()}}
+  defp decode_paths(state, %{"paths" => paths}) do
+    with_path(state, paths, "paths", fn state, paths ->
+      Enum.reduce(paths, {state, %{}}, fn {key, path}, {state, paths} ->
+        {state, path} = with_path(state, path, key, &Item.decode/2)
+        {state, Map.put(paths, key, path)}
+      end)
+    end)
+  end
 end

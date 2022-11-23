@@ -1,8 +1,8 @@
 defmodule OpenAPI.Spec.Link do
   @moduledoc false
-  use OpenAPI.Spec.Helper
+  import OpenAPI.Spec.Helper
 
-  alias OpenAPI.Spec
+  alias OpenAPI.Spec.Server
 
   @type t :: %__MODULE__{
           operation_ref: String.t() | nil,
@@ -10,7 +10,7 @@ defmodule OpenAPI.Spec.Link do
           parameters: %{optional(String.t()) => any},
           request_body: any,
           description: String.t() | nil,
-          server: Spec.Server.t() | nil
+          server: Server.t() | nil
         }
 
   defstruct [
@@ -22,14 +22,26 @@ defmodule OpenAPI.Spec.Link do
     :server
   ]
 
-  @decoders %{
-    operation_ref: :string,
-    operation_id: :string,
-    parameters: {%{:string => :any}, default: %{}},
-    request_body: :any,
-    description: :string,
-    server: Spec.Server
-  }
+  @spec decode(map, map) :: {map, t}
+  def decode(state, yaml) do
+    {state, server} = decode_server(state, yaml)
 
-  def matches?(_value), do: true
+    link = %__MODULE__{
+      description: Map.get(yaml, "description"),
+      operation_id: Map.get(yaml, "operation_id"),
+      operation_ref: Map.get(yaml, "operation_ref"),
+      parameters: Map.get(yaml, "parameters"),
+      request_body: Map.get(yaml, "request_body"),
+      server: server
+    }
+
+    {state, link}
+  end
+
+  @spec decode_server(map, map) :: {map, Server.t() | nil}
+  def decode_server(state, %{"server" => server}) do
+    with_path(state, server, "server", &Server.decode/2)
+  end
+
+  def decode_server(state, _yaml), do: {state, nil}
 end

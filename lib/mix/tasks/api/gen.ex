@@ -21,8 +21,10 @@ defmodule Mix.Tasks.Api.Gen do
       true ->
         OpenAPI.Reader.read(spec_file)
         |> OpenAPI.Spec.decode()
+        |> IO.inspect(pretty: true, limit: :infinity)
 
         # |> IO.inspect(pretty: true, syntax_colors: IO.ANSI.syntax_colors(), limit: :infinity)
+
         # |> OpenAPI.Generator.run(config)
     end
   end

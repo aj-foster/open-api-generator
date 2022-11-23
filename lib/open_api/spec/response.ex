@@ -1,14 +1,16 @@
 defmodule OpenAPI.Spec.Response do
   @moduledoc false
-  use OpenAPI.Spec.Helper
+  import OpenAPI.Spec.Helper
 
-  alias OpenAPI.Spec
+  alias OpenAPI.Spec.Link
+  alias OpenAPI.Spec.Path.Header
+  alias OpenAPI.Spec.Schema.Media
 
   @type t :: %__MODULE__{
           description: String.t(),
-          headers: %{optional(String.t()) => Spec.Path.Header.t() | Spec.Ref.t()},
-          content: %{optional(String.t()) => Spec.Schema.Media.t()},
-          links: %{optional(String.t()) => Spec.Link.t() | Spec.Ref.t()}
+          headers: %{optional(String.t()) => Header.t()},
+          content: %{optional(String.t()) => Media.t()},
+          links: %{optional(String.t()) => Link.t()}
         }
 
   defstruct [
@@ -18,12 +20,59 @@ defmodule OpenAPI.Spec.Response do
     :links
   ]
 
-  @decoders %{
-    description: :string,
-    headers: {%{:string => [Spec.Ref, Spec.Path.Header]}, default: %{}},
-    content: {%{:string => Spec.Schema.Media}, default: %{}},
-    links: {%{:string => [Spec.Ref, Spec.Link]}, default: %{}}
-  }
+  @spec decode(map, map) :: {map, t}
+  def decode(state, yaml) do
+    {state, content} = decode_content(state, yaml)
+    {state, headers} = decode_headers(state, yaml)
+    {state, links} = decode_links(state, yaml)
 
-  def matches?(_value), do: true
+    response = %__MODULE__{
+      description: Map.fetch!(yaml, "description"),
+      headers: headers,
+      content: content,
+      links: links
+    }
+
+    {state, response}
+  end
+
+  @spec decode_content(map, map) :: {map, %{optional(String.t()) => Media.t()}}
+  def decode_content(state, %{"content" => content}) do
+    with_path(state, content, "content", fn state, content ->
+      Enum.reduce(content, {state, %{}}, fn {key, content_item}, {state, content} ->
+        {state, content_item} =
+          with_path(state, content_item, key, fn state, content_item ->
+            with_ref(state, content_item, &Media.decode/2)
+          end)
+
+        {state, Map.put(content, key, content_item)}
+      end)
+    end)
+  end
+
+  def decode_content(state, _yaml), do: {state, %{}}
+
+  @spec decode_headers(map, map) :: {map, %{optional(String.t()) => Header.t()} | nil}
+  def decode_headers(state, %{"headers" => headers}) do
+    with_path(state, headers, "headers", fn state, headers ->
+      Enum.reduce(headers, {state, %{}}, fn {key, header}, {state, headers} ->
+        {state, header} = with_path(state, header, key, &Header.decode/2)
+        {state, Map.put(headers, key, header)}
+      end)
+    end)
+  end
+
+  def decode_headers(state, _yaml), do: {state, nil}
+
+  @spec decode_links(map, map) :: {map, %{optional(String.t()) => Header.t()} | nil}
+  def decode_links(state, %{"links" => links}) do
+    with_path(state, links, "links", fn state, links ->
+      Enum.reduce(links, {state, %{}}, fn {key, link}, {state, links} ->
+        {state, link} = with_path(state, link, key, &Link.decode/2)
+        {state, Map.put(links, key, link)}
+      end)
+    end)
+  end
+
+  def decode_links(state, _yaml), do: {state, nil}
 end

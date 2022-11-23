@@ -1,12 +1,12 @@
 defmodule OpenAPI.Spec.Schema.Encoding do
   @moduledoc false
-  use OpenAPI.Spec.Helper
+  import OpenAPI.Spec.Helper
 
-  alias OpenAPI.Spec
+  alias OpenAPI.Spec.Path.Header
 
   @type t :: %__MODULE__{
           content_type: String.t() | nil,
-          headers: %{optional(String.t()) => Spec.Path.Header.t()},
+          headers: %{optional(String.t()) => Header.t()},
           style: String.t(),
           explode: boolean,
           allow_reserved: boolean
@@ -20,11 +20,30 @@ defmodule OpenAPI.Spec.Schema.Encoding do
     :allow_reserved
   ]
 
-  @decoders %{
-    content_type: :string,
-    headers: %{:string => Spec.Path.Header},
-    style: :string,
-    explode: :boolean,
-    allow_reserved: {:boolean, default: false}
-  }
+  @spec decode(map, map) :: {map, t}
+  def decode(state, yaml) do
+    {state, headers} = decode_headers(state, yaml)
+
+    encoding = %__MODULE__{
+      content_type: Map.get(yaml, "content_type"),
+      headers: headers,
+      style: Map.fetch!(yaml, "style"),
+      explode: Map.fetch!(yaml, "explode"),
+      allow_reserved: Map.get(yaml, "allow_reserved", false)
+    }
+
+    {state, encoding}
+  end
+
+  @spec decode_headers(map, map) :: {map, %{optional(String.t()) => Header.t()} | nil}
+  def decode_headers(state, %{"headers" => headers}) do
+    with_path(state, headers, "headers", fn state, headers ->
+      Enum.reduce(headers, {state, %{}}, fn {key, header}, {state, headers} ->
+        {state, header} = with_path(state, header, key, &Header.decode/2)
+        {state, Map.put(headers, key, header)}
+      end)
+    end)
+  end
+
+  def decode_headers(state, _yaml), do: {state, nil}
 end

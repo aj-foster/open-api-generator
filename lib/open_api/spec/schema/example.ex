@@ -1,6 +1,5 @@
 defmodule OpenAPI.Spec.Schema.Example do
   @moduledoc false
-  use OpenAPI.Spec.Helper
 
   @type t :: %__MODULE__{
           summary: String.t() | nil,
@@ -16,15 +15,15 @@ defmodule OpenAPI.Spec.Schema.Example do
     :external_value
   ]
 
-  @decoders %{
-    summary: :string,
-    description: :string,
-    value: :any,
-    external_value: :string
-  }
+  @spec decode(map, map) :: {map, t}
+  def decode(state, yaml) do
+    example = %__MODULE__{
+      summary: Map.get(yaml, "summary"),
+      description: Map.get(yaml, "description"),
+      value: Map.get(yaml, "value"),
+      external_value: Map.get(yaml, "external_value")
+    }
 
-  def matches?(value) do
-    value = Enum.into(value, %{})
-    match?(%{"value" => _}, value) or match?(%{"externalValue" => _}, value)
+    {state, example}
   end
 end
