@@ -28,10 +28,10 @@ defmodule OpenAPI.Spec.Link do
 
     link = %__MODULE__{
       description: Map.get(yaml, "description"),
-      operation_id: Map.get(yaml, "operation_id"),
-      operation_ref: Map.get(yaml, "operation_ref"),
+      operation_id: Map.get(yaml, "operationId"),
+      operation_ref: Map.get(yaml, "operationRef"),
       parameters: Map.get(yaml, "parameters"),
-      request_body: Map.get(yaml, "request_body"),
+      request_body: Map.get(yaml, "requestBody"),
       server: server
     }
 

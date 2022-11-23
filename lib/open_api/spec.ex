@@ -107,8 +107,8 @@ defmodule OpenAPI.Spec do
   end
 
   @spec decode_external_docs(map, map) :: {map, ExternalDocumentation.t()}
-  defp decode_external_docs(state, %{"external_docs" => docs}) do
-    with_path(state, docs, "external_docs", &ExternalDocumentation.decode/2)
+  defp decode_external_docs(state, %{"externalDocs" => docs}) do
+    with_path(state, docs, "externalDocs", &ExternalDocumentation.decode/2)
   end
 
   defp decode_external_docs(state, _docs), do: {state, nil}

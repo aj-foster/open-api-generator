@@ -21,7 +21,7 @@ defmodule OpenAPI.Spec.Schema.Example do
       summary: Map.get(yaml, "summary"),
       description: Map.get(yaml, "description"),
       value: Map.get(yaml, "value"),
-      external_value: Map.get(yaml, "external_value")
+      external_value: Map.get(yaml, "externalValue")
     }
 
     {state, example}

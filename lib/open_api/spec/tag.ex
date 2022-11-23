@@ -38,7 +38,7 @@ defmodule OpenAPI.Spec.Tag do
   end
 
   @spec decode_external_docs(map, map) :: {map, ExternalDocumentation.t() | nil}
-  defp decode_external_docs(state, %{"external_docs" => docs}),
+  defp decode_external_docs(state, %{"externalDocs" => docs}),
     do: ExternalDocumentation.decode(state, docs)
 
   defp decode_external_docs(state, _docs), do: {state, nil}

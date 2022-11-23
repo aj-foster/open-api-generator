@@ -25,11 +25,11 @@ defmodule OpenAPI.Spec.Schema.Encoding do
     {state, headers} = decode_headers(state, yaml)
 
     encoding = %__MODULE__{
-      content_type: Map.get(yaml, "content_type"),
+      content_type: Map.get(yaml, "contentType"),
       headers: headers,
       style: Map.fetch!(yaml, "style"),
       explode: Map.fetch!(yaml, "explode"),
-      allow_reserved: Map.get(yaml, "allow_reserved", false)
+      allow_reserved: Map.get(yaml, "allowReserved", false)
     }
 
     {state, encoding}

@@ -38,7 +38,7 @@ defmodule OpenAPI.Spec.Info do
     info = %__MODULE__{
       title: Map.fetch!(yaml, "title"),
       description: Map.get(yaml, "description"),
-      terms_of_service: Map.get(yaml, "terms_of_service"),
+      terms_of_service: Map.get(yaml, "termsOfService"),
       contact: contact,
       license: license,
       version: Map.fetch!(yaml, "version")

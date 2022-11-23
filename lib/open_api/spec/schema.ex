@@ -112,19 +112,19 @@ defmodule OpenAPI.Spec.Schema do
       "$oag_location": Map.fetch!(state, :current_path) |> Enum.reverse() |> Enum.join("/"),
       "$oag_referenced_as": Map.fetch!(state, :current_ref),
       title: Map.get(yaml, "title"),
-      multiple_of: Map.get(yaml, "multiple_of"),
+      multiple_of: Map.get(yaml, "multipleOf"),
       maximum: Map.get(yaml, "maximum"),
-      exclusive_maximum: Map.get(yaml, "exclusive_maximum", false),
+      exclusive_maximum: Map.get(yaml, "exclusiveMaximum", false),
       minimum: Map.get(yaml, "minimum"),
-      exclusive_minimum: Map.get(yaml, "exclusive_minimum", false),
-      max_length: Map.get(yaml, "max_length"),
-      min_length: Map.get(yaml, "min_length"),
+      exclusive_minimum: Map.get(yaml, "exclusiveMinimum", false),
+      max_length: Map.get(yaml, "maxLength"),
+      min_length: Map.get(yaml, "minLength"),
       pattern: Map.get(yaml, "pattern"),
-      max_items: Map.get(yaml, "max_items"),
-      min_items: Map.get(yaml, "min_items"),
-      unique_items: Map.get(yaml, "unique_items", false),
-      max_properties: Map.get(yaml, "max_properties"),
-      min_properties: Map.get(yaml, "min_properties"),
+      max_items: Map.get(yaml, "maxItems"),
+      min_items: Map.get(yaml, "minItems"),
+      unique_items: Map.get(yaml, "uniqueItems", false),
+      max_properties: Map.get(yaml, "maxProperties"),
+      min_properties: Map.get(yaml, "minProperties"),
       required: Map.get(yaml, "required"),
       enum: Map.get(yaml, "enum"),
       type: Map.get(yaml, "type"),
@@ -140,8 +140,8 @@ defmodule OpenAPI.Spec.Schema do
       default: Map.get(yaml, "default"),
       nullable: Map.get(yaml, "nullable", false),
       discriminator: discriminator,
-      read_only: Map.get(yaml, "read_only", false),
-      write_only: Map.get(yaml, "write_only", false),
+      read_only: Map.get(yaml, "readOnly", false),
+      write_only: Map.get(yaml, "writeOnly", false),
       xml: xml,
       external_docs: docs,
       example: Map.get(yaml, "example"),
@@ -158,8 +158,8 @@ defmodule OpenAPI.Spec.Schema do
   defp decode_discriminator(state, _discriminator), do: {state, nil}
 
   @spec decode_external_docs(map, map) :: {map, ExternalDocumentation.t() | nil}
-  defp decode_external_docs(state, %{"external_docs" => docs}),
-    do: with_path(state, docs, "external_docs", &ExternalDocumentation.decode/2)
+  defp decode_external_docs(state, %{"externalDocs" => docs}),
+    do: with_path(state, docs, "externalDocs", &ExternalDocumentation.decode/2)
 
   defp decode_external_docs(state, _docs), do: {state, nil}
 
@@ -170,8 +170,8 @@ defmodule OpenAPI.Spec.Schema do
   defp decode_xml(state, _xml), do: {state, nil}
 
   @spec decode_all_of(map, map) :: {map, t | nil}
-  defp decode_all_of(state, %{"all_of" => all_of}) do
-    with_path(state, all_of, "all_of", fn state, all_of ->
+  defp decode_all_of(state, %{"allOf" => all_of}) do
+    with_path(state, all_of, "allOf", fn state, all_of ->
       all_of
       |> Enum.with_index()
       |> Enum.reverse()
@@ -189,8 +189,8 @@ defmodule OpenAPI.Spec.Schema do
   defp decode_all_of(state, _schema), do: {state, nil}
 
   @spec decode_one_of(map, map) :: {map, t | nil}
-  defp decode_one_of(state, %{"one_of" => one_of}) do
-    with_path(state, one_of, "one_of", fn state, one_of ->
+  defp decode_one_of(state, %{"oneOf" => one_of}) do
+    with_path(state, one_of, "oneOf", fn state, one_of ->
       one_of
       |> Enum.with_index()
       |> Enum.reverse()
@@ -208,8 +208,8 @@ defmodule OpenAPI.Spec.Schema do
   defp decode_one_of(state, _schema), do: {state, nil}
 
   @spec decode_any_of(map, map) :: {map, t | nil}
-  defp decode_any_of(state, %{"any_of" => any_of}) do
-    with_path(state, any_of, "any_of", fn state, any_of ->
+  defp decode_any_of(state, %{"anyOf" => any_of}) do
+    with_path(state, any_of, "anyOf", fn state, any_of ->
       any_of
       |> Enum.with_index()
       |> Enum.reverse()
@@ -262,12 +262,12 @@ defmodule OpenAPI.Spec.Schema do
   defp decode_properties(state, _schema), do: {state, %{}}
 
   @spec decode_additional_properties(map, map) :: {map, t | boolean}
-  defp decode_additional_properties(state, %{"additional_properties" => value})
+  defp decode_additional_properties(state, %{"additionalProperties" => value})
        when is_boolean(value),
        do: {state, value}
 
-  defp decode_additional_properties(state, %{"additional_properties" => schema}) do
-    with_path(state, schema, "additional_properties", fn state, schema ->
+  defp decode_additional_properties(state, %{"additionalProperties" => schema}) do
+    with_path(state, schema, "additionalProperties", fn state, schema ->
       with_ref(state, schema, &decode/2)
     end)
   end

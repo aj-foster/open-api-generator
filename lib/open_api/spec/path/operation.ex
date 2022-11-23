@@ -51,7 +51,7 @@ defmodule OpenAPI.Spec.Path.Operation do
       summary: Map.get(yaml, "summary"),
       description: Map.get(yaml, "description"),
       external_docs: external_docs,
-      operation_id: Map.get(yaml, "operation_id"),
+      operation_id: Map.get(yaml, "operationId"),
       parameters: parameters,
       request_body: request_body,
       responses: responses,
@@ -65,8 +65,8 @@ defmodule OpenAPI.Spec.Path.Operation do
   end
 
   @spec decode_external_docs(map, map) :: {map, ExternalDocumentation.t()}
-  defp decode_external_docs(state, %{"external_docs" => docs}) do
-    with_path(state, docs, "external_docs", &ExternalDocumentation.decode/2)
+  defp decode_external_docs(state, %{"externalDocs" => docs}) do
+    with_path(state, docs, "externalDocs", &ExternalDocumentation.decode/2)
   end
 
   defp decode_external_docs(state, _docs), do: {state, nil}
@@ -91,8 +91,8 @@ defmodule OpenAPI.Spec.Path.Operation do
   def decode_parameters(state, _yaml), do: {state, []}
 
   @spec decode_request_body(map, map) :: {map, RequestBody.t() | nil}
-  def decode_request_body(state, %{"request_body" => request_body}) do
-    with_path(state, request_body, "request_body", &RequestBody.decode/2)
+  def decode_request_body(state, %{"requestBody" => request_body}) do
+    with_path(state, request_body, "requestBody", &RequestBody.decode/2)
   end
 
   def decode_request_body(state, _yaml), do: {state, nil}
