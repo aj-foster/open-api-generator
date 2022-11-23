@@ -168,14 +168,13 @@ defmodule OpenAPI.Spec.Schema do
     all_of
     |> Enum.with_index()
     |> Enum.reverse()
-    |> Enum.reduce({state, []}, fn
-      {%{"$ref" => r}, _index}, {state, list} ->
-        {state, element} = ensure_schema(state, r)
-        {state, [element | list]}
+    |> Enum.reduce({state, []}, fn {schema_or_ref, index}, {state, list} ->
+      {state, element} =
+        with_path(state, schema_or_ref, [index, "all_of"], fn state, schema_or_ref ->
+          with_ref(state, schema_or_ref, &decode/2)
+        end)
 
-      {schema, index}, {state, list} ->
-        {state, element} = with_path(state, schema, [index, "all_of"], &decode/2)
-        {state, [element | list]}
+      {state, [element | list]}
     end)
   end
 
@@ -186,14 +185,13 @@ defmodule OpenAPI.Spec.Schema do
     one_of
     |> Enum.with_index()
     |> Enum.reverse()
-    |> Enum.reduce({state, []}, fn
-      {%{"$ref" => r}, _index}, {state, list} ->
-        {state, element} = ensure_schema(state, r)
-        {state, [element | list]}
+    |> Enum.reduce({state, []}, fn {schema_or_ref, index}, {state, list} ->
+      {state, element} =
+        with_path(state, schema_or_ref, [index, "one_of"], fn state, schema_or_ref ->
+          with_ref(state, schema_or_ref, &decode/2)
+        end)
 
-      {schema, index}, {state, list} ->
-        {state, element} = with_path(state, schema, [index, "one_of"], &decode/2)
-        {state, [element | list]}
+      {state, [element | list]}
     end)
   end
 
@@ -204,38 +202,45 @@ defmodule OpenAPI.Spec.Schema do
     any_of
     |> Enum.with_index()
     |> Enum.reverse()
-    |> Enum.reduce({state, []}, fn
-      {%{"$ref" => r}, _index}, {state, list} ->
-        {state, element} = ensure_schema(state, r)
-        {state, [element | list]}
+    |> Enum.reduce({state, []}, fn {schema_or_ref, index}, {state, list} ->
+      {state, element} =
+        with_path(state, schema_or_ref, [index, "any_of"], fn state, schema_or_ref ->
+          with_ref(state, schema_or_ref, &decode/2)
+        end)
 
-      {schema, index}, {state, list} ->
-        {state, element} = with_path(state, schema, [index, "any_of"], &decode/2)
-        {state, [element | list]}
+      {state, [element | list]}
     end)
   end
 
   defp decode_any_of(state, _schema), do: {state, nil}
 
   @spec decode_not(map, map) :: {map, t | nil}
-  defp decode_not(state, %{"not" => %{"$ref" => r}}), do: ensure_schema(state, r)
-  defp decode_not(state, %{"not" => schema}), do: with_path(state, schema, "not", &decode/2)
+  defp decode_not(state, %{"not" => schema}) do
+    with_path(state, schema, "not", fn state, schema ->
+      with_ref(state, schema, &decode/2)
+    end)
+  end
+
   defp decode_not(state, _schema), do: {state, nil}
 
   @spec decode_items(map, map) :: {map, t | nil}
-  defp decode_items(state, %{"items" => %{"$ref" => r}}), do: ensure_schema(state, r)
-  defp decode_items(state, %{"items" => schema}), do: with_path(state, schema, "items", &decode/2)
+  defp decode_items(state, %{"items" => schema}) do
+    with_path(state, schema, "items", fn state, schema ->
+      with_ref(state, schema, &decode/2)
+    end)
+  end
+
   defp decode_items(state, _schema), do: {state, nil}
 
   @spec decode_properties(map, map) :: {map, %{optional(String.t()) => t}}
   defp decode_properties(state, %{"properties" => properties}) do
     Enum.reduce(properties, {state, %{}}, fn
-      {key, %{"$ref" => r}}, {state, properties} ->
-        {state, property} = ensure_schema(state, r)
-        {state, Map.put(properties, key, property)}
-
       {key, schema}, {state, properties} ->
-        {state, property} = with_path(state, schema, [key, "properties"], &decode/2)
+        {state, property} =
+          with_path(state, schema, [key, "properties"], fn state, schema ->
+            with_ref(state, schema, &decode/2)
+          end)
+
         {state, Map.put(properties, key, property)}
     end)
   end
@@ -243,30 +248,15 @@ defmodule OpenAPI.Spec.Schema do
   defp decode_properties(state, _schema), do: {state, %{}}
 
   @spec decode_additional_properties(map, map) :: {map, t | boolean}
-  defp decode_additional_properties(state, %{"additional_properties" => %{"$ref" => r}}),
-    do: ensure_schema(state, r)
-
   defp decode_additional_properties(state, %{"additional_properties" => value})
        when is_boolean(value),
        do: {state, value}
 
-  defp decode_additional_properties(state, %{"additional_properties" => schema}),
-    do: with_path(state, schema, "additional_properties", &decode/2)
+  defp decode_additional_properties(state, %{"additional_properties" => schema}) do
+    with_path(state, schema, "additional_properties", fn state, schema ->
+      with_ref(state, schema, &decode/2)
+    end)
+  end
 
   defp decode_additional_properties(state, _schema), do: {state, true}
-
-  @spec ensure_schema(map, String.t()) :: {map, t}
-  defp ensure_schema(state, schema_ref) do
-    stored_ref = state.schemas[schema_ref]
-
-    if stored_ref do
-      {state, stored_ref}
-    else
-      [file, path] = String.split(schema_ref, "#")
-      state = OpenAPI.Reader.ensure_file(state, file)
-      yaml = get_in(state.files[file], String.split(path, "/", trim: true))
-
-      decode(state, yaml)
-    end
-  end
 end

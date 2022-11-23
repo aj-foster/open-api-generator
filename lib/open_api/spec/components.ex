@@ -62,28 +62,15 @@ defmodule OpenAPI.Spec.Components do
 
   @spec decode_schemas(map, map) :: {map, %{optional(String.t()) => Schema.t()}}
   defp decode_schemas(state, %{"schemas" => yaml}) do
-    Enum.reduce(yaml, {state, %{}}, fn {name, schema_or_ref}, {state, schemas} ->
-      {state, schema} = with_path(state, schema_or_ref, [name, "schemas"], &decode_schema/2)
-      {state, Map.put(schemas, name, schema)}
+    with_path(state, yaml, "schemas", fn state, yaml ->
+      Enum.reduce(yaml, {state, %{}}, fn {name, schema_or_ref}, {state, schemas} ->
+        {state, schema} =
+          with_path(state, schema_or_ref, name, fn state, schema_or_ref ->
+            with_ref(state, schema_or_ref, &Schema.decode/2)
+          end)
+
+        {state, Map.put(schemas, name, schema)}
+      end)
     end)
-  end
-
-  @spec decode_schema(map, map) :: {map, Schema.t()}
-  defp decode_schema(state, %{"$ref" => r}), do: ensure_schema(state, r)
-  defp decode_schema(state, schema), do: Schema.decode(state, schema)
-
-  @spec ensure_schema(map, String.t()) :: {map, t}
-  defp ensure_schema(state, schema_ref) do
-    stored_ref = state.schemas[schema_ref]
-
-    if stored_ref do
-      {state, stored_ref}
-    else
-      [file, path] = String.split(schema_ref, "#")
-      state = OpenAPI.Reader.ensure_file(state, file)
-      yaml = get_in(state.files[file], String.split(path, "/", trim: true))
-
-      decode(state, yaml)
-    end
   end
 end

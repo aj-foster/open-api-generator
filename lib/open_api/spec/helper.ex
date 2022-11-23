@@ -17,6 +17,22 @@ defmodule OpenAPI.Spec.Helper do
     end
   end
 
+  @spec resolve_ref(map, String.t()) :: {map, map}
+  def resolve_ref(state, ref) do
+    stored_yaml = state.refs[ref]
+
+    if stored_yaml do
+      {state, stored_yaml}
+    else
+      [file, path] = String.split(ref, "#")
+      state = OpenAPI.Reader.ensure_file(state, file)
+      yaml = get_in(state.files[file], String.split(path, "/", trim: true))
+      state = put_in(state, [:refs, ref], yaml)
+
+      {state, yaml}
+    end
+  end
+
   @type path_segment :: String.t() | integer
   @type path :: [path_segment]
   @type decoder :: (map, map -> {map, term})
@@ -37,4 +53,12 @@ defmodule OpenAPI.Spec.Helper do
     state = Map.put(state, :current_path, original_path)
     {state, result}
   end
+
+  @spec with_ref(map, map, (map, map -> {map, term})) :: {map, term}
+  def with_ref(state, %{"$ref" => ref}, decoder) do
+    {state, yaml} = resolve_ref(state, ref)
+    decoder.(state, yaml)
+  end
+
+  def with_ref(state, yaml, decoder), do: decoder.(state, yaml)
 end
