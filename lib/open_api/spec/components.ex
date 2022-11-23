@@ -3,6 +3,7 @@ defmodule OpenAPI.Spec.Components do
   use OpenAPI.Spec.Helper
 
   alias OpenAPI.Spec
+  alias OpenAPI.Spec.Schema
 
   @type t :: %__MODULE__{
           schemas: %{optional(String.t()) => [Spec.Ref.t() | Spec.Schema.t()]},
@@ -43,10 +44,23 @@ defmodule OpenAPI.Spec.Components do
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     {state, schemas} = decode_schemas(state, yaml)
-    components = %__MODULE__{schemas: schemas}
+
+    components = %__MODULE__{
+      schemas: schemas,
+      responses: %{},
+      parameters: %{},
+      examples: %{},
+      request_bodies: %{},
+      headers: %{},
+      security_schemes: %{},
+      links: %{},
+      callbacks: %{}
+    }
+
     {state, components}
   end
 
+  @spec decode_schemas(map, map) :: {map, %{optional(String.t()) => Schema.t()}}
   defp decode_schemas(state, %{"schemas" => yaml}) do
     Enum.reduce(yaml, {state, %{}}, fn {name, schema_or_ref}, {state, schemas} ->
       {state, schema} = decode_schema(state, schema_or_ref)
@@ -54,18 +68,20 @@ defmodule OpenAPI.Spec.Components do
     end)
   end
 
-  @spec decode_schema(map, map) :: {map, OpenAPI.Spec.Schema.t() | nil}
+  @spec decode_schema(map, map) :: {map, Schema.t()}
   defp decode_schema(state, %{"$ref" => r}), do: ensure_schema(state, r)
-  defp decode_schema(state, schema), do: OpenAPI.Spec.Schema.decode(state, schema)
+  defp decode_schema(state, schema), do: Schema.decode(state, schema)
 
-  @spec ensure_schema(map, String.t()) :: {map, OpenAPI.Spec.Schema.t()}
+  @spec ensure_schema(map, String.t()) :: {map, t}
   defp ensure_schema(state, schema_ref) do
-    if Map.has_key?(state.schemas, schema_ref) do
-      state
+    stored_ref = state.schemas[schema_ref]
+
+    if stored_ref do
+      {state, stored_ref}
     else
       [file, path] = String.split(schema_ref, "#")
       state = ensure_file(state, file)
-      yaml = get_in(state.files[file], String.split(path, "/"))
+      yaml = get_in(state.files[file], String.split(path, "/", trim: true))
 
       decode(state, yaml)
     end

@@ -2,7 +2,6 @@ defmodule OpenAPI.Spec do
   @moduledoc """
   Open API specification expressed using Elixir structs.
   """
-  use OpenAPI.Spec.Helper
 
   alias OpenAPI.Spec
   alias OpenAPI.Spec.Components
@@ -38,17 +37,6 @@ defmodule OpenAPI.Spec do
     :external_docs
   ]
 
-  @decoders %{
-    openapi: :string,
-    info: Spec.Info,
-    servers: {[Spec.Server], default: [%Spec.Server{url: "/"}]},
-    paths: {%{:string => Spec.Path.Item}, default: %{}},
-    components: Spec.Components,
-    security: nil,
-    tags: {[Spec.Tag], default: []},
-    external_docs: Spec.ExternalDocumentation
-  }
-
   #
   # Decoder
   #
@@ -57,7 +45,6 @@ defmodule OpenAPI.Spec do
   def decode(state) do
     yaml = state.files[""]
 
-    {state, openapi} = decode_openapi(state, yaml)
     {state, info} = decode_info(state, yaml)
     {state, servers} = decode_servers(state, yaml)
     {state, components} = decode_components(state, yaml)
@@ -65,24 +52,19 @@ defmodule OpenAPI.Spec do
     {_state, external_docs} = decode_external_docs(state, yaml)
 
     %__MODULE__{
-      openapi: openapi,
+      openapi: Map.fetch!(yaml, "openapi"),
       info: info,
       servers: servers,
+      paths: %{},
       components: components,
+      security: [],
       tags: tags,
       external_docs: external_docs
     }
   end
 
-  @spec decode_openapi(map, map) :: {map, String.t()}
-  defp decode_openapi(state, %{"openapi" => openapi}) do
-    {state, openapi}
-  end
-
   @spec decode_info(map, map) :: {map, Info.t()}
-  defp decode_info(state, %{"info" => info}) do
-    Info.decode(state, info)
-  end
+  defp decode_info(state, %{"info" => info}), do: Info.decode(state, info)
 
   @spec decode_servers(map, map) :: {map, [Server.t()]}
   defp decode_servers(state, %{"servers" => servers}) when is_list(servers) do
@@ -95,8 +77,7 @@ defmodule OpenAPI.Spec do
     {state, Enum.reverse(servers)}
   end
 
-  defp decode_servers(state, _yaml),
-    do: {state, [%Spec.Server{url: "/"}]}
+  defp decode_servers(state, _yaml), do: {state, [%Spec.Server{url: "/"}]}
 
   @spec decode_components(map, map) :: {map, Components.t()}
   defp decode_components(state, %{"components" => components}) do

@@ -250,13 +250,13 @@ defmodule OpenAPI.Spec.Schema do
 
   @spec ensure_schema(map, String.t()) :: {map, t}
   defp ensure_schema(state, schema_ref) do
-    if Map.has_key?(state.schemas, schema_ref) do
-      {state, state.schemas[schema_ref]}
+    stored_ref = state.schemas[schema_ref]
+
+    if stored_ref do
+      {state, stored_ref}
     else
       [file, path] = String.split(schema_ref, "#")
       state = ensure_file(state, file)
-      # IO.inspect(state.files[file], label: "FILE")
-      # IO.inspect(String.split(path, "/", trim: true))
       yaml = get_in(state.files[file], String.split(path, "/", trim: true))
 
       decode(state, yaml)
