@@ -12,6 +12,8 @@ defmodule OpenAPI.Generator do
     state
     |> process_operations()
     |> collect_operation_files()
+    |> collect_schema_files()
+    |> process_schemas()
     |> reconcile_files()
     |> write()
   end
@@ -33,18 +35,18 @@ defmodule OpenAPI.Generator do
   # Schemas
   #
 
-  # @spec collect_schemas(state, Spec.t()) :: state
-  # defp collect_schemas(state, spec) do
-  #   schemas =
-  #     Enum.map(spec.components.schemas, fn {name, schema} ->
-  #       module = process_name(state, name)
-  #       {name, {module, schema}}
-  #     end)
-  #     |> Enum.reject(fn {name, {module, _schema}} -> ignored?(state, name, module) end)
-  #     |> Enum.into(%{})
+  @spec collect_schema_files(state) :: state
+  defp collect_schema_files(state) do
+    schemas =
+      Enum.map(state.schemas, fn {name, schema} ->
+        module = process_name(state, name)
+        {name, {module, schema}}
+      end)
+      |> Enum.reject(fn {name, {module, _schema}} -> ignored?(state, name, module) end)
+      |> Enum.into(%{})
 
-  #   %{state | schemas: schemas}
-  # end
+    %{state | schemas: schemas}
+  end
 
   @spec process_name(state, String.t()) :: String.t()
   defp process_name(%State{options: %{group: group, replace: replace}}, schema_name) do

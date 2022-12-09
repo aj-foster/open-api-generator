@@ -282,12 +282,11 @@ defmodule OpenAPI.Spec.Schema do
   # Output
   #
 
-  @spec module_name(t) :: String.t()
+  @spec module_name(t) :: String.t() | nil
   def module_name(%__MODULE__{"$oag_last_ref_path": ["components", "schemas", schema_name]}) do
     schema_name
     |> String.replace("-", "_")
     |> Macro.camelize()
-    |> IO.inspect()
   end
 
   def module_name(_), do: nil
