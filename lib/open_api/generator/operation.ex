@@ -6,6 +6,7 @@ defmodule OpenAPI.Generator.Operation do
   alias OpenAPI.Spec.Schema.Media
   alias OpenAPI.Spec.Response
   alias OpenAPI.State
+  alias OpenAPI.Util
 
   @spec process(State.t(), String.t(), atom, Operation.t()) :: {State.t(), term}
   def process(state, path, method, operation) do
@@ -170,13 +171,13 @@ defmodule OpenAPI.Generator.Operation do
   defp parse_response(state, %Response{content: c}) when map_size(c) == 0, do: {state, nil}
 
   defp parse_response(state, %Response{content: %{"application/json" => %Media{schema: schema}}}) do
-    case Schema.module_name(schema) do
+    case Util.module_name(state, schema) do
       nil ->
         {state, OpenAPI.Generator.Schema.type(state, schema)}
 
       name ->
         state = %{state | schemas: Map.put(state.schemas, name, schema)}
-        {state, OpenAPI.Generator.Schema.type(state, schema)}
+        {state, OpenAPI.Generator.Schema.type(state, schema, name)}
     end
   end
 

@@ -1,9 +1,10 @@
 defmodule OpenAPI.Generator.Schema do
   alias OpenAPI.Spec
+  alias OpenAPI.Util
 
-  @spec process(%OpenAPI.Generator.State{}) :: [{module, OpenAPI.Generator.State.file()}]
+  @spec process(%OpenAPI.State{}) :: [{module, OpenAPI.State.file()}]
   def process(state) do
-    for {_name, {module, spec}} <- state.schemas, complex_type?(spec) do
+    for {module, spec} <- state.schemas, complex_type?(spec) do
       filename =
         Path.join([
           state.options.base_location,
@@ -37,8 +38,13 @@ defmodule OpenAPI.Generator.Schema do
   end
 
   defp fields(state, %Spec.Schema{properties: properties}) do
-    Enum.map(properties, fn {name, spec_or_ref} ->
-      {name, type(state, spec_or_ref)}
+    Enum.map(properties, fn
+      {field_name, %Spec.Schema{} = schema} ->
+        schema_name = Util.module_name(state, schema)
+        {field_name, type(state, schema, schema_name)}
+
+      {field_name, spec} ->
+        {field_name, type(state, spec)}
     end)
     |> Enum.sort_by(fn {name, _type} -> name end)
   end

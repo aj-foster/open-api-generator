@@ -1,5 +1,4 @@
 defmodule OpenAPI.Generator do
-  alias OpenAPI.Generator.Options
   alias OpenAPI.Generator.Operation
   alias OpenAPI.Generator.Render
   alias OpenAPI.Generator.Schema
@@ -12,7 +11,6 @@ defmodule OpenAPI.Generator do
     state
     |> process_operations()
     |> collect_operation_files()
-    |> collect_schema_files()
     |> process_schemas()
     |> reconcile_files()
     |> write()
@@ -34,57 +32,6 @@ defmodule OpenAPI.Generator do
   #
   # Schemas
   #
-
-  @spec collect_schema_files(state) :: state
-  defp collect_schema_files(state) do
-    schemas =
-      Enum.map(state.schemas, fn {name, schema} ->
-        module = process_name(state, name)
-        {name, {module, schema}}
-      end)
-      |> Enum.reject(fn {name, {module, _schema}} -> ignored?(state, name, module) end)
-      |> Enum.into(%{})
-
-    %{state | schemas: schemas}
-  end
-
-  @spec process_name(state, String.t()) :: String.t()
-  defp process_name(%State{options: %{group: group, replace: replace}}, schema_name) do
-    schema_name
-    |> replace(replace)
-    |> group(group)
-  end
-
-  @spec replace(String.t(), [{Options.replace_pattern(), Options.replace_action()}]) :: String.t()
-  defp replace(schema_name, replacements) do
-    Enum.reduce(replacements, schema_name, fn {pattern, replacement}, name ->
-      String.replace(name, pattern, replacement)
-    end)
-  end
-
-  @spec group(String.t(), [module]) :: String.t()
-  defp group(schema_name, groups) do
-    Enum.reduce(groups, schema_name, fn group, name ->
-      group = inspect(group)
-
-      cond do
-        name == group -> name
-        String.starts_with?(name, "#{group}.") -> name
-        String.starts_with?(name, group) -> String.replace_leading(name, group, "#{group}.")
-        true -> name
-      end
-    end)
-  end
-
-  @spec ignored?(state, String.t(), module) :: boolean
-  defp ignored?(%State{options: %{ignore: ignore}}, schema_name, schema_module) do
-    Enum.any?(ignore, fn
-      %Regex{} = regex -> Regex.match?(regex, schema_name)
-      ^schema_name -> true
-      ^schema_module -> true
-      _ -> false
-    end)
-  end
 
   @spec process_schemas(state) :: state
   defp process_schemas(state) do

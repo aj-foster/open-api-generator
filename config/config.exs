@@ -38,8 +38,12 @@ config :open_api,
       Webhook,
       Webhook.Config
     ],
+    ignore: [
+      "repository"
+    ],
     replace: [
       {~r/^Codespaces/, "Codespace"},
+      {"FullRepository", "Repository"},
       {~r/^Nullable(.*)/, "\\1"},
       {~r/Oidc/, "OIDC"},
       {~r/^Runner/, "Actions.Runner"},
