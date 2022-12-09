@@ -5,6 +5,53 @@ defmodule OpenAPI.Generator.Operation do
   alias OpenAPI.Spec.Schema
   alias OpenAPI.Spec.Schema.Media
   alias OpenAPI.Spec.Response
+  alias OpenAPI.State
+
+  @spec process(State.t(), String.t(), atom, Operation.t()) :: {State.t(), term}
+  def process(state, path, method, operation) do
+    {state, body} = process_body(state, operation)
+    {state, responses} = responses(state, operation)
+    path_params = path_params(state, path, operation)
+    query_params = query_params(state, operation)
+
+    for {modules, function} <- names(operation), reduce: state do
+      state ->
+        module = Module.concat(modules)
+
+        operation = %{
+          body: body,
+          description: operation.description,
+          docs: operation.external_docs,
+          method: method,
+          module: module,
+          name: function,
+          path: path,
+          path_params: path_params,
+          query_params: query_params,
+          responses: responses,
+          summary: operation.summary
+        }
+
+        %{state | operations: [operation | state.operations]}
+    end
+  end
+
+  @spec process_body(State.t(), Operation.t()) :: {State.t(), term}
+  defp process_body(state, %Operation{request_body: nil}), do: {state, nil}
+
+  defp process_body(state, %Operation{request_body: %RequestBody{content: content}}) do
+    body =
+      content
+      |> Enum.sort_by(fn {content_type, _media} -> content_type end)
+      |> Enum.map(fn {_content_type, media} -> media_to_typespec(state, media) end)
+      |> Enum.uniq()
+
+    {state, body}
+  end
+
+  #
+  # OLD
+  #
 
   def process(state, {path, method, operation_spec}) do
     for {modules, function} <- names(operation_spec) do
@@ -92,6 +139,7 @@ defmodule OpenAPI.Generator.Operation do
 
   defp parameter(_state, %Parameter{name: name} = param), do: {name, param}
 
+  # Remove this later
   defp body(_state, %Operation{request_body: nil}), do: nil
 
   defp body(state, %Operation{request_body: %RequestBody{content: content}}) do
@@ -100,6 +148,8 @@ defmodule OpenAPI.Generator.Operation do
     |> Enum.map(fn {_content_type, media} -> media_to_typespec(state, media) end)
     |> Enum.uniq()
   end
+
+  # end
 
   defp media_to_typespec(state, %Media{schema: %Schema{type: "object"} = schema}) do
     OpenAPI.Generator.Schema.typespec(state, schema)
@@ -110,17 +160,20 @@ defmodule OpenAPI.Generator.Operation do
   end
 
   defp responses(state, %Operation{responses: responses}) do
-    Enum.map(responses, fn {status, response} -> {status, parse_response(state, response)} end)
+    Enum.reduce(responses, {state, %{}}, fn {status, response}, {state, responses} ->
+      {state, response} = parse_response(state, response)
+      {state, Map.put(responses, status, response)}
+    end)
   end
 
-  defp parse_response(_state, %Response{content: nil}), do: nil
-  defp parse_response(_state, %Response{content: c}) when map_size(c) == 0, do: nil
+  defp parse_response(state, %Response{content: nil}), do: {state, nil}
+  defp parse_response(state, %Response{content: c}) when map_size(c) == 0, do: {state, nil}
 
   defp parse_response(state, %Response{content: %{"application/json" => %Media{schema: schema}}}) do
-    OpenAPI.Generator.Schema.type(state, schema)
+    name = Schema.module_name(schema)
+    state = %{state | schemas: Map.put(state.schemas, name, schema)}
+    {state, OpenAPI.Generator.Schema.type(state, schema)}
   end
 
-  defp parse_response(_state, _response) do
-    :string
-  end
+  defp parse_response(state, _response), do: {state, :string}
 end

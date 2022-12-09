@@ -5,12 +5,7 @@ defmodule OpenAPI.Reader do
 
   alias OpenAPI.State
 
-  def read(filename) do
-    State.new(filename)
-    |> read("")
-  end
-
-  @spec read(map, String.t()) :: map
+  @spec read(map, String.t()) :: State.t()
   def read(state, relative_filename) do
     filename = Path.join(state.current_file, relative_filename) |> Path.expand()
     parsed_file = YamlElixir.read_from_file!(filename)

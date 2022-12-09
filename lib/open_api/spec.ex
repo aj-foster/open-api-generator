@@ -11,6 +11,7 @@ defmodule OpenAPI.Spec do
   alias OpenAPI.Spec.Path.Item
   alias OpenAPI.Spec.Server
   alias OpenAPI.Spec.Tag
+  alias OpenAPI.State
 
   #
   # Definition
@@ -43,7 +44,7 @@ defmodule OpenAPI.Spec do
   # Decoder
   #
 
-  @spec decode(map) :: t
+  @spec decode(State.t()) :: State.t()
   def decode(state) do
     yaml = state.files[state.base_file]
 
@@ -52,9 +53,9 @@ defmodule OpenAPI.Spec do
     {state, components} = decode_components(state, yaml)
     {state, paths} = decode_paths(state, yaml)
     {state, tags} = decode_tags(state, yaml)
-    {_state, external_docs} = decode_external_docs(state, yaml)
+    {state, external_docs} = decode_external_docs(state, yaml)
 
-    %__MODULE__{
+    spec = %__MODULE__{
       openapi: Map.fetch!(yaml, "openapi"),
       info: info,
       servers: servers,
@@ -64,12 +65,14 @@ defmodule OpenAPI.Spec do
       tags: tags,
       external_docs: external_docs
     }
+
+    %State{state | spec: spec}
   end
 
-  @spec decode_info(map, map) :: {map, Info.t()}
+  @spec decode_info(State.t(), State.yaml()) :: {State.t(), Info.t()}
   defp decode_info(state, %{"info" => info}), do: with_path(state, info, "info", &Info.decode/2)
 
-  @spec decode_servers(map, map) :: {map, [Server.t()]}
+  @spec decode_servers(State.t(), State.yaml()) :: {State.t(), [Server.t()]}
   defp decode_servers(state, %{"servers" => servers}) when is_list(servers) do
     with_path(state, servers, "servers", fn state, servers ->
       {state, servers} =
@@ -86,12 +89,12 @@ defmodule OpenAPI.Spec do
 
   defp decode_servers(state, _yaml), do: {state, [%Spec.Server{url: "/"}]}
 
-  @spec decode_components(map, map) :: {map, Components.t()}
+  @spec decode_components(State.t(), State.yaml()) :: {State.t(), Components.t()}
   defp decode_components(state, %{"components" => components}) do
     with_path(state, components, "components", &Components.decode/2)
   end
 
-  @spec decode_tags(map, map) :: {map, [Tag.t()]}
+  @spec decode_tags(State.t(), State.yaml()) :: {State.t(), [Tag.t()]}
   defp decode_tags(state, %{"tags" => tags}) do
     with_path(state, tags, "tags", fn state, tags ->
       {state, tags} =
@@ -106,14 +109,14 @@ defmodule OpenAPI.Spec do
     end)
   end
 
-  @spec decode_external_docs(map, map) :: {map, ExternalDocumentation.t()}
+  @spec decode_external_docs(State.t(), State.yaml()) :: {State.t(), ExternalDocumentation.t()}
   defp decode_external_docs(state, %{"externalDocs" => docs}) do
     with_path(state, docs, "externalDocs", &ExternalDocumentation.decode/2)
   end
 
   defp decode_external_docs(state, _docs), do: {state, nil}
 
-  @spec decode_paths(map, map) :: {map, %{optional(String.t()) => Item.t()}}
+  @spec decode_paths(State.t(), State.yaml()) :: {State.t(), %{optional(String.t()) => Item.t()}}
   defp decode_paths(state, %{"paths" => paths}) do
     with_path(state, paths, "paths", fn state, paths ->
       Enum.reduce(paths, {state, %{}}, fn {key, path}, {state, paths} ->

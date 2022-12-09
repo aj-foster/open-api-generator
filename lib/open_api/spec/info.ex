@@ -3,6 +3,7 @@ defmodule OpenAPI.Spec.Info do
   alias OpenAPI.Spec.Info
   alias OpenAPI.Spec.Info.Contact
   alias OpenAPI.Spec.Info.License
+  alias OpenAPI.State
 
   #
   # Definition
@@ -30,7 +31,7 @@ defmodule OpenAPI.Spec.Info do
   # Decoder
   #
 
-  @spec decode(map, map) :: {map, t}
+  @spec decode(State.t(), State.yaml()) :: {State.t(), t}
   def decode(state, yaml) do
     {state, contact} = decode_contact(state, yaml)
     {state, license} = decode_license(state, yaml)

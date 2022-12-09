@@ -58,7 +58,7 @@ defmodule OpenAPI.Generator.Schema do
         state,
         %Spec.Schema{
           type: "object",
-          "$oag_referenced_as": "#/components/schemas/" <> schema_name
+          "$oag_last_ref_path": [schema_name, "schemas", "components"]
         },
         nil
       ) do

@@ -27,3 +27,4 @@ open_api-*.tar
 
 # Test output files
 /example
+/example_old

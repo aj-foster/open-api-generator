@@ -3,31 +3,29 @@ defmodule OpenAPI.Generator do
   alias OpenAPI.Generator.Operation
   alias OpenAPI.Generator.Render
   alias OpenAPI.Generator.Schema
-  alias OpenAPI.Generator.State
   alias OpenAPI.Spec
+  alias OpenAPI.State
 
   @typep pre_state :: %State{}
   @type state :: State.t()
 
-  @spec run(Spec.t(), keyword) :: any
-  def run(spec, opts) do
-    %State{spec: spec}
-    |> process_options(opts)
-    |> collect_schemas(spec)
-    |> process_schemas()
-    |> collect_operations(spec)
-    |> reconcile_files()
-    |> write()
+  @spec run(State.t()) :: State.t()
+  def run(state) do
+    state
+    |> process_operations()
   end
 
-  #
-  # Options
-  #
+  @methods [:get, :put, :post, :delete, :options, :head, :patch, :trace]
 
-  @spec process_options(pre_state, keyword) :: pre_state
-  defp process_options(state, opts) do
-    options = Options.new(opts)
-    %{state | options: options}
+  defp process_operations(state) do
+    for {path, item} <- state.spec.paths,
+        method <- @methods,
+        not is_nil(Map.get(item, method)),
+        reduce: state do
+      state ->
+        operation = Map.get(item, method)
+        Operation.process(state, path, method, operation)
+    end
   end
 
   #
@@ -97,12 +95,10 @@ defmodule OpenAPI.Generator do
   # Operations
   #
 
-  @methods [:get, :put, :post, :delete, :options, :head, :patch, :trace]
-
-  @spec collect_operations(pre_state, Spec.t()) :: pre_state
-  defp collect_operations(state, spec) do
+  @spec collect_operations(State.t()) :: State.t()
+  defp collect_operations(state) do
     operations =
-      for {path, item} <- spec.paths,
+      for {path, item} <- state.spec.paths,
           method <- @methods,
           not is_nil(Map.get(item, method)) do
         Operation.process(state, {path, method, Map.get(item, method)})
@@ -119,7 +115,7 @@ defmodule OpenAPI.Generator do
         end)
       end)
 
-    %{state | operation_files: operations}
+    %State{state | operation_files: operations}
   end
 
   #

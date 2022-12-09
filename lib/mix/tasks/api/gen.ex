@@ -19,13 +19,14 @@ defmodule Mix.Tasks.Api.Gen do
         Mix.shell().error("Error: file not found")
 
       true ->
-        OpenAPI.Reader.read(spec_file)
-        |> OpenAPI.Spec.decode()
+        OpenAPI.run(spec_file, config)
         # |> IO.inspect(pretty: true, limit: :infinity)
 
-        # |> IO.inspect(pretty: true, syntax_colors: IO.ANSI.syntax_colors(), limit: :infinity)
+        # OpenAPI.Reader.read(spec_file)
+        # |> OpenAPI.Spec.decode()
 
-        |> OpenAPI.Generator.run(config)
+        # |> IO.inspect(pretty: true, syntax_colors: IO.ANSI.syntax_colors(), limit: :infinity)
+        # |> OpenAPI.Generator.run(config)
     end
   end
 

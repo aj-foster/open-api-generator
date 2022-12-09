@@ -6,14 +6,16 @@ defmodule OpenAPI.Spec.Schema do
   alias OpenAPI.Spec.ExternalDocumentation
   alias OpenAPI.Spec.Schema.Discriminator
   alias OpenAPI.Spec.Schema.XML
+  alias OpenAPI.State
 
   #
   # Definition
   #
 
   @type t :: %__MODULE__{
-          "$oag_location": [String.t() | integer],
-          "$oag_referenced_as": String.t() | nil,
+          "$oag_base_file_path": [State.path_segment()],
+          "$oag_last_ref_file": String.t(),
+          "$oag_last_ref_path": [State.path_segment()],
           title: String.t() | nil,
           multiple_of: pos_integer | nil,
           maximum: integer | nil,
@@ -52,8 +54,9 @@ defmodule OpenAPI.Spec.Schema do
         }
 
   defstruct [
-    :"$oag_location",
-    :"$oag_referenced_as",
+    :"$oag_base_file_path",
+    :"$oag_last_ref_file",
+    :"$oag_last_ref_path",
     :title,
     :multiple_of,
     :maximum,
@@ -109,8 +112,9 @@ defmodule OpenAPI.Spec.Schema do
     {state, additional_properties} = decode_additional_properties(state, yaml)
 
     schema = %__MODULE__{
-      "$oag_location": Map.fetch!(state, :current_file_path) |> Enum.reverse(),
-      "$oag_referenced_as": Map.fetch!(state, :last_ref),
+      "$oag_base_file_path": Map.fetch!(state, :base_file_path) |> Enum.reverse(),
+      "$oag_last_ref_file": Map.fetch!(state, :last_ref_file),
+      "$oag_last_ref_path": Map.fetch!(state, :last_ref_path) |> Enum.reverse(),
       title: Map.get(yaml, "title"),
       multiple_of: Map.get(yaml, "multipleOf"),
       maximum: Map.get(yaml, "maximum"),
@@ -273,4 +277,18 @@ defmodule OpenAPI.Spec.Schema do
   end
 
   defp decode_additional_properties(state, _schema), do: {state, true}
+
+  #
+  # Output
+  #
+
+  @spec module_name(t) :: String.t()
+  def module_name(%__MODULE__{"$oag_last_ref_path": ["components", "schemas", schema_name]}) do
+    schema_name
+    |> String.replace("-", "_")
+    |> Macro.camelize()
+    |> IO.inspect()
+  end
+
+  def module_name(_), do: nil
 end
