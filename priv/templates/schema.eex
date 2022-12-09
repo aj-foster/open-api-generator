@@ -49,7 +49,7 @@ Additional documentation for this endpoint is available [here](<%= operation.doc
         url: "<%= String.replace(operation.path, ~r/\{([[:word:]]+)\}/, "#\{\\1\}") %>",
         method: <%= inspect(operation.method) %>,<%= if operation.body do %>
         body: body,<% end %><%= if length(operation.query_params) > 0 do %>
-        query: query,<% end %><%= if length(operation.responses) > 0 do %>
+        query: query,<% end %><%= if map_size(operation.responses) > 0 do %>
         response: [<%= for {status, type} <- operation.responses do %>
           {<%= status %>, <%= inspect(type) %>},
         <% end %>

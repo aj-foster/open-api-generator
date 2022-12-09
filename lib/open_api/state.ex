@@ -29,10 +29,11 @@ defmodule OpenAPI.State do
           last_ref_file: String.t() | nil,
           last_ref_path: [path_segment],
           operations: [map],
-          operation_files: [file],
+          operation_files: %{optional(module) => file},
           options: Options.t(),
           refs: %{optional(String.t()) => map},
           schemas: %{optional(String.t()) => map},
+          schema_files: %{optional(module) => file},
           spec: Spec.t() | nil
         }
 
@@ -52,6 +53,7 @@ defmodule OpenAPI.State do
     :options,
     :refs,
     :schemas,
+    :schema_files,
     :spec
   ]
 
@@ -69,10 +71,11 @@ defmodule OpenAPI.State do
       last_ref_file: nil,
       last_ref_path: [],
       operations: [],
-      operation_files: [],
+      operation_files: %{},
       options: Options.new(options),
       refs: %{},
       schemas: %{},
+      schema_files: %{},
       spec: nil
     }
   end
