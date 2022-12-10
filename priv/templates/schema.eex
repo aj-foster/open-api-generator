@@ -39,7 +39,7 @@ Additional documentation for this endpoint is available [here](<%= operation.doc
   * `<%= name %>` (`<%= typespec %>`): <%= description %><% end %>
 <% end %>
 """
-    @spec <%= operation.name %>(<%= for {_, _, type} <- operation.path_params, do: "#{type}, " %> <%= if operation.body, do: Enum.join(operation.body, " | ") <> "," %> keyword) :: {:ok, term} | {:error, term}
+    @spec <%= operation.name %>(<%= for {_, _, type} <- operation.path_params, do: "#{type}, " %> <%= if operation.body, do: Enum.join(operation.body, " | ") <> "," %> keyword) :: {:ok, any} | {:error, any}
     def <%= operation.name %>(<%= for {name, _, _} <- operation.path_params, do: "#{name}, " %> <%= if operation.body, do: "body, " %> opts \\ []) do
       client = opts[:client] || @default_client<%= if length(operation.query_params) > 0 do %>
         query = Keyword.take(opts, [<%= Enum.map_join(operation.query_params, ", ", fn {name, _description, _typespec} -> ":#{name}" end) %>])

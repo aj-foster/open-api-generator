@@ -171,7 +171,7 @@ defmodule OpenAPI.Generator.Operation do
   defp parse_response(state, %Response{content: c}) when map_size(c) == 0, do: {state, nil}
 
   defp parse_response(state, %Response{content: %{"application/json" => %Media{schema: schema}}}) do
-    case Util.module_name(state, schema) do
+    case Util.referenced_name(state, schema) do
       nil ->
         {state, OpenAPI.Generator.Schema.type(state, schema)}
 

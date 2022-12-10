@@ -1,18 +1,23 @@
 defmodule OpenAPI.Generator.Options do
   @moduledoc false
 
+  @type group_options :: [module]
   @type ignore_pattern :: Regex.t() | String.t() | module
-  @type replace_pattern :: String.pattern() | Regex.t()
-  @type replace_action :: String.t() | (String.t() -> String.t())
+  @type ignore_options :: [ignore_pattern]
+  @type merge_options :: [{module, module}]
+  @type rename_pattern :: String.pattern() | Regex.t()
+  @type rename_action :: String.t() | (String.t() -> String.t())
+  @type rename_options :: [{rename_pattern, rename_action}]
 
   @type t :: %__MODULE__{
           base_location: String.t(),
           base_module: module,
           default_client: module,
-          group: [module],
-          ignore: [ignore_pattern],
+          group: group_options,
+          ignore: ignore_options,
+          merge: merge_options,
           operation_location: String.t(),
-          replace: [{replace_pattern, replace_action}],
+          rename: rename_options,
           schema_location: String.t()
         }
 
@@ -22,8 +27,9 @@ defmodule OpenAPI.Generator.Options do
     :default_client,
     :group,
     :ignore,
+    :merge,
     :operation_location,
-    :replace,
+    :rename,
     :schema_location
   ]
 
@@ -37,8 +43,9 @@ defmodule OpenAPI.Generator.Options do
       default_client: get_default_client(opts[:default_client], base_module),
       group: get_group(opts[:group]),
       ignore: get_ignore(opts[:ignore]),
+      merge: get_merge(opts[:merge]),
       operation_location: get_operation_location(opts[:operation_location]),
-      replace: get_replace(opts[:replace]),
+      rename: get_rename(opts[:rename]),
       schema_location: get_schema_location(opts[:schema_location])
     }
   end
@@ -89,6 +96,21 @@ defmodule OpenAPI.Generator.Options do
     end
   end
 
+  @spec get_merge(any) :: merge_options | no_return
+  defp get_merge(nil), do: []
+
+  defp get_merge(value) when is_list(value) do
+    if Enum.all?(value, fn {before_merge, after_merge} ->
+         (is_atom(before_merge) or is_binary(before_merge)) and
+           (is_atom(after_merge) or is_binary(after_merge))
+       end) do
+      value
+    else
+      raise ArgumentError,
+            "Option :merge expects a list of tuples with patterns and replacements"
+    end
+  end
+
   @spec get_operation_location(any) :: String.t() | no_return
   defp get_operation_location(nil), do: ""
   defp get_operation_location(value) when is_binary(value), do: value
@@ -96,10 +118,10 @@ defmodule OpenAPI.Generator.Options do
   defp get_operation_location(value),
     do: raise(ArgumentError, "Option :operation_location expects a string, got #{inspect(value)}")
 
-  @spec get_replace(any) :: [{replace_pattern, replace_action}] | no_return
-  defp get_replace(nil), do: []
+  @spec get_rename(any) :: [{rename_pattern, rename_action}] | no_return
+  defp get_rename(nil), do: []
 
-  defp get_replace(value) when is_list(value) do
+  defp get_rename(value) when is_list(value) do
     if Enum.all?(value, fn
          {compiled_pattern, _action} when is_tuple(compiled_pattern) -> true
          {string, _action} when is_binary(string) -> true
@@ -110,7 +132,7 @@ defmodule OpenAPI.Generator.Options do
       value
     else
       raise ArgumentError,
-            "Option :replace expects a list of tuples with patterns and replacements"
+            "Option :rename expects a list of tuples with patterns and replacements"
     end
   end
 

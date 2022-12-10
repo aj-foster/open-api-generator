@@ -1,38 +1,45 @@
 defmodule OpenAPI.Util do
+  alias OpenAPI.Generator.Options
   alias OpenAPI.Spec.Schema
   alias OpenAPI.State
 
-  @spec module_name(State.t(), Schema.t()) :: String.t() | nil
-  def module_name(state, %Schema{"$oag_last_ref_path": ["components", "schemas", schema_name]}) do
-    schema_module =
-      schema_name
-      |> String.replace("-", "_")
-      |> Macro.camelize()
-      |> then(fn module -> process_name(state, module) end)
+  @doc """
+  Returns the name of the schema after processing the generator configuration.
+  """
+  @spec referenced_name(State.t(), Schema.t()) :: String.t() | nil
+  def referenced_name(%State{options: options}, schema) do
+    %Options{group: group, ignore: ignore, merge: merge, rename: rename} = options
 
-    unless ignored?(state, schema_name, schema_module) do
-      schema_module
+    with {:ok, module} <- schema_to_module(schema),
+         {merged_module, _merged?} <- process_merge_settings(module, merge),
+         {:ok, non_ignored_module} <- process_ignore_settings(merged_module, ignore) do
+      non_ignored_module
+      |> process_rename_settings(rename)
+      |> process_group_settings(group)
     end
   end
 
-  def module_name(_state, _schema), do: nil
+  @spec schema_to_module(Schema.t()) :: {:ok, String.t()} | nil
+  defp schema_to_module(%Schema{"$oag_last_ref_path": ["components", "schemas", schema_name]}) do
+    module =
+      schema_name
+      |> String.replace("-", "_")
+      |> Macro.camelize()
 
-  @spec process_name(State.t(), String.t()) :: String.t()
-  defp process_name(%State{options: %{group: group, replace: replace}}, schema_name) do
-    schema_name
-    |> replace(replace)
-    |> group(group)
+    {:ok, module}
   end
 
-  @spec replace(String.t(), [{Options.replace_pattern(), Options.replace_action()}]) :: String.t()
-  defp replace(schema_name, replacements) do
+  defp schema_to_module(_schema), do: nil
+
+  @spec process_rename_settings(String.t(), Options.rename_options()) :: String.t()
+  defp process_rename_settings(schema_name, replacements) do
     Enum.reduce(replacements, schema_name, fn {pattern, replacement}, name ->
       String.replace(name, pattern, replacement)
     end)
   end
 
-  @spec group(String.t(), [module]) :: String.t()
-  defp group(schema_name, groups) do
+  @spec process_group_settings(String.t(), [module]) :: String.t()
+  defp process_group_settings(schema_name, groups) do
     Enum.reduce(groups, schema_name, fn group, name ->
       group = inspect(group)
 
@@ -40,18 +47,39 @@ defmodule OpenAPI.Util do
         name == group -> name
         String.starts_with?(name, "#{group}.") -> name
         String.starts_with?(name, group) -> String.replace_leading(name, group, "#{group}.")
-        true -> name
+        :else -> name
       end
     end)
   end
 
-  @spec ignored?(State.t(), String.t(), String.t()) :: boolean
-  defp ignored?(%State{options: %{ignore: ignore}}, schema_name, schema_module) do
-    Enum.any?(ignore, fn
+  @spec process_ignore_settings(String.t(), Options.ignore_options()) :: {:ok, String.t()} | nil
+  defp process_ignore_settings(schema_name, ignore_options) do
+    unless ignored?(schema_name, ignore_options) do
+      {:ok, schema_name}
+    end
+  end
+
+  @spec ignored?(String.t(), Options.ignore_options()) :: boolean
+  defp ignored?(schema_name, ignore_options) do
+    Enum.any?(ignore_options, fn
       %Regex{} = regex -> Regex.match?(regex, schema_name)
       ^schema_name -> true
-      ^schema_module -> true
       _ -> false
     end)
   end
+
+  @spec process_merge_settings(String.t(), Options.merge_options()) :: {String.t(), boolean}
+  defp process_merge_settings(schema_name, merge_options) do
+    Enum.reduce(merge_options, {schema_name, false}, fn {before_merge, after_merge},
+                                                        {name, merged?} ->
+      if name == inspect(before_merge) do
+        {after_merge, true}
+      else
+        {name, merged?}
+      end
+    end)
+  end
 end
+
+# IDEA: merge. Say NullableRepository -> FullRepository. Union of fields (error if type conflict).
+# Create typespecs for each variation.

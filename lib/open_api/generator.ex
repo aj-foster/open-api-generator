@@ -4,9 +4,7 @@ defmodule OpenAPI.Generator do
   alias OpenAPI.Generator.Schema
   alias OpenAPI.State
 
-  @type state :: State.t()
-
-  @spec run(State.t()) :: State.t()
+  @spec run(State.t()) :: :ok
   def run(state) do
     state
     |> process_operations()
@@ -16,8 +14,13 @@ defmodule OpenAPI.Generator do
     |> write()
   end
 
+  #
+  # Operations
+  #
+
   @methods [:get, :put, :post, :delete, :options, :head, :patch, :trace]
 
+  @spec process_operations(State.t()) :: State.t()
   defp process_operations(state) do
     for {path, item} <- state.spec.paths,
         method <- @methods,
@@ -28,20 +31,6 @@ defmodule OpenAPI.Generator do
         Operation.process(state, path, method, operation)
     end
   end
-
-  #
-  # Schemas
-  #
-
-  @spec process_schemas(state) :: state
-  defp process_schemas(state) do
-    files = Schema.process(state) |> Enum.into(%{})
-    %{state | schema_files: files}
-  end
-
-  #
-  # Operations
-  #
 
   @spec collect_operation_files(State.t()) :: State.t()
   defp collect_operation_files(state) do
@@ -67,10 +56,20 @@ defmodule OpenAPI.Generator do
   end
 
   #
+  # Schemas
+  #
+
+  @spec process_schemas(State.t()) :: State.t()
+  defp process_schemas(state) do
+    files = Schema.process(state) |> Enum.into(%{})
+    %{state | schema_files: files}
+  end
+
+  #
   # Write
   #
 
-  # @spec reconcile_files(state) :: state
+  @spec reconcile_files(State.t()) :: State.t()
   defp reconcile_files(state) do
     files =
       Map.merge(state.schema_files, state.operation_files, fn _module,
@@ -82,6 +81,7 @@ defmodule OpenAPI.Generator do
     %{state | files: files}
   end
 
+  @spec write(State.t()) :: :ok
   defp write(state) do
     File.mkdir_p!(state.options.base_location)
 

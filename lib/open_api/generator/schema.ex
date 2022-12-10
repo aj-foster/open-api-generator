@@ -4,7 +4,7 @@ defmodule OpenAPI.Generator.Schema do
 
   @spec process(%OpenAPI.State{}) :: [{module, OpenAPI.State.file()}]
   def process(state) do
-    for {module, spec} <- state.schemas, complex_type?(spec) do
+    for {module, spec} <- state.schemas do
       filename =
         Path.join([
           state.options.base_location,
@@ -20,15 +20,6 @@ defmodule OpenAPI.Generator.Schema do
     end
   end
 
-  defp complex_type?(%Spec.Schema{type: nil}), do: false
-  defp complex_type?(%Spec.Schema{type: "boolean"}), do: false
-  defp complex_type?(%Spec.Schema{type: "integer"}), do: false
-  defp complex_type?(%Spec.Schema{type: "number"}), do: false
-  defp complex_type?(%Spec.Schema{type: "string"}), do: false
-  defp complex_type?(%Spec.Schema{any_of: any_of}) when is_list(any_of), do: false
-  defp complex_type?(%Spec.Schema{one_of: one_of}) when is_list(one_of), do: false
-  defp complex_type?(_), do: true
-
   defp docstring(%Spec.Schema{title: title, description: description}) do
     """
     #{title || description || "Generated Schema"}
@@ -40,7 +31,7 @@ defmodule OpenAPI.Generator.Schema do
   defp fields(state, %Spec.Schema{properties: properties}) do
     Enum.map(properties, fn
       {field_name, %Spec.Schema{} = schema} ->
-        schema_name = Util.module_name(state, schema)
+        schema_name = Util.referenced_name(state, schema)
         {field_name, type(state, schema, schema_name)}
 
       {field_name, spec} ->
@@ -51,6 +42,11 @@ defmodule OpenAPI.Generator.Schema do
 
   def type(state, spec, name \\ nil)
 
+  def type(state, %Spec.Schema{type: "array", items: %Spec.Schema{} = schema}, _name) do
+    schema_name = Util.referenced_name(state, schema)
+    {:array, type(state, schema, schema_name)}
+  end
+
   def type(state, %Spec.Schema{type: "array", items: items}, _name) do
     {:array, type(state, items)}
   end
@@ -59,21 +55,6 @@ defmodule OpenAPI.Generator.Schema do
   def type(_state, %Spec.Schema{type: "integer"}, _name), do: :integer
   def type(_state, %Spec.Schema{type: "number"}, _name), do: :number
   def type(_state, %Spec.Schema{type: "string"}, _name), do: :string
-
-  def type(
-        state,
-        %Spec.Schema{
-          type: "object",
-          "$oag_last_ref_path": [schema_name, "schemas", "components"]
-        },
-        nil
-      ) do
-    # TODO: ignored schemas -> map
-    case Map.get(state.schemas, schema_name) do
-      {module, spec} -> type(state, spec, module)
-      nil -> :map
-    end
-  end
 
   def type(state, %Spec.Schema{type: "object"}, name) do
     if name do

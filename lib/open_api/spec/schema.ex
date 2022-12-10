@@ -277,17 +277,4 @@ defmodule OpenAPI.Spec.Schema do
   end
 
   defp decode_additional_properties(state, _schema), do: {state, true}
-
-  #
-  # Output
-  #
-
-  @spec module_name(t) :: String.t() | nil
-  def module_name(%__MODULE__{"$oag_last_ref_path": ["components", "schemas", schema_name]}) do
-    schema_name
-    |> String.replace("-", "_")
-    |> Macro.camelize()
-  end
-
-  def module_name(_), do: nil
 end
