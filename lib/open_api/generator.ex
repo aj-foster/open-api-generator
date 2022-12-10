@@ -1,4 +1,5 @@
 defmodule OpenAPI.Generator do
+  alias OpenAPI.Generator.Field
   alias OpenAPI.Generator.Operation
   alias OpenAPI.Generator.Render
   alias OpenAPI.Generator.Schema
@@ -77,7 +78,25 @@ defmodule OpenAPI.Generator do
           Map.get(schemas, after_merge) ||
             raise "Attempted to merge into unknown schema #{after_merge}"
 
-        new_fields = Map.merge(schema_to_be_merged.fields, schema_to_receive_merge.fields)
+        new_fields =
+          Map.merge(schema_to_be_merged.fields, schema_to_receive_merge.fields, fn field_name,
+                                                                                   field1,
+                                                                                   field2 ->
+            type =
+              if field1.type != field2.type do
+                {:union, [field1.type, field2.type]}
+              else
+                field2.type
+              end
+
+            %Field{
+              required: field1.required and field2.required,
+              name: field_name,
+              nullable: field1.nullable or field2.nullable,
+              type: type
+            }
+          end)
+
         combined_schema = Map.put(schema_to_receive_merge, :fields, new_fields)
 
         schemas

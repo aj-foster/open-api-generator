@@ -18,7 +18,7 @@ defmodule <%= inspect(@module) %> do
     @spec __fields__ :: keyword
     def __fields__ do
       [
-      <%= for {name, type} <- Enum.sort_by(@fields, fn {k, _v} -> k end) do %>
+      <%= for {name, %{type: type}} <- Enum.sort_by(@fields, fn {k, _v} -> k end) do %>
         <%= inspect(name) %>: <%= inspect(type) %>,
       <% end %>
       ]
