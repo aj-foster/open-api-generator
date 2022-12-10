@@ -134,7 +134,8 @@ defmodule OpenAPI.Generator.Operation do
         {state, OpenAPI.Generator.Schema.type(state, schema)}
 
       name ->
-        state = %{state | schemas: Map.put(state.schemas, name, schema)}
+        unprocessed_name = Util.unprocessed_name(schema)
+        state = %{state | schemas: Map.put(state.schemas, unprocessed_name, schema)}
         {state, OpenAPI.Generator.Schema.type(state, schema, name)}
     end
   end

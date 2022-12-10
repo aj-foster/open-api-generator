@@ -42,12 +42,10 @@ config :open_api,
     #   "repository"
     # ],
     merge: [
-      {"FullRepository", "Repository"},
-      {"NullableRepository", "Repository"}
+      {"FullRepository", "Repository"}
     ],
     rename: [
       {~r/^Codespaces/, "Codespace"},
-      {~r/^Nullable(.*)/, "\\1"},
       {~r/Oidc/, "OIDC"},
       {~r/^Runner/, "Actions.Runner"},
       {~r/^Scim/, "SCIM"},

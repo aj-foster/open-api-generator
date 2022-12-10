@@ -13,7 +13,7 @@ defmodule OpenAPI.State do
   @type file :: %{
           name: String.t(),
           docstring: String.t(),
-          fields: [term],
+          fields: map,
           methods: [term]
         }
 

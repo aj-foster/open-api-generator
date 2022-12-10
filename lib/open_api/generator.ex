@@ -3,6 +3,7 @@ defmodule OpenAPI.Generator do
   alias OpenAPI.Generator.Render
   alias OpenAPI.Generator.Schema
   alias OpenAPI.State
+  alias OpenAPI.Util
 
   @spec run(State.t()) :: :ok
   def run(state) do
@@ -45,7 +46,7 @@ defmodule OpenAPI.Generator do
             Macro.underscore(operation.module) <> ".ex"
           ])
 
-        file = %{docstring: "", fields: [], name: filename, operations: [operation]}
+        file = %{docstring: "", fields: %{}, name: filename, operations: [operation]}
 
         Map.update(acc, operation.module, file, fn existing_file ->
           %{existing_file | operations: [operation | existing_file.operations]}
@@ -60,9 +61,49 @@ defmodule OpenAPI.Generator do
   #
 
   @spec process_schemas(State.t()) :: State.t()
-  defp process_schemas(state) do
-    files = Schema.process(state) |> Enum.into(%{})
-    %{state | schema_files: files}
+  defp process_schemas(%State{options: %{merge: merge_options}} = state) do
+    schemas =
+      for {schema_name, schema} <- state.schemas, into: %{} do
+        {schema_name, Schema.process(state, schema)}
+      end
+
+    schemas =
+      Enum.reduce(merge_options, schemas, fn {before_merge, after_merge}, schemas ->
+        schema_to_be_merged =
+          Map.get(schemas, before_merge) ||
+            raise "Attempted to merge unknown schema #{before_merge}"
+
+        schema_to_receive_merge =
+          Map.get(schemas, after_merge) ||
+            raise "Attempted to merge into unknown schema #{after_merge}"
+
+        new_fields = Map.merge(schema_to_be_merged.fields, schema_to_receive_merge.fields)
+        combined_schema = Map.put(schema_to_receive_merge, :fields, new_fields)
+
+        schemas
+        |> Map.delete(before_merge)
+        |> Map.put(after_merge, combined_schema)
+      end)
+
+    files =
+      Enum.map(schemas, fn {name, schema} ->
+        %{fields: fields} = schema
+        module = Util.processed_name(state, name)
+
+        filename =
+          Path.join([
+            state.options.base_location,
+            state.options.schema_location,
+            Macro.underscore(module) <> ".ex"
+          ])
+
+        module = Module.concat(state.options.base_module, module)
+
+        {module, %{name: filename, docstring: "", fields: fields, operations: []}}
+      end)
+      |> Enum.into(%{})
+
+    %State{state | schema_files: files}
   end
 
   #

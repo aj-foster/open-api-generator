@@ -4,6 +4,27 @@ defmodule OpenAPI.Util do
   alias OpenAPI.State
 
   @doc """
+  Returns the name of the schema before processing the generator configuration.
+  """
+  @spec unprocessed_name(Schema.t()) :: String.t() | nil
+  def unprocessed_name(schema) do
+    with {:ok, module} <- schema_to_module(schema) do
+      module
+    end
+  end
+
+  @spec processed_name(State.t(), String.t()) :: String.t() | nil
+  def processed_name(%State{options: options}, schema_name) do
+    %Options{group: group, ignore: ignore, rename: rename} = options
+
+    with {:ok, non_ignored_module} <- process_ignore_settings(schema_name, ignore) do
+      non_ignored_module
+      |> process_rename_settings(rename)
+      |> process_group_settings(group)
+    end
+  end
+
+  @doc """
   Returns the name of the schema after processing the generator configuration.
   """
   @spec referenced_name(State.t(), Schema.t()) :: String.t() | nil
@@ -72,7 +93,7 @@ defmodule OpenAPI.Util do
   defp process_merge_settings(schema_name, merge_options) do
     Enum.reduce(merge_options, {schema_name, false}, fn {before_merge, after_merge},
                                                         {name, merged?} ->
-      if name == inspect(before_merge) do
+      if name == to_string(before_merge) do
         {after_merge, true}
       else
         {name, merged?}
