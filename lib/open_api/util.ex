@@ -80,6 +80,3 @@ defmodule OpenAPI.Util do
     end)
   end
 end
-
-# IDEA: merge. Say NullableRepository -> FullRepository. Union of fields (error if type conflict).
-# Create typespecs for each variation.

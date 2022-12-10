@@ -43,7 +43,7 @@ config :open_api,
     # ],
     merge: [
       {"FullRepository", "Repository"},
-      {"NullableRepository", "FullRepository"}
+      {"NullableRepository", "Repository"}
     ],
     rename: [
       {~r/^Codespaces/, "Codespace"},

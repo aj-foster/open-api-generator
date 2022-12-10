@@ -30,18 +30,6 @@ defmodule OpenAPI.Spec.Components do
     :callbacks
   ]
 
-  @decoders %{
-    schemas: {%{:string => [Spec.Ref, Spec.Schema]}, default: %{}},
-    responses: {%{:string => [Spec.Ref, Spec.Response]}, default: %{}},
-    parameters: {%{:string => [Spec.Ref, Spec.Path.Parameter]}, default: %{}},
-    examples: {%{:string => [Spec.Ref, Spec.Schema.Example]}, default: %{}},
-    request_bodies: {%{:string => [Spec.Ref, Spec.RequestBody]}, default: %{}},
-    headers: {%{:string => [Spec.Ref, Spec.Path.Header]}, default: %{}},
-    security_schemes: {%{:string => [Spec.Ref, nil]}, default: %{}},
-    links: {%{:string => [Spec.Ref, Spec.Link]}, default: %{}},
-    callbacks: {%{:string => [Spec.Ref, nil]}, default: %{}}
-  }
-
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     {state, examples} = decode_examples(state, yaml)

@@ -54,36 +54,6 @@ defmodule OpenAPI.Generator.Operation do
   # OLD
   #
 
-  def process(state, {path, method, operation_spec}) do
-    for {modules, function} <- names(operation_spec) do
-      module = Module.concat(modules)
-
-      filename =
-        Path.join([
-          state.options.base_location,
-          state.options.operation_location,
-          Macro.underscore(module) <> ".ex"
-        ])
-
-      module = Module.concat(state.options.base_module, module)
-
-      operation = %{
-        body: body(state, operation_spec),
-        description: operation_spec.description,
-        docs: operation_spec.external_docs,
-        method: method,
-        name: function,
-        path: path,
-        path_params: path_params(state, path, operation_spec),
-        query_params: query_params(state, operation_spec),
-        responses: responses(state, operation_spec),
-        summary: operation_spec.summary
-      }
-
-      {module, %{docstring: "", fields: [], name: filename, operations: [operation]}}
-    end
-  end
-
   @doc """
   Construct an ergonomic name for an operation helper based on tags and operation ID.
   """
@@ -139,18 +109,6 @@ defmodule OpenAPI.Generator.Operation do
   end
 
   defp parameter(_state, %Parameter{name: name} = param), do: {name, param}
-
-  # Remove this later
-  defp body(_state, %Operation{request_body: nil}), do: nil
-
-  defp body(state, %Operation{request_body: %RequestBody{content: content}}) do
-    content
-    |> Enum.sort_by(fn {content_type, _media} -> content_type end)
-    |> Enum.map(fn {_content_type, media} -> media_to_typespec(state, media) end)
-    |> Enum.uniq()
-  end
-
-  # end
 
   defp media_to_typespec(state, %Media{schema: %Schema{type: "object"} = schema}) do
     OpenAPI.Generator.Schema.typespec(state, schema)
