@@ -376,6 +376,16 @@ defmodule OpenAPI.Generator.Render do
     quote(do: [unquote(inner_type)])
   end
 
+  defp to_type({:union, types}) do
+    types
+    |> Enum.sort()
+    |> Enum.map(&to_type/1)
+    |> Enum.reverse()
+    |> Enum.reduce(fn type, expression ->
+      {:|, [], [type, expression]}
+    end)
+  end
+
   defp to_type({module, type}) do
     quote do
       unquote(module).unquote(type)()

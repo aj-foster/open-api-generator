@@ -90,7 +90,7 @@ defmodule OpenAPI.Generator.Operation do
     String.split(path, ~r/(^|\})[^\{\}]*(\{|$)/, trim: true)
     |> Enum.map(fn name ->
       schema = all_params[name].schema
-      type = OpenAPI.Generator.Schema.type(state, schema, name)
+      type = OpenAPI.Generator.Schema.type(state, schema)
       {name, schema, type}
     end)
   end
@@ -103,7 +103,7 @@ defmodule OpenAPI.Generator.Operation do
       _ -> false
     end)
     |> Enum.map(fn {name, param} ->
-      type = OpenAPI.Generator.Schema.type(state, param.schema, name)
+      type = OpenAPI.Generator.Schema.type(state, param.schema)
       {name, param.description, type}
     end)
   end
@@ -133,10 +133,10 @@ defmodule OpenAPI.Generator.Operation do
       nil ->
         {state, OpenAPI.Generator.Schema.type(state, schema)}
 
-      name_and_type ->
+      _name_and_type ->
         {original_name, _type} = Naming.original_name(schema)
         state = %{state | schemas: Map.put_new(state.schemas, original_name, schema)}
-        {state, OpenAPI.Generator.Schema.type(state, schema, name_and_type)}
+        {state, OpenAPI.Generator.Schema.type(state, schema)}
     end
   end
 
