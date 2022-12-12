@@ -38,18 +38,17 @@ config :open_api,
       Webhook,
       Webhook.Config
     ],
-    # ignore: [
-    #   "repository"
-    # ],
     merge: [
-      {"FullRepository", "Repository"}
+      {"FullRepository", "Repository"},
+      {"PullRequestSimple", "PullRequest"},
+      {"PrivateUser", "User"},
+      {"PublicUser", "User"}
     ],
     rename: [
       {~r/^Codespaces/, "Codespace"},
       {~r/Oidc/, "OIDC"},
       {~r/^Runner/, "Actions.Runner"},
       {~r/^Scim/, "SCIM"},
-      {~r/^Simple(.*)/, "\\1.Simple"},
       {~r/^Ssh/, "SSH"},
       {~r/^Workflow/, "Actions.Workflow"}
     ],

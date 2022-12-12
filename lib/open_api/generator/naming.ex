@@ -83,16 +83,16 @@ defmodule OpenAPI.Generator.Naming do
   end
 
   @spec merged_type(String.t() | atom, String.t() | atom) :: atom
-  defp merged_type(before_merge, after_merge) do
+  def merged_type(before_merge, after_merge) do
     cond do
       String.starts_with?(before_merge, after_merge) ->
         before_merge
-        |> String.trim_trailing(after_merge)
+        |> String.trim_leading(after_merge)
         |> Macro.underscore()
 
       String.ends_with?(before_merge, after_merge) ->
         before_merge
-        |> String.trim_leading(after_merge)
+        |> String.trim_trailing(after_merge)
         |> Macro.underscore()
 
       :else ->
