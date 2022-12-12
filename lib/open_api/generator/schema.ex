@@ -1,41 +1,51 @@
 defmodule OpenAPI.Generator.Schema do
   alias OpenAPI.Generator.Field
+  alias OpenAPI.Generator.Naming
   alias OpenAPI.Spec
   alias OpenAPI.State
-  alias OpenAPI.Util
 
   @type t :: %__MODULE__{
-          fields: [Field.t()],
-          merged: boolean,
-          name: String.t(),
-          original_name: String.t()
+          fields: %{optional(String.t()) => Field.t()},
+          final_name: String.t(),
+          final_type: atom,
+          original_name: String.t(),
+          original_type: atom
         }
 
   defstruct [
     :fields,
-    :merged,
-    :name,
-    :original_name
+    :final_name,
+    :final_type,
+    :original_name,
+    :original_type
   ]
 
-  @spec process(State.t(), Spec.Schema.t()) :: map
+  @spec process(State.t(), Spec.Schema.t()) :: t
   def process(state, schema) do
     fields = fields(state, schema)
+    {original_name, original_type} = Naming.original_name(schema)
+    {final_name, final_type} = Naming.referenced_name(state, schema)
 
-    %{fields: fields}
+    %__MODULE__{
+      fields: fields,
+      final_name: final_name,
+      final_type: final_type,
+      original_name: original_name,
+      original_type: original_type
+    }
   end
 
   defp fields(state, %Spec.Schema{properties: properties, required: required}) do
     Enum.map(properties, fn
       {field_name, %Spec.Schema{nullable: nullable?} = schema} ->
-        schema_name = Util.referenced_name(state, schema)
+        name_and_type = Naming.referenced_name(state, schema)
         required? = is_list(required) and field_name in required
 
         %Field{
           name: field_name,
           nullable: nullable?,
           required: required?,
-          type: type(state, schema, schema_name)
+          type: type(state, schema, name_and_type)
         }
 
       {field_name, spec} ->
@@ -55,8 +65,8 @@ defmodule OpenAPI.Generator.Schema do
   def type(state, spec, name \\ nil)
 
   def type(state, %Spec.Schema{type: "array", items: %Spec.Schema{} = schema}, _name) do
-    schema_name = Util.referenced_name(state, schema)
-    {:array, type(state, schema, schema_name)}
+    name_and_type = Naming.referenced_name(state, schema)
+    {:array, type(state, schema, name_and_type)}
   end
 
   def type(state, %Spec.Schema{type: "array", items: items}, _name) do
@@ -68,11 +78,10 @@ defmodule OpenAPI.Generator.Schema do
   def type(_state, %Spec.Schema{type: "number"}, _name), do: :number
   def type(_state, %Spec.Schema{type: "string"}, _name), do: :string
 
-  def type(state, %Spec.Schema{type: "object"}, name) do
-    if name do
-      Module.concat(state.options.base_module, name)
-    else
-      :map
+  def type(state, %Spec.Schema{type: "object"}, name_and_type) do
+    case name_and_type do
+      {name, type} -> {Module.concat(state.options.base_module, name), type}
+      _else -> :map
     end
   end
 

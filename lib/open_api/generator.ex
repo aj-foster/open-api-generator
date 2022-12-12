@@ -1,17 +1,16 @@
 defmodule OpenAPI.Generator do
-  alias OpenAPI.Generator.Field
   alias OpenAPI.Generator.Operation
+  alias OpenAPI.Generator.Options
   alias OpenAPI.Generator.Render
   alias OpenAPI.Generator.Schema
   alias OpenAPI.State
-  alias OpenAPI.Util
 
   @spec run(State.t()) :: :ok
   def run(state) do
     state
     |> process_operations()
     |> collect_operation_files()
-    |> process_schemas()
+    |> collect_schema_files()
     |> reconcile_files()
     |> write()
   end
@@ -35,19 +34,21 @@ defmodule OpenAPI.Generator do
   end
 
   @spec collect_operation_files(State.t()) :: State.t()
-  defp collect_operation_files(state) do
+  defp collect_operation_files(%State{operations: operations, options: options} = state) do
+    %Options{base_location: base_location, operation_location: operation_location} = options
+
     operations =
-      state.operations
+      operations
       |> List.flatten()
       |> Enum.reduce(%{}, fn operation, acc ->
         filename =
           Path.join([
-            state.options.base_location,
-            state.options.operation_location,
+            base_location,
+            operation_location,
             Macro.underscore(operation.module) <> ".ex"
           ])
 
-        file = %{docstring: "", fields: %{}, name: filename, operations: [operation]}
+        file = %{name: filename, operations: [operation], schemas: []}
 
         Map.update(acc, operation.module, file, fn existing_file ->
           %{existing_file | operations: [operation | existing_file.operations]}
@@ -61,66 +62,29 @@ defmodule OpenAPI.Generator do
   # Schemas
   #
 
-  @spec process_schemas(State.t()) :: State.t()
-  defp process_schemas(%State{options: %{merge: merge_options}} = state) do
-    schemas =
-      for {schema_name, schema} <- state.schemas, into: %{} do
-        {schema_name, Schema.process(state, schema)}
-      end
-
-    schemas =
-      Enum.reduce(merge_options, schemas, fn {before_merge, after_merge}, schemas ->
-        schema_to_be_merged =
-          Map.get(schemas, before_merge) ||
-            raise "Attempted to merge unknown schema #{before_merge}"
-
-        schema_to_receive_merge =
-          Map.get(schemas, after_merge) ||
-            raise "Attempted to merge into unknown schema #{after_merge}"
-
-        new_fields =
-          Map.merge(schema_to_be_merged.fields, schema_to_receive_merge.fields, fn field_name,
-                                                                                   field1,
-                                                                                   field2 ->
-            type =
-              if field1.type != field2.type do
-                {:union, [field1.type, field2.type]}
-              else
-                field2.type
-              end
-
-            %Field{
-              required: field1.required and field2.required,
-              name: field_name,
-              nullable: field1.nullable or field2.nullable,
-              type: type
-            }
-          end)
-
-        combined_schema = Map.put(schema_to_receive_merge, :fields, new_fields)
-
-        schemas
-        |> Map.delete(before_merge)
-        |> Map.put(after_merge, combined_schema)
-      end)
+  @spec collect_schema_files(State.t()) :: State.t()
+  defp collect_schema_files(%State{options: options, schemas: schemas} = state) do
+    %Options{base_location: base_location, schema_location: schema_location} = options
 
     files =
-      Enum.map(schemas, fn {name, schema} ->
-        %{fields: fields} = schema
-        module = Util.processed_name(state, name)
+      schemas
+      |> Map.values()
+      |> Enum.reduce(%{}, fn schema, files ->
+        %Schema{final_name: final_name} = schema = Schema.process(state, schema)
 
         filename =
           Path.join([
-            state.options.base_location,
-            state.options.schema_location,
-            Macro.underscore(module) <> ".ex"
+            base_location,
+            schema_location,
+            Macro.underscore(final_name) <> ".ex"
           ])
 
-        module = Module.concat(state.options.base_module, module)
+        file = %{name: filename, operations: [], schemas: [schema]}
 
-        {module, %{name: filename, docstring: "", fields: fields, operations: []}}
+        Map.update(files, final_name, file, fn existing_file ->
+          %{existing_file | schemas: [schema | existing_file.schemas]}
+        end)
       end)
-      |> Enum.into(%{})
 
     %State{state | schema_files: files}
   end
@@ -142,26 +106,26 @@ defmodule OpenAPI.Generator do
   end
 
   @spec write(State.t()) :: :ok
-  defp write(state) do
-    File.mkdir_p!(state.options.base_location)
+  defp write(%State{files: files, options: options}) do
+    %Options{
+      base_module: base_module,
+      base_location: base_location,
+      default_client: default_client
+    } = options
 
-    for {module, file} <- state.files do
-      %{name: filename, docstring: docstring, fields: fields, operations: operations} = file
+    File.mkdir_p!(base_location)
 
-      operations = Enum.sort_by(operations, & &1.name)
+    for {module, file} <- files do
+      %{name: filename} = file
+      module = Module.concat(base_module, module)
 
-      file =
-        Render.schema(
-          module: module,
-          default_client: state.options.default_client,
-          docstring: docstring,
-          fields: fields,
-          operations: operations
-        )
-        |> Code.format_string!()
+      contents =
+        file
+        |> Map.merge(%{default_client: default_client, module: module})
+        |> Render.render()
 
       File.mkdir_p!(Path.dirname(filename))
-      File.write!(filename, [file, "\n"])
+      File.write!(filename, [contents, "\n"])
     end
 
     :ok
