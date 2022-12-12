@@ -115,13 +115,17 @@ defmodule OpenAPI.Generator do
 
     File.mkdir_p!(base_location)
 
-    for {module, file} <- files do
+    for {original_module, file} <- files do
       %{name: filename} = file
-      module = Module.concat(base_module, module)
+      module = Module.concat(base_module, original_module)
 
       contents =
         file
-        |> Map.merge(%{default_client: default_client, module: module})
+        |> Map.merge(%{
+          default_client: default_client,
+          original_module: original_module,
+          module: module
+        })
         |> Render.render()
 
       File.mkdir_p!(Path.dirname(filename))

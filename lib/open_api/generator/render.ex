@@ -27,9 +27,32 @@ defmodule OpenAPI.Generator.Render do
     |> IO.iodata_to_binary()
   end
 
-  defp render_moduledoc(_file) do
+  defp render_moduledoc(file) do
+    header =
+      cond do
+        file.operations == [] ->
+          schemas = Enum.map(file.schemas, & &1.original_name) |> Enum.sort()
+          plural? = length(file.schemas) > 1
+
+          "Provides struct and type#{if plural?, do: "s", else: ""} for #{Enum.join(schemas, ",")}"
+
+        file.schemas == [] ->
+          topic = Macro.underscore(file.original_module) |> String.replace("_", " ")
+          plural? = length(file.operations) > 1
+          "Provides API endpoint#{if plural?, do: "s", else: ""} related to #{topic}"
+
+        :else ->
+          topic = Macro.underscore(file.original_module) |> String.replace("_", " ")
+          schemas_plural? = length(file.schemas) > 1
+          endpoints_plural? = length(file.operations) > 1
+
+          "Provides API endpoint#{if endpoints_plural?, do: "s", else: ""}, struct, and type#{if schemas_plural?, do: "s", else: ""} related to #{topic}"
+      end
+
+    moduledoc = "#{header}\n"
+
     quote do
-      @moduledoc "Doc strings are not yet implemented."
+      @moduledoc unquote(moduledoc)
     end
     |> put_newlines()
   end
