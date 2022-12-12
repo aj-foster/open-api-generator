@@ -90,8 +90,8 @@ defmodule OpenAPI.Generator.Operation do
     String.split(path, ~r/(^|\})[^\{\}]*(\{|$)/, trim: true)
     |> Enum.map(fn name ->
       schema = all_params[name].schema
-      typespec = OpenAPI.Generator.Schema.typespec(state, schema, name)
-      {name, schema, typespec}
+      type = OpenAPI.Generator.Schema.type(state, schema, name)
+      {name, schema, type}
     end)
   end
 
@@ -103,15 +103,15 @@ defmodule OpenAPI.Generator.Operation do
       _ -> false
     end)
     |> Enum.map(fn {name, param} ->
-      typespec = OpenAPI.Generator.Schema.typespec(state, param.schema, name)
-      {name, param.description, typespec}
+      type = OpenAPI.Generator.Schema.type(state, param.schema, name)
+      {name, param.description, type}
     end)
   end
 
   defp parameter(_state, %Parameter{name: name} = param), do: {name, param}
 
   defp media_to_typespec(state, %Media{schema: %Schema{type: "object"} = schema}) do
-    OpenAPI.Generator.Schema.typespec(state, schema)
+    OpenAPI.Generator.Schema.type(state, schema)
   end
 
   defp media_to_typespec(_state, _operation) do

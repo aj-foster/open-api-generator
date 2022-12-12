@@ -5,15 +5,15 @@ defmodule OpenAPI.Generator.Render do
   alias OpenAPI.Generator.Schema
 
   def render(file) do
-    docstring = render_docstring(file)
+    moduledoc = render_moduledoc(file)
     default_client = render_default_client(file)
-    typespecs = render_typespecs(file.schemas)
+    types = render_types(file.schemas)
     struct = render_struct(file.schemas)
     field_function = render_field_function(file.schemas)
     operations = render_operations(file.operations)
 
     module_contents =
-      [docstring, default_client, typespecs, struct, field_function, operations]
+      [moduledoc, default_client, types, struct, field_function, operations]
       |> List.flatten()
 
     quote do
@@ -21,44 +21,49 @@ defmodule OpenAPI.Generator.Render do
         (unquote_splicing(module_contents))
       end
     end
+    |> put_multiline_docs()
     |> Code.quoted_to_algebra(escape: false)
     |> Inspect.Algebra.format(98)
     |> IO.iodata_to_binary()
   end
 
-  defp render_docstring(_file) do
-    {:@, [end_of_expression: [newlines: 2]],
-     [{:moduledoc, [], ["Doc strings are not yet implemented."]}]}
+  defp render_moduledoc(_file) do
+    quote do
+      @moduledoc "Doc strings are not yet implemented."
+    end
+    |> put_newlines()
   end
 
   defp render_default_client(%{operations: []}), do: []
 
   defp render_default_client(file) do
-    {:@, [end_of_expression: [newlines: 2]], [{:default_client, [], [file.default_client]}]}
+    quote do
+      @default_client unquote(file.default_client)
+    end
+    |> put_newlines()
   end
 
-  # TODO: Translate types into typespecs
-  defp render_typespecs([]), do: []
+  defp render_types([]), do: []
 
-  # TODO: Maybe remove Elixir from AST below
-  defp render_typespecs(schemas) do
+  defp render_types(schemas) do
     for %Schema{fields: fields, final_type: type} <- schemas do
-      fields = render_typespec_fields(fields)
+      fields = render_type_fields(fields)
 
       quote do
-        @type unquote({type, [], Elixir}) :: %__MODULE__{
+        @type unquote({type, [], nil}) :: %__MODULE__{
                 unquote_splicing(fields)
               }
       end
+      |> put_newlines()
     end
   end
 
-  defp render_typespec_fields(fields) do
+  defp render_type_fields(fields) do
     fields
     |> Enum.sort_by(fn {name, _field} -> name end)
     |> Enum.map(fn {name, %Field{type: type}} ->
       quote do
-        {unquote(String.to_atom(name)), unquote(type)}
+        {unquote(String.to_atom(name)), unquote(to_type(type))}
       end
     end)
   end
@@ -71,6 +76,7 @@ defmodule OpenAPI.Generator.Render do
     quote do
       defstruct unquote(fields)
     end
+    |> put_newlines()
   end
 
   defp render_struct_fields(schemas) do
@@ -86,8 +92,6 @@ defmodule OpenAPI.Generator.Render do
   defp render_field_function([]), do: []
 
   defp render_field_function(schemas) do
-    function_clauses = Enum.map(schemas, &render_field_function_clause/1)
-
     docstring =
       quote do
         @doc false
@@ -103,6 +107,7 @@ defmodule OpenAPI.Generator.Render do
         def __fields__(type \\ :t)
       end
 
+    function_clauses = Enum.map(schemas, &render_field_function_clause/1)
     [docstring, typespec, header, function_clauses]
   end
 
@@ -132,17 +137,19 @@ defmodule OpenAPI.Generator.Render do
     |> Enum.sort_by(fn %{name: name} -> name end)
     |> Enum.map(fn operation ->
       docstring = render_operation_docs(operation)
+      typespec = render_operation_typespec(operation)
       function = render_operation_function(operation)
 
-      [docstring, function]
+      [docstring, typespec, function]
     end)
     |> List.flatten()
   end
 
   defp render_operation_docs(operation) do
     options =
-      for {name, description, typespec} <- operation.query_params, reduce: "" do
+      for {name, description, type} <- operation.query_params, reduce: "" do
         options ->
+          typespec = to_type(type) |> Macro.to_string()
           options <> "\n  * `#{name}` (#{typespec}): #{description}"
       end
 
@@ -166,8 +173,9 @@ defmodule OpenAPI.Generator.Render do
 
     docs = "#{operation.summary}\n#{options_section}#{resources_section}\n"
 
-    {:@, [end_of_expression: [newlines: 1, line: 8]],
-     [{:doc, [], [{:__block__, [delimiter: "\"\"\"", indentation: 2], [docs]}]}]}
+    quote do
+      @doc unquote(docs)
+    end
   end
 
   defp render_operation_function(operation) do
@@ -176,27 +184,37 @@ defmodule OpenAPI.Generator.Render do
         {String.to_atom(name), [], nil}
       end)
 
-    body_argument = if operation.body, do: [{:body, [], nil}], else: []
+    body_argument = if operation.body, do: quote(do: body)
+    opts_argument = quote do: opts \\ []
 
-    opts_argument =
-      quote do
-        opts \\ []
-      end
-
-    arguments = List.flatten([path_parameter_arguments, body_argument, opts_argument])
+    arguments = clean_list([path_parameter_arguments, body_argument, opts_argument])
 
     client = render_operation_client()
     query = render_operation_query(operation.query_params)
     call = render_operation_call(operation)
 
-    operation_body =
-      [client, query, call]
-      |> Enum.reject(&is_nil/1)
+    operation_body = clean_list([client, query, call])
 
     quote do
       def unquote(String.to_atom(operation.name))(unquote_splicing(arguments)) do
         (unquote_splicing(operation_body))
       end
+    end
+  end
+
+  defp render_operation_typespec(operation) do
+    path_parameter_arguments =
+      Enum.map(operation.path_params, fn {_, _, type} ->
+        quote(do: unquote(to_type(type)))
+      end)
+
+    body_argument = if operation.body, do: quote(do: map)
+    opts_argument = quote(do: keyword)
+
+    arguments = clean_list([path_parameter_arguments, body_argument, opts_argument])
+
+    quote do
+      @spec unquote(String.to_atom(operation.name))(unquote_splicing(arguments)) :: term
     end
   end
 
@@ -280,6 +298,64 @@ defmodule OpenAPI.Generator.Render do
       client.request(%{
         unquote_splicing(request_details)
       })
+    end
+  end
+
+  #
+  # Helpers
+  #
+
+  defp clean_list(nodes) do
+    nodes
+    |> List.flatten()
+    |> Enum.reject(&is_atom/1)
+  end
+
+  defp put_multiline_docs(ast_node) do
+    pre = fn
+      {:doc, meta, children}, acc ->
+        {{:doc, meta, [{:__block__, [delimiter: "\"\"\"", indentation: 2], children}]}, acc}
+
+      {:moduledoc, meta, children}, acc ->
+        {{:moduledoc, meta, [{:__block__, [delimiter: "\"\"\"", indentation: 2], children}]}, acc}
+
+      node, acc ->
+        {node, acc}
+    end
+
+    post = fn ast_node, acc -> {ast_node, acc} end
+
+    {ast_node, _acc} = Macro.traverse(ast_node, nil, pre, post)
+    ast_node
+  end
+
+  defp put_newlines({term, metadata, arguments}) do
+    end_of_expression =
+      Keyword.get(metadata, :end_of_expression, [])
+      |> Keyword.put(:newlines, 2)
+
+    {term, Keyword.put(metadata, :end_of_expression, end_of_expression), arguments}
+  end
+
+  #
+  # Types
+  #
+
+  defp to_type(:boolean), do: quote(do: boolean)
+  defp to_type(:integer), do: quote(do: integer)
+  defp to_type(:map), do: quote(do: map)
+  defp to_type(:number), do: quote(do: number)
+  defp to_type(:string), do: quote(do: String.t())
+  defp to_type(:unknown), do: quote(do: term)
+
+  defp to_type({:array, type}) do
+    inner_type = to_type(type)
+    quote(do: [unquote(inner_type)])
+  end
+
+  defp to_type({module, type}) do
+    quote do
+      unquote(module).unquote(type)()
     end
   end
 end
