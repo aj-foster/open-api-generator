@@ -378,9 +378,8 @@ defmodule OpenAPI.Generator.Render do
 
   defp to_type({:union, types}) do
     types
-    |> Enum.sort()
+    |> Enum.sort(:desc)
     |> Enum.map(&to_type/1)
-    |> Enum.reverse()
     |> Enum.reduce(fn type, expression ->
       {:|, [], [type, expression]}
     end)

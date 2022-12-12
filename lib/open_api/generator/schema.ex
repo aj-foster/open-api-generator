@@ -20,6 +20,33 @@ defmodule OpenAPI.Generator.Schema do
     :original_type
   ]
 
+  @spec discover(State.t(), any) :: State.t()
+  def discover(state, spec)
+
+  def discover(state, %Spec.Schema{} = schema) do
+    state =
+      if Naming.referenced_name(state, schema) do
+        {original_name, _type} = Naming.original_name(schema)
+        %{state | schemas: Map.put_new(state.schemas, original_name, schema)}
+      else
+        state
+      end
+
+    Map.values(schema)
+    |> Enum.reduce(state, fn value, state -> discover(state, value) end)
+  end
+
+  def discover(state, spec) when is_map(spec) do
+    Map.values(spec)
+    |> Enum.reduce(state, fn value, state -> discover(state, value) end)
+  end
+
+  def discover(state, spec) when is_list(spec) do
+    Enum.reduce(spec, state, fn value, state -> discover(state, value) end)
+  end
+
+  def discover(state, _spec), do: state
+
   @spec process(State.t(), Spec.Schema.t()) :: t
   def process(state, schema) do
     fields = fields(state, schema)
@@ -33,6 +60,10 @@ defmodule OpenAPI.Generator.Schema do
       original_name: original_name,
       original_type: original_type
     }
+  rescue
+    e in FunctionClauseError ->
+      IO.inspect(schema)
+      reraise e, __STACKTRACE__
   end
 
   defp fields(state, %Spec.Schema{properties: properties, required: required}) do

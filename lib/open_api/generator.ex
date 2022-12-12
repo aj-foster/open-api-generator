@@ -63,11 +63,12 @@ defmodule OpenAPI.Generator do
   #
 
   @spec collect_schema_files(State.t()) :: State.t()
-  defp collect_schema_files(%State{options: options, schemas: schemas} = state) do
+  defp collect_schema_files(%State{options: options} = state) do
     %Options{base_location: base_location, schema_location: schema_location} = options
+    state = Schema.discover(state, state.spec.paths)
 
     files =
-      schemas
+      state.schemas
       |> Map.values()
       |> Enum.reduce(%{}, fn schema, files ->
         %Schema{final_name: final_name} = schema = Schema.process(state, schema)
