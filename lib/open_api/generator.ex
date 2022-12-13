@@ -8,11 +8,43 @@ defmodule OpenAPI.Generator do
   @spec run(State.t()) :: :ok
   def run(state) do
     state
+    |> collect_schema_files()
     |> process_operations()
     |> collect_operation_files()
-    |> collect_schema_files()
     |> reconcile_files()
     |> write()
+  end
+
+  #
+  # Schemas
+  #
+
+  @spec collect_schema_files(State.t()) :: State.t()
+  defp collect_schema_files(%State{options: options} = state) do
+    %Options{base_location: base_location, schema_location: schema_location} = options
+    state = Schema.discover(state, state.spec.paths)
+
+    files =
+      state.schemas
+      |> Map.values()
+      |> Enum.reduce(%{}, fn schema, files ->
+        %Schema{final_name: final_name} = schema = Schema.process(state, schema)
+
+        filename =
+          Path.join([
+            base_location,
+            schema_location,
+            Macro.underscore(final_name) <> ".ex"
+          ])
+
+        file = %{name: filename, operations: [], schemas: [schema]}
+
+        Map.update(files, final_name, file, fn existing_file ->
+          %{existing_file | schemas: [schema | existing_file.schemas]}
+        end)
+      end)
+
+    %State{state | schema_files: files}
   end
 
   #
@@ -56,38 +88,6 @@ defmodule OpenAPI.Generator do
       end)
 
     %State{state | operation_files: operations}
-  end
-
-  #
-  # Schemas
-  #
-
-  @spec collect_schema_files(State.t()) :: State.t()
-  defp collect_schema_files(%State{options: options} = state) do
-    %Options{base_location: base_location, schema_location: schema_location} = options
-    state = Schema.discover(state, state.spec.paths)
-
-    files =
-      state.schemas
-      |> Map.values()
-      |> Enum.reduce(%{}, fn schema, files ->
-        %Schema{final_name: final_name} = schema = Schema.process(state, schema)
-
-        filename =
-          Path.join([
-            base_location,
-            schema_location,
-            Macro.underscore(final_name) <> ".ex"
-          ])
-
-        file = %{name: filename, operations: [], schemas: [schema]}
-
-        Map.update(files, final_name, file, fn existing_file ->
-          %{existing_file | schemas: [schema | existing_file.schemas]}
-        end)
-      end)
-
-    %State{state | schema_files: files}
   end
 
   #

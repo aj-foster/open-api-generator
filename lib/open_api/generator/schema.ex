@@ -25,7 +25,7 @@ defmodule OpenAPI.Generator.Schema do
 
   def discover(state, %Spec.Schema{} = schema) do
     state =
-      if Naming.referenced_name(state, schema) do
+      if Naming.referenced_name(state, schema, skip_collapse: true) do
         {original_name, _type} = Naming.original_name(schema)
         %{state | schemas: Map.put_new(state.schemas, original_name, schema)}
       else
@@ -66,7 +66,7 @@ defmodule OpenAPI.Generator.Schema do
       reraise e, __STACKTRACE__
   end
 
-  defp fields(state, %Spec.Schema{properties: properties, required: required}) do
+  def fields(state, %Spec.Schema{properties: properties, required: required}) do
     Enum.map(properties, fn
       {field_name, %Spec.Schema{nullable: nullable?} = schema} ->
         required? = is_list(required) and field_name in required

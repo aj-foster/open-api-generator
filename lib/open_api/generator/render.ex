@@ -34,7 +34,7 @@ defmodule OpenAPI.Generator.Render do
           schemas = Enum.map(file.schemas, & &1.original_name) |> Enum.sort()
           plural? = length(file.schemas) > 1
 
-          "Provides struct and type#{if plural?, do: "s", else: ""} for #{Enum.join(schemas, ",")}"
+          "Provides struct and type#{if plural?, do: "s", else: ""} for #{Enum.join(schemas, ", ")}"
 
         file.schemas == [] ->
           topic = Macro.underscore(file.original_module) |> String.replace("_", " ")
@@ -69,6 +69,13 @@ defmodule OpenAPI.Generator.Render do
   defp render_types([]), do: []
 
   defp render_types(schemas) do
+    schemas =
+      schemas
+      |> Enum.sort_by(fn %Schema{final_type: type} -> type end)
+      |> Enum.dedup_by(fn %Schema{fields: fields, final_name: final_name, final_type: final_type} ->
+        {fields, final_name, final_type}
+      end)
+
     for %Schema{fields: fields, final_type: type} <- schemas do
       fields = render_type_fields(fields)
 
@@ -84,9 +91,15 @@ defmodule OpenAPI.Generator.Render do
   defp render_type_fields(fields) do
     fields
     |> Enum.sort_by(fn {name, _field} -> name end)
-    |> Enum.map(fn {name, %Field{type: type}} ->
-      quote do
-        {unquote(String.to_atom(name)), unquote(to_type(type))}
+    |> Enum.map(fn {name, %Field{nullable: nullable?, required: required?, type: type}} ->
+      if nullable? or not required? do
+        quote do
+          {unquote(String.to_atom(name)), unquote(to_type(type)) | nil}
+        end
+      else
+        quote do
+          {unquote(String.to_atom(name)), unquote(to_type(type))}
+        end
       end
     end)
   end
@@ -130,7 +143,14 @@ defmodule OpenAPI.Generator.Render do
         def __fields__(type \\ :t)
       end
 
-    function_clauses = Enum.map(schemas, &render_field_function_clause/1)
+    function_clauses =
+      schemas
+      |> Enum.sort_by(fn %Schema{final_type: type} -> type end)
+      |> Enum.dedup_by(fn %Schema{fields: fields, final_name: final_name, final_type: final_type} ->
+        {fields, final_name, final_type}
+      end)
+      |> Enum.map(&render_field_function_clause/1)
+
     [docstring, typespec, header, function_clauses]
   end
 

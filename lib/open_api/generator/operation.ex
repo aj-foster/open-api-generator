@@ -1,5 +1,4 @@
 defmodule OpenAPI.Generator.Operation do
-  alias OpenAPI.Generator.Naming
   alias OpenAPI.Spec.Path.Operation
   alias OpenAPI.Spec.Path.Parameter
   alias OpenAPI.Spec.RequestBody
@@ -129,15 +128,7 @@ defmodule OpenAPI.Generator.Operation do
   defp parse_response(state, %Response{content: c}) when map_size(c) == 0, do: {state, nil}
 
   defp parse_response(state, %Response{content: %{"application/json" => %Media{schema: schema}}}) do
-    case Naming.referenced_name(state, schema) do
-      nil ->
-        {state, OpenAPI.Generator.Schema.type(state, schema)}
-
-      _name_and_type ->
-        {original_name, _type} = Naming.original_name(schema)
-        state = %{state | schemas: Map.put_new(state.schemas, original_name, schema)}
-        {state, OpenAPI.Generator.Schema.type(state, schema)}
-    end
+    {state, OpenAPI.Generator.Schema.type(state, schema)}
   end
 
   defp parse_response(state, _response), do: {state, :string}

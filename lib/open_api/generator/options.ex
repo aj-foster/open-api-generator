@@ -100,9 +100,13 @@ defmodule OpenAPI.Generator.Options do
   defp get_merge(nil), do: []
 
   defp get_merge(value) when is_list(value) do
-    if Enum.all?(value, fn {before_merge, after_merge} ->
-         (is_atom(before_merge) or is_binary(before_merge)) and
-           (is_atom(after_merge) or is_binary(after_merge))
+    if Enum.all?(value, fn
+         {%Regex{}, after_merge} ->
+           is_atom(after_merge) or is_binary(after_merge)
+
+         {before_merge, after_merge} ->
+           (is_atom(before_merge) or is_binary(before_merge)) and
+             (is_atom(after_merge) or is_binary(after_merge))
        end) do
       value
     else
