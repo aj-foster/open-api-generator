@@ -246,6 +246,8 @@ defmodule OpenAPI.Generator.Render do
   end
 
   defp render_operation_typespec(operation) do
+    name = String.to_atom(operation.name)
+
     path_parameter_arguments =
       Enum.map(operation.path_params, fn {_, _, type} ->
         quote(do: unquote(to_type(type)))
@@ -255,9 +257,10 @@ defmodule OpenAPI.Generator.Render do
     opts_argument = quote(do: keyword)
 
     arguments = clean_list([path_parameter_arguments, body_argument, opts_argument])
+    return_type = render_return_type(operation.responses)
 
     quote do
-      @spec unquote(String.to_atom(operation.name))(unquote_splicing(arguments)) :: term
+      @spec unquote(name)(unquote_splicing(arguments)) :: unquote(return_type)
     end
   end
 
@@ -344,6 +347,35 @@ defmodule OpenAPI.Generator.Render do
     end
   end
 
+  defp render_return_type([]), do: quote(do: :ok)
+
+  defp render_return_type(responses) do
+    {success, error} =
+      responses
+      |> Enum.map(fn {status, type} -> {String.to_integer(status), type} end)
+      |> Enum.reject(fn {_status, type} -> is_nil(type) end)
+      |> Enum.reject(fn {status, _type} -> status >= 300 and status < 400 end)
+      |> Enum.split_with(fn {status, _type} -> status < 300 end)
+
+    ok =
+      if length(success) > 0 do
+        type = to_type({:union, Enum.map(success, &elem(&1, 1))})
+        quote(do: {:ok, unquote(type)})
+      else
+        quote(do: :ok)
+      end
+
+    error =
+      if length(error) > 0 do
+        type = to_type({:union, Enum.map(error, &elem(&1, 1))})
+        quote(do: {:error, unquote(type)})
+      else
+        quote(do: :error)
+      end
+
+    {:|, [], [ok, error]}
+  end
+
   #
   # Helpers
   #
@@ -399,6 +431,7 @@ defmodule OpenAPI.Generator.Render do
   defp to_type({:union, types}) do
     types
     |> Enum.sort(:desc)
+    |> Enum.dedup()
     |> Enum.map(&to_type/1)
     |> Enum.reduce(fn type, expression ->
       {:|, [], [type, expression]}
