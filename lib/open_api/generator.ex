@@ -115,7 +115,6 @@ defmodule OpenAPI.Generator do
     } = options
 
     File.mkdir_p!(base_location)
-    files = Map.take(files, [Repos])
 
     for {original_module, file} <- files do
       %{name: filename} = file

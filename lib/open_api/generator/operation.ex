@@ -1,4 +1,5 @@
 defmodule OpenAPI.Generator.Operation do
+  alias OpenAPI.Generator.Typing
   alias OpenAPI.Spec.Path.Operation
   alias OpenAPI.Spec.Path.Parameter
   alias OpenAPI.Spec.RequestBody
@@ -89,7 +90,7 @@ defmodule OpenAPI.Generator.Operation do
     String.split(path, ~r/(^|\})[^\{\}]*(\{|$)/, trim: true)
     |> Enum.map(fn name ->
       schema = all_params[name].schema
-      type = OpenAPI.Generator.Schema.type(state, schema)
+      type = Typing.schema_to_type(state, schema)
       {name, schema, type}
     end)
   end
@@ -102,7 +103,7 @@ defmodule OpenAPI.Generator.Operation do
       _ -> false
     end)
     |> Enum.map(fn {name, param} ->
-      type = OpenAPI.Generator.Schema.type(state, param.schema)
+      type = Typing.schema_to_type(state, param.schema)
       {name, param.description, type}
     end)
   end
@@ -110,7 +111,7 @@ defmodule OpenAPI.Generator.Operation do
   defp parameter(_state, %Parameter{name: name} = param), do: {name, param}
 
   defp media_to_typespec(state, %Media{schema: %Schema{type: "object"} = schema}) do
-    OpenAPI.Generator.Schema.type(state, schema)
+    Typing.schema_to_type(state, schema)
   end
 
   defp media_to_typespec(_state, _operation) do
@@ -128,7 +129,7 @@ defmodule OpenAPI.Generator.Operation do
   defp parse_response(state, %Response{content: c}) when map_size(c) == 0, do: {state, nil}
 
   defp parse_response(state, %Response{content: %{"application/json" => %Media{schema: schema}}}) do
-    {state, OpenAPI.Generator.Schema.type(state, schema)}
+    {state, Typing.schema_to_type(state, schema)}
   end
 
   defp parse_response(state, _response), do: {state, :string}
