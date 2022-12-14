@@ -8,7 +8,7 @@ defmodule OpenAPI.Generator.Schema do
 
   @type t :: %__MODULE__{
           fields: %{optional(String.t()) => Field.t()},
-          final_name: String.t(),
+          final_name: module,
           final_type: atom,
           original_name: String.t(),
           original_type: atom
@@ -61,7 +61,7 @@ defmodule OpenAPI.Generator.Schema do
 
     %__MODULE__{
       fields: fields,
-      final_name: final_name,
+      final_name: Module.concat([final_name]),
       final_type: final_type,
       original_name: original_name,
       original_type: original_type

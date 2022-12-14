@@ -102,7 +102,11 @@ defmodule OpenAPI.Generator do
       Map.merge(state.schema_files, state.operation_files, fn _module,
                                                               schema_file,
                                                               operation_file ->
-        Map.merge(schema_file, operation_file)
+        %{
+          name: operation_file.name,
+          operations: operation_file.operations,
+          schemas: schema_file.schemas
+        }
       end)
 
     %{state | files: files}
