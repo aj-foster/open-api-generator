@@ -1,5 +1,7 @@
 # OpenAPI Generator for Elixir
 
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) 
+
 _A highly-configurable code generator that combines ergonomics with maintainability._
 
 ---
@@ -83,6 +85,7 @@ It includes a large number of groups for easily readable module names, merges fo
 
 ## Further Reading
 
+* [Code of Conduct](CODE_OF_CONDUCT.md)
 * [Contribution Guidelines](CONTRIBUTING.md)
 * [License](LICENSE)
 * [OpenAPI Specification](https://swagger.io/specification/)
