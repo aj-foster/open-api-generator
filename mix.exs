@@ -19,6 +19,7 @@ defmodule OpenAPI.MixProject do
 
   defp deps do
     [
+      {:ex_doc, "~> 0.27", only: :dev, runtime: false},
       {:yamerl, "~> 0.10.0"},
       {:yaml_elixir, "~> 2.9"}
     ]
