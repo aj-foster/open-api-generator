@@ -1,8 +1,22 @@
 defmodule Mix.Tasks.Api.Gen do
   @moduledoc """
-  Generate code from an Open API specification.
+  Generate code from an Open API description
+
+  This task requires two arguments:
+
+  * The configuration profile to use, and
+  * The location of the OpenAPI description.
+
+  The description location can be given as an absolute path or a path relative to the Mix project
+  where this task is run.
+
+  ## Example
+
+  ```shell
+  mix api.gen default ../rest-api-description/spec.yaml
+  ```
   """
-  @shortdoc "Generate code from an Open API specification"
+  @shortdoc "Generate code from an Open API description"
 
   use Mix.Task
 
