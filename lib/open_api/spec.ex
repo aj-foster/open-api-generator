@@ -1,7 +1,5 @@
 defmodule OpenAPI.Spec do
-  @moduledoc """
-  Open API specification expressed using Elixir structs.
-  """
+  @moduledoc false
   import OpenAPI.Spec.Helper
 
   alias OpenAPI.Spec

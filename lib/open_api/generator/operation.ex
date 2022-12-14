@@ -1,4 +1,6 @@
 defmodule OpenAPI.Generator.Operation do
+  @moduledoc false
+
   alias OpenAPI.Generator.Typing
   alias OpenAPI.Spec.Path.Operation
   alias OpenAPI.Spec.Path.Parameter

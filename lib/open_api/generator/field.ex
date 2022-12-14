@@ -1,4 +1,6 @@
 defmodule OpenAPI.Generator.Field do
+  @moduledoc false
+
   alias OpenAPI.Generator.Typing
   alias OpenAPI.Spec
   alias OpenAPI.State

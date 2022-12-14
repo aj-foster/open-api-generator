@@ -1,5 +1,5 @@
 defmodule OpenAPI.State do
-  @moduledoc "Contains state used by the generator while reading and writing files."
+  @moduledoc false
 
   alias OpenAPI.Config
   alias OpenAPI.Spec

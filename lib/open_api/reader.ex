@@ -1,7 +1,5 @@
 defmodule OpenAPI.Reader do
-  @moduledoc """
-  Provides an Open API spec reader for Yaml and JSON.
-  """
+  @moduledoc false
 
   alias OpenAPI.State
 

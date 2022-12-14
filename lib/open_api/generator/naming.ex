@@ -1,4 +1,6 @@
 defmodule OpenAPI.Generator.Naming do
+  @moduledoc false
+
   alias OpenAPI.Config
   alias OpenAPI.Spec.Schema
   alias OpenAPI.State

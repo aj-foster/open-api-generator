@@ -1,4 +1,6 @@
 defmodule OpenAPI.Generator.Schema do
+  @moduledoc false
+
   alias OpenAPI.Generator.Field
   alias OpenAPI.Generator.Naming
   alias OpenAPI.Spec

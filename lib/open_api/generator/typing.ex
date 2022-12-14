@@ -1,4 +1,6 @@
 defmodule OpenAPI.Generator.Typing do
+  @moduledoc false
+
   alias OpenAPI.Generator.Naming
   alias OpenAPI.Spec
 

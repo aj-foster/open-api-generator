@@ -1,4 +1,6 @@
 defmodule OpenAPI.Generator do
+  @moduledoc false
+
   alias OpenAPI.Config
   alias OpenAPI.Generator.Operation
   alias OpenAPI.Generator.Render
