@@ -139,8 +139,10 @@ defmodule OpenAPI.Generator.Render do
       end
 
     header =
-      quote do
-        def __fields__(type \\ :t)
+      if Enum.any?(schemas, &(&1.final_type == :t)) do
+        quote do
+          def __fields__(type \\ :t)
+        end
       end
 
     function_clauses =
@@ -151,7 +153,7 @@ defmodule OpenAPI.Generator.Render do
       end)
       |> Enum.map(&render_field_function_clause/1)
 
-    [docstring, typespec, header, function_clauses]
+    clean_list([docstring, typespec, header, function_clauses])
   end
 
   defp render_field_function_clause(schema) do

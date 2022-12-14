@@ -123,7 +123,7 @@ defmodule OpenAPI.Generator.Naming do
 
     cond do
       is_nil(destination_schema) ->
-        {module, :t}
+        {module, type}
 
       same?(schema, destination_schema) ->
         {module, :t}
