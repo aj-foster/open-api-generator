@@ -41,7 +41,7 @@ defmodule OpenAPI.Generator.Typing do
       Naming.referenced_name(state, schema)
     end
     |> case do
-      {name, type} -> {Module.concat(state.options.base_module, name), type}
+      {name, type} -> {Module.concat(state.config.base_module, name), type}
       _else -> :map
     end
   end

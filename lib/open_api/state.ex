@@ -1,7 +1,7 @@
 defmodule OpenAPI.State do
   @moduledoc "Contains state used by the generator while reading and writing files."
 
-  alias OpenAPI.Generator.Options
+  alias OpenAPI.Config
   alias OpenAPI.Spec
 
   @typedoc "Decode function for raw Yaml."
@@ -24,13 +24,13 @@ defmodule OpenAPI.State do
   @type t :: %__MODULE__{
           base_file: String.t(),
           base_file_path: [path_segment],
+          config: Config.t(),
           current_file: String.t(),
           current_file_path: [path_segment],
           last_ref_file: String.t() | nil,
           last_ref_path: [path_segment],
           operations: [map],
           operation_files: %{optional(module) => file},
-          options: Options.t(),
           refs: %{optional(String.t()) => map},
           schemas: %{optional(String.t()) => map},
           schema_files: %{optional(module) => file},
@@ -43,6 +43,7 @@ defmodule OpenAPI.State do
   defstruct [
     :base_file,
     :base_file_path,
+    :config,
     :current_file,
     :current_file_path,
     :files,
@@ -50,7 +51,6 @@ defmodule OpenAPI.State do
     :last_ref_path,
     :operations,
     :operation_files,
-    :options,
     :refs,
     :schemas,
     :schema_files,
@@ -59,12 +59,13 @@ defmodule OpenAPI.State do
 
   @doc "Create a new state struct starting from the given `base_filename`."
   @spec new(String.t(), keyword) :: t
-  def new(base_filename, options) do
+  def new(base_filename, config) do
     absolute_path_of_base_file = Path.absname(base_filename, File.cwd!()) |> Path.expand()
 
     %__MODULE__{
       base_file: absolute_path_of_base_file,
       base_file_path: [],
+      config: Config.new(config),
       current_file: absolute_path_of_base_file,
       current_file_path: [],
       files: %{},
@@ -72,7 +73,6 @@ defmodule OpenAPI.State do
       last_ref_path: [],
       operations: [],
       operation_files: %{},
-      options: Options.new(options),
       refs: %{},
       schemas: %{},
       schema_files: %{},

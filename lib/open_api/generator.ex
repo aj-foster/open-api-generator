@@ -1,6 +1,6 @@
 defmodule OpenAPI.Generator do
+  alias OpenAPI.Config
   alias OpenAPI.Generator.Operation
-  alias OpenAPI.Generator.Options
   alias OpenAPI.Generator.Render
   alias OpenAPI.Generator.Schema
   alias OpenAPI.State
@@ -20,8 +20,8 @@ defmodule OpenAPI.Generator do
   #
 
   @spec collect_schema_files(State.t()) :: State.t()
-  defp collect_schema_files(%State{options: options} = state) do
-    %Options{base_location: base_location, schema_location: schema_location} = options
+  defp collect_schema_files(%State{config: config} = state) do
+    %Config{base_location: base_location, schema_location: schema_location} = config
     state = Schema.discover(state, state.spec.paths)
 
     files =
@@ -66,8 +66,8 @@ defmodule OpenAPI.Generator do
   end
 
   @spec collect_operation_files(State.t()) :: State.t()
-  defp collect_operation_files(%State{operations: operations, options: options} = state) do
-    %Options{base_location: base_location, operation_location: operation_location} = options
+  defp collect_operation_files(%State{operations: operations, config: config} = state) do
+    %Config{base_location: base_location, operation_location: operation_location} = config
 
     operations =
       operations
@@ -107,12 +107,12 @@ defmodule OpenAPI.Generator do
   end
 
   @spec write(State.t()) :: :ok
-  defp write(%State{files: files, options: options}) do
-    %Options{
+  defp write(%State{files: files, config: config}) do
+    %Config{
       base_module: base_module,
       base_location: base_location,
       default_client: default_client
-    } = options
+    } = config
 
     File.mkdir_p!(base_location)
 

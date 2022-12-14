@@ -1,5 +1,5 @@
 defmodule OpenAPI.Generator.Naming do
-  alias OpenAPI.Generator.Options
+  alias OpenAPI.Config
   alias OpenAPI.Spec.Schema
   alias OpenAPI.State
 
@@ -19,8 +19,8 @@ defmodule OpenAPI.Generator.Naming do
   Returns the name of the schema after processing the generator configuration.
   """
   @spec referenced_name(State.t(), Schema.t(), keyword) :: module_and_type | nil
-  def referenced_name(%State{options: options} = state, schema, opts \\ []) do
-    %Options{group: group, ignore: ignore, merge: merge, rename: rename} = options
+  def referenced_name(%State{config: config} = state, schema, opts \\ []) do
+    %Config{group: group, ignore: ignore, merge: merge, rename: rename} = config
 
     with {:ok, module_and_type} <- schema_to_module(schema),
          merged_module_and_type <- process_merge_settings(module_and_type, merge),

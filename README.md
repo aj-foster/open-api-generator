@@ -54,6 +54,7 @@ config :open_api,
 
 This is the minimum viable configuration for the generator.
 It will create modules namespaced with `Example.` and save files in `lib/example`.
+For a full list of configuration options, see the documentation for `OpenAPI.Config`.
 
 ### Output Module Naming
 

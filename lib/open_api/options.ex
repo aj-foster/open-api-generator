@@ -1,4 +1,4 @@
-defmodule OpenAPI.Generator.Options do
+defmodule OpenAPI.Config do
   @moduledoc false
 
   @type group_options :: [module]
