@@ -58,4 +58,31 @@ For a full list of configuration options, see the documentation for `OpenAPI.Con
 
 ### Output Module Naming
 
-TODO.
+When the generator encounters a schema in the OpenAPI description, it performs a number of steps to determine the final name (module and type) of the schema that will be output to a file:
+
+1. Based on the schema's location in the document, a provisional name is assigned.
+  For example, `#/components/schemas/full-repository` becomes `FullRepository.t()`.
+
+2. Schemas are **merged** based on the `merge` configuration key.
+  For example, you may choose to merge `FullRepository.t()` into the `Repository.t()` schema to create `Repository.full()`.
+  If two merged schemas have identical fields, then they will get the same name.
+
+3. Schemas can be **ignored** using the `ignore` configuration key.
+  Ignored schemas will be typed as simple `map()` types elsewhere in the generated code.
+
+4. Schemas can be **renamed** using the `rename` configuration key.
+  For example, you may wish to add or remove a word, change plurality, etc.
+
+5. Finally, schemas can be **grouped** using the `group` configuration key.
+  For example, a group of `Repository` would change `RepositoryInvitation` to `Repository.Invitation`.
+
+The final module and type will be consistent in the output schema files and other files that reference them.
+
+The `config/config.exs` file for this repository contains an example configuration related to the GitHub API description.
+It includes a large number of groups for easily readable module names, merges for repeated or highly related schemas, and some module renaming for ease-of-use.
+
+## Further Reading
+
+* [Contribution Guidelines](CONTRIBUTING.md)
+* [License](LICENSE)
+* [OpenAPI Specification](https://swagger.io/specification/)
