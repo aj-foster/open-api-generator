@@ -49,11 +49,23 @@ defmodule OpenAPI.Generator.Typing do
   end
 
   def schema_to_type(state, %Spec.Schema{any_of: any_of}, opts) when is_list(any_of) do
-    {:union, Enum.map(any_of, &schema_to_type(state, &1, opts))}
+    Enum.map(any_of, &schema_to_type(state, &1, opts))
+    |> Enum.uniq()
+    |> case do
+      [] -> :any
+      [type] -> type
+      types -> {:union, types}
+    end
   end
 
   def schema_to_type(state, %Spec.Schema{one_of: one_of}, opts) when is_list(one_of) do
-    {:union, Enum.map(one_of, &schema_to_type(state, &1, opts))}
+    Enum.map(one_of, &schema_to_type(state, &1, opts))
+    |> Enum.uniq()
+    |> case do
+      [] -> :any
+      [type] -> type
+      types -> {:union, types}
+    end
   end
 
   def schema_to_type(_state, %Spec.Schema{type: nil}, _opts), do: :unknown
