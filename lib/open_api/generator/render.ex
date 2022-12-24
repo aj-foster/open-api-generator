@@ -255,7 +255,7 @@ defmodule OpenAPI.Generator.Render do
         quote(do: unquote(to_type(type)))
       end)
 
-    body_argument = if operation.body, do: quote(do: map)
+    body_argument = render_operation_typespec_body(operation.body)
     opts_argument = quote(do: keyword)
 
     arguments = clean_list([path_parameter_arguments, body_argument, opts_argument])
@@ -264,6 +264,13 @@ defmodule OpenAPI.Generator.Render do
     quote do
       @spec unquote(name)(unquote_splicing(arguments)) :: unquote(return_type)
     end
+  end
+
+  defp render_operation_typespec_body(nil), do: nil
+
+  defp render_operation_typespec_body(body) do
+    body_type = {:union, Enum.map(body, fn {_content_type, type} -> type end)}
+    quote(do: unquote(to_type(body_type)))
   end
 
   defp render_operation_client do
@@ -315,6 +322,13 @@ defmodule OpenAPI.Generator.Render do
         end
       end
 
+    request =
+      if operation.body do
+        quote do
+          {:request, unquote(operation.body)}
+        end
+      end
+
     responses =
       if map_size(operation.responses) > 0 do
         items =
@@ -339,7 +353,7 @@ defmodule OpenAPI.Generator.Render do
       end
 
     request_details =
-      [url, body, method, query, responses, options]
+      [url, body, method, query, request, responses, options]
       |> Enum.reject(&is_nil/1)
 
     quote do
@@ -418,6 +432,7 @@ defmodule OpenAPI.Generator.Render do
   # Types
   #
 
+  defp to_type(:binary), do: quote(do: binary)
   defp to_type(:boolean), do: quote(do: boolean)
   defp to_type(:integer), do: quote(do: integer)
   defp to_type(:map), do: quote(do: map)

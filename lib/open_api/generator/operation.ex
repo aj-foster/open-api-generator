@@ -46,8 +46,9 @@ defmodule OpenAPI.Generator.Operation do
     body =
       content
       |> Enum.sort_by(fn {content_type, _media} -> content_type end)
-      |> Enum.map(fn {_content_type, media} -> media_to_typespec(state, media) end)
-      |> Enum.uniq()
+      |> Enum.map(fn {content_type, %Media{schema: %Schema{} = schema}} ->
+        {content_type, Typing.schema_to_type(state, schema)}
+      end)
 
     {state, body}
   end
@@ -112,14 +113,6 @@ defmodule OpenAPI.Generator.Operation do
 
   defp parameter(_state, %Parameter{name: name} = param), do: {name, param}
 
-  defp media_to_typespec(state, %Media{schema: %Schema{type: "object"} = schema}) do
-    Typing.schema_to_type(state, schema)
-  end
-
-  defp media_to_typespec(_state, _operation) do
-    "term"
-  end
-
   defp responses(state, %Operation{responses: responses}) do
     Enum.reduce(responses, {state, %{}}, fn {status, response}, {state, responses} ->
       {state, response} = parse_response(state, response)
@@ -134,5 +127,5 @@ defmodule OpenAPI.Generator.Operation do
     {state, Typing.schema_to_type(state, schema)}
   end
 
-  defp parse_response(state, _response), do: {state, :string}
+  defp parse_response(state, _response), do: {state, :binary}
 end
