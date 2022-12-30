@@ -117,7 +117,8 @@ defmodule OpenAPI.Generator do
     %Config{
       base_module: base_module,
       base_location: base_location,
-      default_client: default_client
+      default_client: default_client,
+      types: types
     } = config
 
     File.mkdir_p!(base_location)
@@ -131,7 +132,8 @@ defmodule OpenAPI.Generator do
         |> Map.merge(%{
           default_client: default_client,
           original_module: original_module,
-          module: module
+          module: module,
+          types: types
         })
         |> Render.render()
 

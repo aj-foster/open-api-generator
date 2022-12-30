@@ -10,7 +10,7 @@ defmodule OpenAPI.Generator.Render do
     types = render_types(file.schemas)
     struct = render_struct(file.schemas)
     field_function = render_field_function(file.schemas)
-    operations = render_operations(file.operations)
+    operations = render_operations(file.operations, file.types)
 
     module_contents =
       [moduledoc, default_client, types, struct, field_function, operations]
@@ -177,12 +177,12 @@ defmodule OpenAPI.Generator.Render do
     end)
   end
 
-  defp render_operations(operations) do
+  defp render_operations(operations, type_overrides) do
     operations
     |> Enum.sort_by(fn %{name: name} -> name end)
     |> Enum.map(fn operation ->
       docstring = render_operation_docs(operation)
-      typespec = render_operation_typespec(operation)
+      typespec = render_operation_typespec(operation, type_overrides)
       function = render_operation_function(operation)
 
       [docstring, typespec, function]
@@ -247,7 +247,7 @@ defmodule OpenAPI.Generator.Render do
     end
   end
 
-  defp render_operation_typespec(operation) do
+  defp render_operation_typespec(operation, type_overrides) do
     name = String.to_atom(operation.name)
 
     path_parameter_arguments =
@@ -259,7 +259,7 @@ defmodule OpenAPI.Generator.Render do
     opts_argument = quote(do: keyword)
 
     arguments = clean_list([path_parameter_arguments, body_argument, opts_argument])
-    return_type = render_return_type(operation.responses)
+    return_type = render_return_type(operation.responses, type_overrides)
 
     quote do
       @spec unquote(name)(unquote_splicing(arguments)) :: unquote(return_type)
@@ -363,9 +363,9 @@ defmodule OpenAPI.Generator.Render do
     end
   end
 
-  defp render_return_type([]), do: quote(do: :ok)
+  defp render_return_type([], _type_overrides), do: quote(do: :ok)
 
-  defp render_return_type(responses) do
+  defp render_return_type(responses, type_overrides) do
     {success, error} =
       responses
       |> Enum.map(fn {status, type} -> {String.to_integer(status), type} end)
@@ -382,11 +382,15 @@ defmodule OpenAPI.Generator.Render do
       end
 
     error =
-      if length(error) > 0 do
-        type = to_type({:union, Enum.map(error, &elem(&1, 1))})
-        quote(do: {:error, unquote(type)})
+      if error_type = type_overrides[:error] do
+        quote(do: {:error, unquote(to_type(error_type))})
       else
-        quote(do: :error)
+        if length(error) > 0 do
+          type = to_type({:union, Enum.map(error, &elem(&1, 1))})
+          quote(do: {:error, unquote(type)})
+        else
+          quote(do: :error)
+        end
       end
 
     {:|, [], [ok, error]}

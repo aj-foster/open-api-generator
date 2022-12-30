@@ -47,6 +47,14 @@ defmodule OpenAPI.Config do
     This may useful if you want to hide generated schema files in a subdirectory of a larger
     project. Defaults to outputting schema files to the `base_location`.
 
+  * `types` (keyword list): Overrides to the types defined by the generator. Each value should be
+    a tuple `{module, type}` such as `{MyModule, :t}`.
+
+    * `error`: Override the error type for all operations. APIs often define their own error
+      schemas, which may differ between operations. Use this option to define a single, consistent
+      error type for all operations. For example, a value `{MyError, :t}` would cause operations
+      to return `{:ok, ...} | {:error, MyError.t()}`.
+
   ## Naming
 
   Most of the configuration of this project relates to the manipulation of schema names. It is
@@ -209,7 +217,8 @@ defmodule OpenAPI.Config do
           merge: merge_options,
           operation_location: String.t(),
           rename: rename_options,
-          schema_location: String.t()
+          schema_location: String.t(),
+          types: keyword
         }
 
   defstruct [
@@ -221,7 +230,8 @@ defmodule OpenAPI.Config do
     :merge,
     :operation_location,
     :rename,
-    :schema_location
+    :schema_location,
+    :types
   ]
 
   @doc false
@@ -238,7 +248,8 @@ defmodule OpenAPI.Config do
       merge: get_merge(opts[:merge]),
       operation_location: get_operation_location(opts[:operation_location]),
       rename: get_rename(opts[:rename]),
-      schema_location: get_schema_location(opts[:schema_location])
+      schema_location: get_schema_location(opts[:schema_location]),
+      types: get_types(opts[:types])
     }
   end
 
@@ -338,4 +349,11 @@ defmodule OpenAPI.Config do
 
   defp get_schema_location(value),
     do: raise(ArgumentError, "Option :schema_location expects a string, got #{inspect(value)}")
+
+  @spec get_types(any) :: keyword | no_return
+  defp get_types(nil), do: []
+  defp get_types(value) when is_list(value), do: value
+
+  defp get_types(value),
+    do: raise(ArgumentError, "Option :types expects a keyword list, got #{inspect(value)}")
 end

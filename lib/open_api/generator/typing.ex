@@ -6,7 +6,8 @@ defmodule OpenAPI.Generator.Typing do
 
   @typedoc "Runtime type annotation"
   @type t ::
-          :boolean
+          :binary
+          | :boolean
           | :integer
           | :number
           | :string
