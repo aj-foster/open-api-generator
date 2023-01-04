@@ -1,0 +1,42 @@
+name: CI
+
+on: [pull_request]
+
+jobs:
+  test:
+    name: "Test"
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup BEAM
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: "25.2"
+          elixir-version: "1.14.2"
+
+      - name: Fetch Hex Cache
+        uses: actions/cache@v3
+        id: hex-cache
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+
+      - name: Run Tests
+        run: |
+          mix deps.get
+          mix test
+
+      - name: Publish Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: ${{ success() || failure() }}
+        with:
+          comment_mode: "off"
+          junit_files: _build/test/lib/oapi_generator/*.xml
