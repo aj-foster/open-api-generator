@@ -67,7 +67,7 @@ defmodule OpenAPI.Config do
 
   And the following configuration:
 
-      config :open_api, default: [
+      config :oapi_generator, default: [
         base_location: "lib/",
         base_module: Example,
         group: [User],

@@ -23,7 +23,7 @@ defmodule Mix.Tasks.Api.Gen do
   @impl Mix.Task
   def run([profile, spec_file]) do
     profile = String.to_atom(profile)
-    config = Application.get_env(:open_api, profile)
+    config = Application.get_env(:oapi_generator, profile)
 
     cond do
       is_nil(config) ->

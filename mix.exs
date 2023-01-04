@@ -6,7 +6,7 @@ defmodule OpenAPI.MixProject do
 
   def project do
     [
-      app: :open_api,
+      app: :oapi_generator,
       version: @version,
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,

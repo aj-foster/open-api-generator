@@ -1,7 +1,7 @@
 # Config for testing purposes only
 import Config
 
-config :open_api,
+config :oapi_generator,
   default: [
     base_location: "example/lib/",
     base_module: Example,

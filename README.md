@@ -30,7 +30,7 @@ In the meantime, please install it directly from GitHub:
 ```elixir
 def deps do
   [
-    {:open_api, github: "aj-foster/open-api-generator", branch: "main"}
+    {:oapi_generator, github: "aj-foster/open-api-generator", branch: "main"}
   ]
 end
 ```
@@ -47,7 +47,7 @@ This project uses configuration profiles to allow multiple configurations with t
 To get started, create a profile called `default` in your configuration:
 
 ```elixir
-config :open_api,
+config :oapi_generator,
   default: [
     base_location: "lib/example",
     base_module: Example
