@@ -83,6 +83,7 @@ The final module and type will be consistent in the output schema files and othe
 The `config/config.exs` file for this repository contains an example configuration related to the GitHub API description.
 It includes a large number of groups for easily readable module names, merges for repeated or highly related schemas, and some module renaming for ease-of-use.
 
+
 ## Usage
 
 Once the library is installed and configured, use `mix api.gen` with the name of the configuration profile and the OpenAPI description file:
@@ -97,3 +98,8 @@ mix api.gen default ../rest-api-description/spec.yaml
 * [Contribution Guidelines](CONTRIBUTING.md)
 * [License](LICENSE)
 * [OpenAPI Specification](https://swagger.io/specification/)
+
+
+## Sponsorship
+
+If you like this library or it makes you money, please consider [sponsoring](https://github.com/sponsors/aj-foster).
