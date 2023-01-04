@@ -1,7 +1,7 @@
 defmodule OpenAPI.MixProject do
   use Mix.Project
 
-  @version "0.0.1-beta.0"
+  @version "0.0.1-beta.1"
   @source_url "https://github.com/aj-foster/open-api-generator"
 
   def project do
@@ -21,14 +21,13 @@ defmodule OpenAPI.MixProject do
 
   def application do
     [
-      extra_applications: [:eex, :logger]
+      extra_applications: [:logger]
     ]
   end
 
   defp deps do
     [
-      {:ex_doc, "~> 0.27", only: :dev, runtime: false},
-      {:yamerl, "~> 0.10.0"},
+      {:ex_doc, "~> 0.29", only: :dev, runtime: false},
       {:yaml_elixir, "~> 2.9"}
     ]
   end
@@ -50,13 +49,12 @@ defmodule OpenAPI.MixProject do
       description: "Highly-configurable OpenAPI code generator",
       files: [
         "lib",
-        "priv",
         "LICENSE",
         "mix.exs",
         "README.md"
       ],
       licenses: ["MIT"],
-      links: %{"GitHub" => @source_url},
+      links: %{"GitHub" => @source_url, "Sponsor" => "https://github.com/sponsors/aj-foster"},
       maintainers: ["AJ Foster"]
     ]
   end
