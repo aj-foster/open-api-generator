@@ -21,6 +21,8 @@ The goal of this library is to create **ergonomic** client libraries from OpenAP
 At the same time, the changes made to the code are easily repeatable (fully automated) for the sake of maintainability.
 Think: the friendliness of your favorite hand-crafted client library applied to the scale of large APIs.
 
+> _See an example client library [here](https://github.com/aj-foster/open-api-github)._
+
 For more on how this is accomplished, see **Configuration** below.
 
 
