@@ -1,5 +1,7 @@
 # OpenAPI Generator for Elixir
 
+[![Hex.pm](https://img.shields.io/hexpm/v/oapi_generator)](https://hex.pm/packages/oapi_generator)
+[![Documentation](https://img.shields.io/badge/hex-docs-blue)](https://hexdocs.pm/oapi_generator)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) 
 
 _A highly-configurable code generator that combines ergonomics with maintainability._
@@ -24,18 +26,18 @@ For more on how this is accomplished, see **Configuration** below.
 
 ## Installation
 
-OpenAPI Generator is not yet available on Hex.pm.
-In the meantime, please install it directly from GitHub:
+This library is available on Hex.pm.
+Add the dependency in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:oapi_generator, github: "aj-foster/open-api-generator", branch: "main"}
+    {:oapi_generator, "~> 0.0.1"}
   ]
 end
 ```
 
-Be aware that the `main` branch may occasionally include unstable updates.
+Then install the dependency using `mix deps.get`.
 
 
 ## Configuration
