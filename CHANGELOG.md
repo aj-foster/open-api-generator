@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## 0.0.1
+_Nothing yet._
+
+### 0.0.2
+
+* **Add**: Support OpenAPI 3.1 `"null"` type
+* **Add**: Support `type` field given as an array of primitive types
+* **Fix**: Infer `map` type in more cases when `type` field is unspecified
+
+### 0.0.1
 
 * **Initial Release**

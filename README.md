@@ -13,7 +13,7 @@ Anyone can create an OpenAPI description document that includes the available en
 For example, [GitHub](https://github.com/github/rest-api-description) maintains a comprehensive OpenAPI description for their services.
 
 Generating code from an OpenAPI description can be relatively easy — this project [certainly isn't the first](https://openapi-generator.tech/docs/generators/elixir) — but there's a catch: API descriptions often don't translate into ergonomic code.
-Most users of an API client library don't want to think about the difference between a `NullableRepository` and `Repository`, as in the GitHub API description.
+Most users of an API client library don't want to think about the difference between a `NullableRepository` and `Repository`, as in the OpenAPI 3.0 GitHub API description.
 (They have the same fields, but one has `nullable: true`.)
 Users just want to get back a `%Repository{}` or `nil`.
 
@@ -34,7 +34,7 @@ Add the dependency in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:oapi_generator, "~> 0.0.1"}
+    {:oapi_generator, "~> 0.0.2"}
   ]
 end
 ```
