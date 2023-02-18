@@ -228,21 +228,52 @@ defmodule OpenAPI.Generator.Naming do
   def type(%Schema{type: "string"}), do: :string
   def type(%Schema{type: "null"}), do: :null
 
+  def type(%Schema{type: types} = schema) when is_list(types) do
+    nullable? = Enum.any?(types, &(&1 == "null"))
+
+    union =
+      types
+      |> Enum.reject(&(&1 == "null"))
+      |> Enum.map(fn type -> type(%Schema{schema | type: type}) end)
+
+    cond do
+      not nullable? and length(union) == 1 -> List.first(union)
+      nullable? and length(union) == 1 -> {:nullable, List.first(union)}
+      not nullable? -> {:union, union}
+      nullable? -> {:nullable, {:union, union}}
+    end
+  end
+
+  def type(%Schema{any_of: any_of}) when is_list(any_of) do
+    types = Enum.map(any_of, &type/1)
+    nullable? = Enum.any?(types, &(&1 == :null))
+    union = Enum.reject(types, &(&1 == :null))
+
+    cond do
+      not nullable? and length(union) == 1 -> List.first(union)
+      nullable? and length(union) == 1 -> {:nullable, List.first(union)}
+      not nullable? -> {:union, union}
+      nullable? -> {:nullable, {:union, union}}
+    end
+  end
+
+  def type(%Schema{one_of: one_of}) when is_list(one_of) do
+    types = Enum.map(one_of, &type/1)
+    nullable? = Enum.any?(types, &(&1 == :null))
+    union = Enum.reject(types, &(&1 == :null))
+
+    cond do
+      not nullable? and length(union) == 1 -> List.first(union)
+      nullable? and length(union) == 1 -> {:nullable, List.first(union)}
+      not nullable? -> {:union, union}
+      nullable? -> {:nullable, {:union, union}}
+    end
+  end
+
   def type(%Schema{type: "object"} = schema) do
     original_name(schema) || :map
   end
 
-  def type(%Schema{any_of: any_of}) when is_list(any_of) do
-    {:union, Enum.map(any_of, &type/1)}
-  end
-
-  def type(%Schema{one_of: one_of}) when is_list(one_of) do
-    {:union, Enum.map(one_of, &type/1)}
-  end
-
-  def type(%Schema{type: types} = schema) when is_list(types) do
-    {:union, Enum.map(types, fn type -> type(%Schema{schema | type: type}) end)}
-  end
-
+  def type(%Schema{type: nil, properties: props}) when is_map(props), do: :map
   def type(%Schema{type: nil}), do: :unknown
 end

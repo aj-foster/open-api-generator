@@ -15,6 +15,7 @@ defmodule OpenAPI.Generator.Typing do
           | :unknown
           | {:array, t}
           | {:union, [t]}
+          | {:nullable, t}
           | {module, atom}
 
   @doc """
@@ -39,6 +40,50 @@ defmodule OpenAPI.Generator.Typing do
     {:array, schema_to_type(state, items, opts)}
   end
 
+  def schema_to_type(state, %Spec.Schema{type: types} = schema, opts) when is_list(types) do
+    nullable? = Enum.any?(types, &(&1 == "null"))
+
+    union =
+      types
+      |> Enum.reject(&(&1 == "null"))
+      |> Enum.map(fn type ->
+        schema_to_type(state, %Spec.Schema{schema | type: type}, opts)
+      end)
+
+    cond do
+      not nullable? and length(union) == 1 -> List.first(union)
+      nullable? and length(union) == 1 -> {:nullable, List.first(union)}
+      not nullable? -> {:union, union}
+      nullable? -> {:nullable, {:union, union}}
+    end
+  end
+
+  def schema_to_type(state, %Spec.Schema{any_of: any_of}, opts) when is_list(any_of) do
+    types = Enum.map(any_of, &schema_to_type(state, &1, opts)) |> Enum.uniq()
+    nullable? = Enum.any?(types, &(&1 == :null))
+    union = Enum.reject(types, &(&1 == :null))
+
+    cond do
+      not nullable? and length(union) == 1 -> List.first(union)
+      nullable? and length(union) == 1 -> {:nullable, List.first(union)}
+      not nullable? -> {:union, union}
+      nullable? -> {:nullable, {:union, union}}
+    end
+  end
+
+  def schema_to_type(state, %Spec.Schema{one_of: one_of}, opts) when is_list(one_of) do
+    types = Enum.map(one_of, &schema_to_type(state, &1, opts)) |> Enum.uniq()
+    nullable? = Enum.any?(types, &(&1 == :null))
+    union = Enum.reject(types, &(&1 == :null))
+
+    cond do
+      not nullable? and length(union) == 1 -> List.first(union)
+      nullable? and length(union) == 1 -> {:nullable, List.first(union)}
+      not nullable? -> {:union, union}
+      nullable? -> {:nullable, {:union, union}}
+    end
+  end
+
   def schema_to_type(state, %Spec.Schema{type: "object"} = schema, opts) do
     if opts[:original] do
       Naming.original_name(schema)
@@ -51,33 +96,9 @@ defmodule OpenAPI.Generator.Typing do
     end
   end
 
-  def schema_to_type(state, %Spec.Schema{any_of: any_of}, opts) when is_list(any_of) do
-    Enum.map(any_of, &schema_to_type(state, &1, opts))
-    |> Enum.uniq()
-    |> case do
-      [] -> :any
-      [type] -> type
-      types -> {:union, types}
-    end
-  end
-
-  def schema_to_type(state, %Spec.Schema{one_of: one_of}, opts) when is_list(one_of) do
-    Enum.map(one_of, &schema_to_type(state, &1, opts))
-    |> Enum.uniq()
-    |> case do
-      [] -> :any
-      [type] -> type
-      types -> {:union, types}
-    end
-  end
-
-  def schema_to_type(state, %Spec.Schema{type: types} = schema, opts) when is_list(types) do
-    union =
-      Enum.map(types, fn type ->
-        schema_to_type(state, %Spec.Schema{schema | type: type}, opts)
-      end)
-
-    {:union, union}
+  def schema_to_type(_state, %Spec.Schema{type: nil, properties: props}, _opts)
+      when is_map(props) do
+    :map
   end
 
   def schema_to_type(_state, %Spec.Schema{type: nil}, _opts), do: :unknown

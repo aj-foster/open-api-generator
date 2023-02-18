@@ -92,14 +92,21 @@ defmodule OpenAPI.Generator.Render do
     fields
     |> Enum.sort_by(fn {name, _field} -> name end)
     |> Enum.map(fn {name, %Field{nullable: nullable?, required: required?, type: type}} ->
-      if nullable? or not required? do
-        quote do
-          {unquote(String.to_atom(name)), unquote(to_type(type)) | nil}
-        end
-      else
-        quote do
-          {unquote(String.to_atom(name)), unquote(to_type(type))}
-        end
+      cond do
+        match?({:nullable, _}, type) ->
+          quote do
+            {unquote(String.to_atom(name)), unquote(to_type(type))}
+          end
+
+        nullable? or not required? ->
+          quote do
+            {unquote(String.to_atom(name)), unquote(to_type(type)) | nil}
+          end
+
+        :else ->
+          quote do
+            {unquote(String.to_atom(name)), unquote(to_type(type))}
+          end
       end
     end)
   end
@@ -448,6 +455,10 @@ defmodule OpenAPI.Generator.Render do
   defp to_type({:array, type}) do
     inner_type = to_type(type)
     quote(do: [unquote(inner_type)])
+  end
+
+  defp to_type({:nullable, type}) do
+    {:|, [], [to_type(type), nil]}
   end
 
   defp to_type({:union, types}) do
