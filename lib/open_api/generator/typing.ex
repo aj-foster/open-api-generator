@@ -11,6 +11,7 @@ defmodule OpenAPI.Generator.Typing do
           | :integer
           | :number
           | :string
+          | :null
           | :unknown
           | {:array, t}
           | {:union, [t]}
@@ -32,6 +33,7 @@ defmodule OpenAPI.Generator.Typing do
   def schema_to_type(_state, %Spec.Schema{type: "integer"}, _opts), do: :integer
   def schema_to_type(_state, %Spec.Schema{type: "number"}, _opts), do: :number
   def schema_to_type(_state, %Spec.Schema{type: "string"}, _opts), do: :string
+  def schema_to_type(_state, %Spec.Schema{type: "null"}, _opts), do: :null
 
   def schema_to_type(state, %Spec.Schema{type: "array", items: items}, opts) do
     {:array, schema_to_type(state, items, opts)}
@@ -67,6 +69,15 @@ defmodule OpenAPI.Generator.Typing do
       [type] -> type
       types -> {:union, types}
     end
+  end
+
+  def schema_to_type(state, %Spec.Schema{type: types} = schema, opts) when is_list(types) do
+    union =
+      Enum.map(types, fn type ->
+        schema_to_type(state, %Spec.Schema{schema | type: type}, opts)
+      end)
+
+    {:union, union}
   end
 
   def schema_to_type(_state, %Spec.Schema{type: nil}, _opts), do: :unknown

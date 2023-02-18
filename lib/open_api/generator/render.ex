@@ -442,6 +442,7 @@ defmodule OpenAPI.Generator.Render do
   defp to_type(:map), do: quote(do: map)
   defp to_type(:number), do: quote(do: number)
   defp to_type(:string), do: quote(do: String.t())
+  defp to_type(:null), do: quote(do: nil)
   defp to_type(:unknown), do: quote(do: term)
 
   defp to_type({:array, type}) do
