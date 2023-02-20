@@ -300,6 +300,19 @@ defmodule OpenAPI.Generator.Render do
   end
 
   defp render_operation_call(operation) do
+    args =
+      if length(operation.path_params) > 0 do
+        args =
+          Enum.map(operation.path_params, fn {name, _spec, _type} ->
+            arg_as_atom = String.to_atom(name)
+            {arg_as_atom, {arg_as_atom, [], nil}}
+          end)
+
+        quote do
+          {:args, unquote(args)}
+        end
+      end
+
     url =
       String.replace(operation.path, ~r/\{([[:word:]]+)\}/, "#\{\\1\}")
       |> then(&"\"#{&1}\"")
@@ -360,7 +373,7 @@ defmodule OpenAPI.Generator.Render do
       end
 
     request_details =
-      [url, body, method, query, request, responses, options]
+      [args, url, body, method, query, request, responses, options]
       |> Enum.reject(&is_nil/1)
 
     quote do
