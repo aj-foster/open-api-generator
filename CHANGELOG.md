@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Nothing yet._
 
+### 0.0.3
+
+* **Add**: Add `args` keyword list to client calls.
+  This will allow specialized clients, like a test mock, to differentiate between static URL segments and dynamic path parameters.
+
 ### 0.0.2
 
 * **Add**: Support OpenAPI 3.1 `"null"` type
