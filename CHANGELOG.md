@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet._
+* **Add**: Add `call` information to client calls.
+  This will allow specialized clients, like a test mock, to introspect the original calling function without the use of stack traces.
+
+<!-- _Nothing yet._ -->
 
 ### 0.0.3
 

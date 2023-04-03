@@ -10,7 +10,7 @@ defmodule OpenAPI.Generator.Render do
     types = render_types(file.schemas)
     struct = render_struct(file.schemas)
     field_function = render_field_function(file.schemas)
-    operations = render_operations(file.operations, file.types)
+    operations = render_operations(file.operations, file.types, file.module)
 
     module_contents =
       [moduledoc, default_client, types, struct, field_function, operations]
@@ -184,13 +184,13 @@ defmodule OpenAPI.Generator.Render do
     end)
   end
 
-  defp render_operations(operations, type_overrides) do
+  defp render_operations(operations, type_overrides, module_name) do
     operations
     |> Enum.sort_by(fn %{name: name} -> name end)
     |> Enum.map(fn operation ->
       docstring = render_operation_docs(operation)
       typespec = render_operation_typespec(operation, type_overrides)
-      function = render_operation_function(operation)
+      function = render_operation_function(operation, module_name)
 
       [docstring, typespec, function]
     end)
@@ -230,7 +230,7 @@ defmodule OpenAPI.Generator.Render do
     end
   end
 
-  defp render_operation_function(operation) do
+  defp render_operation_function(operation, module_name) do
     path_parameter_arguments =
       Enum.map(operation.path_params, fn {name, _spec, _type} ->
         {String.to_atom(name), [], nil}
@@ -243,7 +243,7 @@ defmodule OpenAPI.Generator.Render do
 
     client = render_operation_client()
     query = render_operation_query(operation.query_params)
-    call = render_operation_call(operation)
+    call = render_operation_call(operation, module_name)
 
     operation_body = clean_list([client, query, call])
 
@@ -299,7 +299,7 @@ defmodule OpenAPI.Generator.Render do
     end
   end
 
-  defp render_operation_call(operation) do
+  defp render_operation_call(operation, module_name) do
     args =
       if length(operation.path_params) > 0 do
         args =
@@ -311,6 +311,11 @@ defmodule OpenAPI.Generator.Render do
         quote do
           {:args, unquote(args)}
         end
+      end
+
+    call =
+      quote do
+        {:call, {unquote(module_name), unquote(String.to_atom(operation.name))}}
       end
 
     url =
@@ -373,7 +378,7 @@ defmodule OpenAPI.Generator.Render do
       end
 
     request_details =
-      [args, url, body, method, query, request, responses, options]
+      [args, call, url, body, method, query, request, responses, options]
       |> Enum.reject(&is_nil/1)
 
     quote do
