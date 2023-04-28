@@ -75,7 +75,10 @@ defmodule OpenAPI.Generator.Operation do
     function = String.replace(id, ~r|[/-]|, "_") |> Macro.underscore()
 
     for tag <- tags do
-      tag = String.replace(tag, "-", "_")
+      tag = tag
+      |> String.replace("-", "_")
+      |> String.replace(" ", "")
+
       camelized_tag = Macro.camelize(tag)
       underscored_tag = Macro.underscore(tag)
 
