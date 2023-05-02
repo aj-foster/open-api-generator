@@ -76,6 +76,12 @@ defmodule OpenAPI.Generator.OperationTest do
 
       assert [{["ModName"], "example_op"}] =
                Operation.names(%Path.Operation{operation_id: "example-op", tags: ["mod-name"]})
+
+      assert [{["ModName"], "example_op"}] =
+               Operation.names(%Path.Operation{
+                 operation_id: "example   -op",
+                 tags: ["mod-/  name"]
+               })
     end
 
     test "names an operation with multiple tags" do

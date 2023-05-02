@@ -72,13 +72,10 @@ defmodule OpenAPI.Generator.Operation do
   end
 
   def names(%Operation{operation_id: id, tags: tags}) do
-    function = String.replace(id, ~r|[/-]|, "_") |> Macro.underscore()
+    function = String.replace(id, ~r|[-/ ]+|, "_") |> Macro.underscore()
 
     for tag <- tags do
-      tag = tag
-      |> String.replace("-", "_")
-      |> String.replace(" ", "")
-
+      tag = String.replace(tag, ~r|[-/ ]+|, "_")
       camelized_tag = Macro.camelize(tag)
       underscored_tag = Macro.underscore(tag)
 
