@@ -9,6 +9,7 @@ defmodule OpenAPI.Generator.Typing do
           :binary
           | :boolean
           | :integer
+          | :map
           | :number
           | :string
           | :null

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **Add**: Add `call` information to client calls.
   This will allow specialized clients, like a test mock, to introspect the original calling function without the use of stack traces.
+* **Fix**: Add missing type `:map` to `OpenAPI.Generator.Typing.t()`.
 
 <!-- _Nothing yet._ -->
 
