@@ -16,7 +16,7 @@ defmodule OpenAPI.Spec.Path.Operation do
           operation_id: String.t() | nil,
           parameters: [Parameter.t()],
           request_body: RequestBody.t() | nil,
-          responses: %{optional(String.t()) => Response.t()},
+          responses: %{optional(pos_integer | :default) => Response.t()},
           callbacks: nil,
           deprecated: boolean,
           security: nil,
@@ -106,6 +106,7 @@ defmodule OpenAPI.Spec.Path.Operation do
             with_ref(state, response, &Response.decode/2)
           end)
 
+        key = if key == "default", do: :default, else: String.to_integer(key)
         {state, Map.put(responses, key, property)}
       end)
     end)
