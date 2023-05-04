@@ -359,11 +359,9 @@ defmodule OpenAPI.Generator.Render do
         items =
           operation.responses
           |> Enum.sort_by(fn {status, _type} -> status end)
-          |> Enum.map(fn {status, type} ->
-            {status, ""} = Integer.parse(status)
-
+          |> Enum.map(fn {status_or_default, type} ->
             quote do
-              {unquote(status), unquote(type)}
+              {unquote(status_or_default), unquote(type)}
             end
           end)
 
@@ -393,7 +391,6 @@ defmodule OpenAPI.Generator.Render do
   defp render_return_type(responses, type_overrides) do
     {success, error} =
       responses
-      |> Enum.map(fn {status, type} -> {String.to_integer(status), type} end)
       |> Enum.reject(fn {_status, type} -> is_nil(type) end)
       |> Enum.reject(fn {status, _type} -> status >= 300 and status < 400 end)
       |> Enum.split_with(fn {status, _type} -> status < 300 end)
