@@ -62,7 +62,10 @@ defmodule OpenAPI.Generator.Operation do
   """
   @spec names(Operation.t()) :: [{[String.t()], String.t()}]
   def names(%Operation{operation_id: id, tags: []}) do
-    [function | modules] = String.replace(id, "-", "_") |> String.split("/") |> Enum.reverse()
+    [function | modules] =
+      String.replace(id, ~r|[-_ ]+|, "_")
+      |> String.split("/")
+      |> Enum.reverse()
 
     modules =
       Enum.reverse(modules)
@@ -72,10 +75,10 @@ defmodule OpenAPI.Generator.Operation do
   end
 
   def names(%Operation{operation_id: id, tags: tags}) do
-    function = String.replace(id, ~r|[/-]|, "_") |> Macro.underscore()
+    function = normalize_identifier(id)
 
     for tag <- tags do
-      tag = String.replace(tag, "-", "_")
+      tag = normalize_identifier(tag)
       camelized_tag = Macro.camelize(tag)
       underscored_tag = Macro.underscore(tag)
 
@@ -83,6 +86,18 @@ defmodule OpenAPI.Generator.Operation do
 
       {[camelized_tag], function}
     end
+  end
+
+  defp normalize_identifier(input) do
+    input
+    |> String.split(~r|([-/ _]+)?([A-Z]+)?([a-z]+)?|, include_captures: true, trim: true)
+    |> Enum.map(fn segment ->
+      segment
+      |> String.replace(~r|^[-/ _]+|, "")
+      |> String.replace(~r|[-/ _]+$|, "")
+      |> String.downcase()
+    end)
+    |> Enum.join("_")
   end
 
   defp path_params(state, path, %Operation{parameters: parameters}) do
