@@ -90,11 +90,11 @@ defmodule OpenAPI.Generator.Operation do
 
   defp normalize_identifier(input) do
     input
-    |> String.split(~r|([-/ _]+)?([A-Z]+)?([a-z]+)?|, include_captures: true, trim: true)
+    |> String.split(~r|([^A-Za-z0-9]+)?([A-Z]+)?([a-z0-9]+)?|, include_captures: true, trim: true)
     |> Enum.map(fn segment ->
       segment
-      |> String.replace(~r|^[-/ _]+|, "")
-      |> String.replace(~r|[-/ _]+$|, "")
+      |> String.replace(~r|^[^A-Za-z0-9]+|, "")
+      |> String.replace(~r|[^A-Za-z0-9]+$|, "")
       |> String.downcase()
     end)
     |> Enum.join("_")
