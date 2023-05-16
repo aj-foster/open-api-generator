@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* **Fix**: Handle nullable union types with no realizable non-null types.
+  This case occurred in the GitHub spec (see [github/rest-api-description#2534](https://github.com/github/rest-api-description/issues/2534)).
+
 ### 0.0.4
 
 * **Add**: Add `call` information to client calls.

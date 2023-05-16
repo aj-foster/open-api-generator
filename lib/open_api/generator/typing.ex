@@ -52,6 +52,7 @@ defmodule OpenAPI.Generator.Typing do
       end)
 
     cond do
+      nullable? and length(union) == 0 -> :null
       not nullable? and length(union) == 1 -> List.first(union)
       nullable? and length(union) == 1 -> {:nullable, List.first(union)}
       not nullable? -> {:union, union}
