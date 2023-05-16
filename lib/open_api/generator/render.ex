@@ -301,12 +301,15 @@ defmodule OpenAPI.Generator.Render do
 
   defp render_operation_call(operation, module_name) do
     args =
-      if length(operation.path_params) > 0 do
+      if length(operation.path_params) > 0 or not is_nil(operation.body) do
         args =
           Enum.map(operation.path_params, fn {name, _spec, _type} ->
             arg_as_atom = String.to_atom(name)
             {arg_as_atom, {arg_as_atom, [], nil}}
           end)
+
+        body_arg = unless is_nil(operation.body), do: {:body, {:body, [], nil}}
+        args = clean_list([args, body_arg])
 
         quote do
           {:args, unquote(args)}

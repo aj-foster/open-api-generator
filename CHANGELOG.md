@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* **Fix**: Include `body` argument in `args` passed to the client.
+  Clients may rely on this information (the values themselves, or the arity) for their operations, especially in testing situations.
+
 ### 0.0.5
 
 * **Fix**: Replace all non-alphanumeric characters when naming tagged operations.
