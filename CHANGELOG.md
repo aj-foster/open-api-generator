@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 0.0.5
+
+* **Fix**: Replace all non-alphanumeric characters when naming tagged operations.
 * **Fix**: Handle nullable union types with no realizable non-null types.
   This case occurred in the GitHub spec (see [github/rest-api-description#2534](https://github.com/github/rest-api-description/issues/2534)).
 
@@ -16,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   This will allow specialized clients, like a test mock, to introspect the original calling function without the use of stack traces.
 * **Fix**: Add missing type `:map` to `OpenAPI.Generator.Typing.t()`.
 * **Fix**: Support `default` entry in responses object (thanks [@aej](https://github.com/aej)!).
+* **Fix**: Strip spaces and repetitive dash/underscore/whitespace characters when naming operations (thanks [@feynmanliang](https://github.com/feynmanliang)!).
 
 ### 0.0.3
 

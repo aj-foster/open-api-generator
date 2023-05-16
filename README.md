@@ -34,7 +34,7 @@ Add the dependency in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:oapi_generator, "~> 0.0.4"}
+    {:oapi_generator, "~> 0.0.5"}
   ]
 end
 ```
