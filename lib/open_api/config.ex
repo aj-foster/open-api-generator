@@ -22,6 +22,12 @@ defmodule OpenAPI.Config do
     implements a `request/1` function and performs the request and decodes the response. By default,
     a module `[base_module].Client` will be used.
 
+  * `extra_fields` (keyword list): Additional fields to add to each schema. The key is the name
+    of the field, and the value is the type (as defined by `t:OpenAPI.Generator.Typing.t/0`. For
+    example, `[__info__: :map]` will add a field named `__info__` with type `map` to every schema.
+    This can be useful for library authors that would like to store additional information in
+    the structs returned by the client operations. Defaults to `[]`.
+
   * `group` (list of modules): Namespaces to use when grouping modules. For example, two schemas
     `SchemaOne` and `SchemaTwo` grouped by the `Schema` module would become `Schema.One` and
     `Schema.Two`. Defaults to no grouping.
@@ -186,6 +192,9 @@ defmodule OpenAPI.Config do
   that feels friendly to users.
   """
 
+  @typedoc "Keyword list of extra fields to add to each schema"
+  @type extra_fields :: keyword(OpenAPI.Generator.Typing.t())
+
   @typedoc "List of module namespaces to create when grouping"
   @type group_options :: [module]
 
@@ -212,6 +221,7 @@ defmodule OpenAPI.Config do
           base_location: String.t(),
           base_module: module,
           default_client: module,
+          extra_fields: extra_fields,
           group: group_options,
           ignore: ignore_options,
           merge: merge_options,
@@ -225,6 +235,7 @@ defmodule OpenAPI.Config do
     :base_location,
     :base_module,
     :default_client,
+    :extra_fields,
     :group,
     :ignore,
     :merge,
@@ -243,6 +254,7 @@ defmodule OpenAPI.Config do
       base_location: get_base_location(opts[:base_location]),
       base_module: base_module,
       default_client: get_default_client(opts[:default_client], base_module),
+      extra_fields: get_extra_fields(opts[:extra_fields]),
       group: get_group(opts[:group]),
       ignore: get_ignore(opts[:ignore]),
       merge: get_merge(opts[:merge]),
@@ -270,6 +282,13 @@ defmodule OpenAPI.Config do
   @spec get_default_client(any, module) :: module | no_return
   defp get_default_client(nil, base_module), do: Module.concat([base_module, Client])
   defp get_default_client(value, _base_module) when is_atom(value), do: value
+
+  @spec get_extra_fields(any) :: extra_fields
+  defp get_extra_fields(nil), do: []
+  defp get_extra_fields(value) when is_list(value), do: value
+
+  defp get_extra_fields(value),
+    do: raise(ArgumentError, "Option :extra_fields expects a keyword list, got #{inspect(value)}")
 
   @spec get_group(any) :: [module] | no_return
   defp get_group(nil), do: []

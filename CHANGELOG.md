@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* **Add**: New `extra_fields` option to allow library authors to create their own private fields on generated structs.
 * **Fix**: Include `body` argument in `args` passed to the client.
   Clients may rely on this information (the values themselves, or the arity) for their operations, especially in testing situations.
 

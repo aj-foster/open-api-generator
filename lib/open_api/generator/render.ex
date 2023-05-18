@@ -176,6 +176,7 @@ defmodule OpenAPI.Generator.Render do
 
   defp render_field_function_clause_fields(fields) do
     fields
+    |> Enum.reject(fn {_name, %Field{private: private?}} -> private? end)
     |> Enum.sort_by(fn {name, _field} -> name end)
     |> Enum.map(fn {name, %Field{type: type}} ->
       quote do
