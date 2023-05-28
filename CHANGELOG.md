@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Add**: New _Client Author Guide_ for assisting client library authors.
+**Fix**: Allow empty/missing `tags` and `components` keys in the specification (thanks [@rubas](https://github.com/rubas)).
+
 ### 0.0.6 (2023-05-17)
 
 * **Add**: New `extra_fields` option to allow library authors to create their own private fields on generated structs.

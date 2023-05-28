@@ -23,10 +23,10 @@ defmodule OpenAPI.Config do
     a module `[base_module].Client` will be used.
 
   * `extra_fields` (keyword list): Additional fields to add to each schema. The key is the name
-    of the field, and the value is the type (as defined by `t:OpenAPI.Generator.Typing.t/0`. For
-    example, `[__info__: :map]` will add a field named `__info__` with type `map` to every schema.
-    This can be useful for library authors that would like to store additional information in
-    the structs returned by the client operations. Defaults to `[]`.
+    of the field, and the value is the type (as defined by `t:type/0`. For example,
+    `[__info__: :map]` will add a field named `__info__` with type `map` to every schema. This can
+    be useful for library authors that would like to store additional information in the structs
+    returned by the client operations. Defaults to `[]`.
 
   * `group` (list of modules): Namespaces to use when grouping modules. For example, two schemas
     `SchemaOne` and `SchemaTwo` grouped by the `Schema` module would become `Schema.One` and
@@ -192,8 +192,23 @@ defmodule OpenAPI.Config do
   that feels friendly to users.
   """
 
+  @typedoc "Runtime type annotation"
+  @type type ::
+          :binary
+          | :boolean
+          | :integer
+          | :map
+          | :number
+          | :string
+          | :null
+          | :unknown
+          | {:array, t}
+          | {:union, [t]}
+          | {:nullable, t}
+          | {module, atom}
+
   @typedoc "Keyword list of extra fields to add to each schema"
-  @type extra_fields :: keyword(OpenAPI.Generator.Typing.t())
+  @type extra_fields :: keyword(type)
 
   @typedoc "List of module namespaces to create when grouping"
   @type group_options :: [module]

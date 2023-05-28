@@ -37,9 +37,13 @@ defmodule OpenAPI.MixProject do
       main: "readme",
       extras: [
         "README.md": [title: "Overview"],
+        "guides/client-author-guide.md": [title: "Client Author Guide"],
         "CODE_OF_CONDUCT.md": [title: "Code of Conduct"],
         "CONTRIBUTING.md": [title: "Contributing"],
         LICENSE: [title: "License"]
+      ],
+      groups_for_extras: [
+        Guides: ~r/guides\/.*/
       ]
     ]
   end
