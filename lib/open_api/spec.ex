@@ -92,6 +92,8 @@ defmodule OpenAPI.Spec do
     with_path(state, components, "components", &Components.decode/2)
   end
 
+  defp decode_components(state, _yaml), do: {state, Components.decode(state, %{})}
+
   @spec decode_tags(State.t(), State.yaml()) :: {State.t(), [Tag.t()]}
   defp decode_tags(state, %{"tags" => tags}) do
     with_path(state, tags, "tags", fn state, tags ->
@@ -106,6 +108,8 @@ defmodule OpenAPI.Spec do
       {state, Enum.reverse(tags)}
     end)
   end
+
+  defp decode_tags(state, _yaml), do: {state, []}
 
   @spec decode_external_docs(State.t(), State.yaml()) :: {State.t(), ExternalDocumentation.t()}
   defp decode_external_docs(state, %{"externalDocs" => docs}) do
@@ -122,5 +126,10 @@ defmodule OpenAPI.Spec do
         {state, Map.put(paths, key, path)}
       end)
     end)
+  end
+
+  defp decode_paths(state, _yaml) do
+    IO.warn("Evaluating spec with no `paths` object; this will likely result in no output")
+    {state, %{}}
   end
 end
