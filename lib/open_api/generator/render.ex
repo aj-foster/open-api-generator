@@ -6,14 +6,20 @@ defmodule OpenAPI.Generator.Render do
 
   def render(file) do
     moduledoc = render_moduledoc(file)
+    using = render_using(file)
     default_client = render_default_client(file)
     types = render_types(file.schemas)
     struct = render_struct(file.schemas)
     field_function = render_field_function(file.schemas)
     operations = render_operations(file.operations, file.types, file.module)
 
+    header =
+      [moduledoc, using]
+      |> List.flatten()
+      |> put_newlines()
+
     module_contents =
-      [moduledoc, default_client, types, struct, field_function, operations]
+      [header, default_client, types, struct, field_function, operations]
       |> List.flatten()
 
     quote do
@@ -54,7 +60,21 @@ defmodule OpenAPI.Generator.Render do
     quote do
       @moduledoc unquote(moduledoc)
     end
-    |> put_newlines()
+  end
+
+  defp render_using(%{using: []}), do: []
+
+  defp render_using(%{using: using}) do
+    modules =
+      using
+      |> Enum.sort()
+      |> Enum.dedup()
+
+    for module <- modules do
+      quote do
+        use unquote(module)
+      end
+    end
   end
 
   defp render_default_client(%{operations: []}), do: []
@@ -457,6 +477,9 @@ defmodule OpenAPI.Generator.Render do
 
     {term, Keyword.put(metadata, :end_of_expression, end_of_expression), arguments}
   end
+
+  defp put_newlines([node]), do: [put_newlines(node)]
+  defp put_newlines([head | tail]), do: [head | put_newlines(tail)]
 
   #
   # Types

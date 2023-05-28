@@ -14,7 +14,8 @@ defmodule OpenAPI.State do
           name: String.t(),
           docstring: String.t(),
           fields: map,
-          methods: [term]
+          methods: [term],
+          using: [module]
         }
 
   @typedoc "Key or index of a Yaml document."

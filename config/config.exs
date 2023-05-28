@@ -64,5 +64,6 @@ config :oapi_generator,
       {~r/^Ssh/, "SSH"},
       {~r/^Workflow/, "Actions.Workflow"}
     ],
-    schema_location: "schemas/"
+    schema_location: "schemas/",
+    schema_use: MyModule
   ]

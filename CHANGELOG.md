@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Add**: `schema_use` option to add optional `use [Module]` statements within schemas.
 **Add**: New _Client Author Guide_ for assisting client library authors.
 **Fix**: Allow empty/missing `tags` and `components` keys in the specification (thanks [@rubas](https://github.com/rubas)).
 

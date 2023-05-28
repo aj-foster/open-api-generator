@@ -23,7 +23,12 @@ defmodule OpenAPI.Generator do
 
   @spec collect_schema_files(State.t()) :: State.t()
   defp collect_schema_files(%State{config: config} = state) do
-    %Config{base_location: base_location, schema_location: schema_location} = config
+    %Config{
+      base_location: base_location,
+      schema_location: schema_location,
+      schema_use: schema_use
+    } = config
+
     state = Schema.discover(state, state.spec.paths)
 
     files =
@@ -39,10 +44,21 @@ defmodule OpenAPI.Generator do
             Macro.underscore(final_name) <> ".ex"
           ])
 
-        file = %{name: filename, operations: [], schemas: [schema]}
+        using =
+          if schema_use do
+            [schema_use]
+          else
+            []
+          end
+
+        file = %{name: filename, operations: [], schemas: [schema], using: using}
 
         Map.update(files, final_name, file, fn existing_file ->
-          %{existing_file | schemas: [schema | existing_file.schemas]}
+          %{
+            existing_file
+            | schemas: [schema | existing_file.schemas],
+              using: existing_file.using ++ using
+          }
         end)
       end)
 
@@ -82,10 +98,14 @@ defmodule OpenAPI.Generator do
             Macro.underscore(operation.module) <> ".ex"
           ])
 
-        file = %{name: filename, operations: [operation], schemas: []}
+        file = %{name: filename, operations: [operation], schemas: [], using: []}
 
         Map.update(acc, operation.module, file, fn existing_file ->
-          %{existing_file | operations: [operation | existing_file.operations]}
+          %{
+            existing_file
+            | operations: [operation | existing_file.operations],
+              using: existing_file.using
+          }
         end)
       end)
 
@@ -105,7 +125,8 @@ defmodule OpenAPI.Generator do
         %{
           name: operation_file.name,
           operations: operation_file.operations,
-          schemas: schema_file.schemas
+          schemas: schema_file.schemas,
+          using: operation_file.using ++ schema_file.using
         }
       end)
 

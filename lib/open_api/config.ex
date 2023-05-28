@@ -53,6 +53,11 @@ defmodule OpenAPI.Config do
     This may useful if you want to hide generated schema files in a subdirectory of a larger
     project. Defaults to outputting schema files to the `base_location`.
 
+  * `:schema_use` (module): Optional module that should be included in a `use [Module]` statement
+    in each schema. This allows library authors to implement a `__using__/1` macro with additional
+    functionality. The `__using__/1` macro currently does not receive any options, but it may
+    in the future. Defaults to `nil`, meaning no `use` statement is included.
+
   * `types` (keyword list): Overrides to the types defined by the generator. Each value should be
     a tuple `{module, type}` such as `{MyModule, :t}`.
 
@@ -243,6 +248,7 @@ defmodule OpenAPI.Config do
           operation_location: String.t(),
           rename: rename_options,
           schema_location: String.t(),
+          schema_use: module,
           types: keyword
         }
 
@@ -257,6 +263,7 @@ defmodule OpenAPI.Config do
     :operation_location,
     :rename,
     :schema_location,
+    :schema_use,
     :types
   ]
 
@@ -276,6 +283,7 @@ defmodule OpenAPI.Config do
       operation_location: get_operation_location(opts[:operation_location]),
       rename: get_rename(opts[:rename]),
       schema_location: get_schema_location(opts[:schema_location]),
+      schema_use: get_schema_use(opts[:schema_use]),
       types: get_types(opts[:types])
     }
   end
@@ -383,6 +391,13 @@ defmodule OpenAPI.Config do
 
   defp get_schema_location(value),
     do: raise(ArgumentError, "Option :schema_location expects a string, got #{inspect(value)}")
+
+  @spec get_schema_use(any) :: module | nil | no_return
+  defp get_schema_use(nil), do: nil
+  defp get_schema_use(value) when is_atom(value), do: value
+
+  defp get_schema_use(value),
+    do: raise(ArgumentError, "Option :schema_use expects a module, got #{inspect(value)}")
 
   @spec get_types(any) :: keyword | no_return
   defp get_types(nil), do: []
