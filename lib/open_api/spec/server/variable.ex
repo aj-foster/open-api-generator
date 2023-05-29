@@ -6,7 +6,7 @@ defmodule OpenAPI.Spec.Server.Variable do
   #
 
   @type t :: %__MODULE__{
-          enum: [String.t()],
+          enum: nonempty_list(String.t()) | nil,
           default: String.t(),
           description: String.t() | nil
         }
@@ -24,7 +24,7 @@ defmodule OpenAPI.Spec.Server.Variable do
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     variable = %__MODULE__{
-      enum: Map.fetch!(yaml, "enum"),
+      enum: Map.get(yaml, "enum"),
       default: Map.fetch!(yaml, "default"),
       description: Map.get(yaml, "description")
     }
