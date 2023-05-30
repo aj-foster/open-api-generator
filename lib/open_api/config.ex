@@ -40,9 +40,18 @@ defmodule OpenAPI.Config do
   * `merge` (list of two-tuples): Source and destination modules for schemas that should be merged
     into a single file. See **Merging** below for examples. Defaults to no schemas merged.
 
+  * `operation_default_module` (module): module name that will be appended to the `base_module`
+     when generating operation modules and the operation has no tags or `operation_use_tags`
+     is set to `false`. Defaults to `Operation`. See **Operations** below for details on
+     operations generation.
+
   * `operation_location` (string): Relative path, after the `base_location`, to output operation
     files. This may useful if you want to hide generated operation files in a subdirectory of a
     larger project. Defaults to outputting operation files to the `base_location`.
+
+  * `operation_use_tags` (boolean): whether to use OpenAPI specification tags when generating the
+     operation modules names. Defaults to `true`. See **Operations** below for details on
+     operations generation.
 
   * `rename` (list of rename pattern and action tuples): Renaming actions to take on schema names.
     The two elements of each tuple will be fed as the second and third arguments to
@@ -195,6 +204,42 @@ defmodule OpenAPI.Config do
 
   Even simple renaming and groups can take a raw OpenAPI description and turn it into a library
   that feels friendly to users.
+
+  ## Operations
+
+  Operations are the API entrypoint, which normally will be called by the user of the library.
+  This generator generates a set of modules with functions in them according to some
+  normalization rules:
+
+   * operation tags and ids will be normalized for spaces, slashes, etc
+   * operation tags will be used to generate modules that contains the operation
+   * operations with slashes will be split and components used to generate the
+     module hierarchy of the operation
+
+  Examples:
+    * Operation `foo` with tag `bar` => `Bar.foo`
+    * Operation `foo/bar` with tag `baz` => `Baz.foo_bar`
+    * Operation `foo/bar` without tags => `Foo.bar`
+
+  Further examples can be found in `OpenAPI.Generator.OperationTest.names/1` test.
+
+  To recap, tags are used to generate modules containing the operation, and if
+  not present the modules will be created from operation id name *if* the
+  operation name contains slashes.
+
+  If the operation has no slashes and no tags, the generator cannot infer a proper
+  module name, that's where the `operation_default_module` config option comes in place.
+  For such tagless operations, which has no "slashes" in it, the `operation_default_module`
+  will be used as container for the operation.
+
+  Examples:
+    * Operation `foo` without tags => `[base_module].Operation.foo`
+
+  Since OpenAPI tags are not stricly part of the specification, user can also
+  decide to not use them at all with the option `operation_use_tags` set to `false`.
+  This will put all operations into a single module specified by `operation_default_module`.
+  There's no risk of functions conflict since by definition operation IDs are unique
+  on a given OpenAPI specification.
   """
 
   @typedoc "Runtime type annotation"
@@ -245,7 +290,9 @@ defmodule OpenAPI.Config do
           group: group_options,
           ignore: ignore_options,
           merge: merge_options,
+          operation_default_module: module(),
           operation_location: String.t(),
+          operation_use_tags: boolean(),
           rename: rename_options,
           schema_location: String.t(),
           schema_use: module,
@@ -260,7 +307,9 @@ defmodule OpenAPI.Config do
     :group,
     :ignore,
     :merge,
+    :operation_default_module,
     :operation_location,
+    :operation_use_tags,
     :rename,
     :schema_location,
     :schema_use,
@@ -280,7 +329,9 @@ defmodule OpenAPI.Config do
       group: get_group(opts[:group]),
       ignore: get_ignore(opts[:ignore]),
       merge: get_merge(opts[:merge]),
+      operation_default_module: get_operation_default_module(opts[:operation_default_module]),
       operation_location: get_operation_location(opts[:operation_location]),
+      operation_use_tags: get_operation_use_tags(opts[:operation_use_tags]),
       rename: get_rename(opts[:rename]),
       schema_location: get_schema_location(opts[:schema_location]),
       schema_use: get_schema_use(opts[:schema_use]),
@@ -360,12 +411,31 @@ defmodule OpenAPI.Config do
     end
   end
 
+  @spec get_operation_default_module(any) :: module
+  defp get_operation_default_module(nil), do: Operation
+  defp get_operation_default_module(value) when is_atom(value), do: value
+
+  defp get_operation_default_module(value),
+    do:
+      raise(
+        ArgumentError,
+        "Option :operation_default_module expects a module, got #{inspect(value)}"
+      )
+
   @spec get_operation_location(any) :: String.t() | no_return
   defp get_operation_location(nil), do: ""
   defp get_operation_location(value) when is_binary(value), do: value
 
   defp get_operation_location(value),
     do: raise(ArgumentError, "Option :operation_location expects a string, got #{inspect(value)}")
+
+  @spec get_operation_use_tags(any) :: boolean()
+  defp get_operation_use_tags(nil), do: true
+  defp get_operation_use_tags(value) when is_boolean(value), do: value
+
+  defp get_operation_use_tags(value) do
+    raise(ArgumentError, "Option :operation_use_tags expects a boolean, got #{inspect(value)}")
+  end
 
   @spec get_rename(any) :: [{rename_pattern, rename_action}] | no_return
   defp get_rename(nil), do: []
