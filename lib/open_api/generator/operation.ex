@@ -75,10 +75,17 @@ defmodule OpenAPI.Generator.Operation do
   end
 
   def names(%Operation{operation_id: id, tags: tags}) do
-    function = normalize_identifier(id)
+    function =
+      normalize_identifier(id)
+      |> Enum.map(&String.downcase/1)
+      |> Enum.join("_")
 
     for tag <- tags do
-      tag = normalize_identifier(tag)
+      tag =
+        normalize_identifier(tag)
+        |> Enum.map(&Macro.camelize/1)
+        |> Enum.join("")
+
       camelized_tag = Macro.camelize(tag)
       underscored_tag = Macro.underscore(tag)
 
@@ -95,9 +102,7 @@ defmodule OpenAPI.Generator.Operation do
       segment
       |> String.replace(~r|^[^A-Za-z0-9]+|, "")
       |> String.replace(~r|[^A-Za-z0-9]+$|, "")
-      |> String.downcase()
     end)
-    |> Enum.join("_")
   end
 
   defp path_params(state, path, %Operation{parameters: parameters}) do
