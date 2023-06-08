@@ -8,7 +8,7 @@ defmodule OpenAPI.Generator.Operation do
   alias OpenAPI.Spec.Schema
   alias OpenAPI.Spec.Schema.Media
   alias OpenAPI.Spec.Response
-  alias OpenAPI.State
+  alias OpenAPI.{Config, State}
 
   @spec process(State.t(), String.t(), atom, Operation.t()) :: {State.t(), term}
   def process(state, path, method, operation) do
@@ -16,17 +16,16 @@ defmodule OpenAPI.Generator.Operation do
     {state, responses} = responses(state, operation)
     path_params = path_params(state, path, operation)
     query_params = query_params(state, operation)
+    operation = maybe_with_tags(state, operation)
 
     for {modules, function} <- names(operation), reduce: state do
       state ->
-        module = Module.concat(modules)
-
         operation = %{
           body: body,
           description: operation.description,
           docs: operation.external_docs,
           method: method,
-          module: module,
+          module: gen_module(state, modules),
           name: function,
           path: path,
           path_params: path_params,
@@ -37,6 +36,25 @@ defmodule OpenAPI.Generator.Operation do
 
         %{state | operations: [operation | state.operations]}
     end
+  end
+
+  @spec gen_module(State.t(), [String.t()]) :: module
+  defp gen_module(state, []) do
+    %State{config: %Config{operation_default_module: module}} = state
+    Module.concat([module])
+  end
+
+  defp gen_module(_state, modules) do
+    Module.concat(modules)
+  end
+
+  @spec maybe_with_tags(State.t(), Operation.t()) :: Operation.t()
+  defp maybe_with_tags(%State{config: %Config{operation_use_tags: true}}, operation) do
+    operation
+  end
+
+  defp maybe_with_tags(%State{config: %Config{operation_use_tags: false}}, operation) do
+    %Operation{operation | tags: []}
   end
 
   @spec process_body(State.t(), Operation.t()) :: {State.t(), term}
