@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 0.0.7 (2023-06-07)
+
 **Add**: `schema_use` option to add optional `use [Module]` statements within schemas.
+**Add**: `operation_default_module` and `operation_use_tags` options for controlling the creation of operation modules (thanks [@xadhoom](https://github.com/xadhoom)!).
 **Add**: New _Client Author Guide_ for assisting client library authors.
-**Fix**: Allow empty/missing `tags` and `components` keys in the specification (thanks [@rubas](https://github.com/rubas)).
+**Fix**: Allow empty/missing `tags` and `components` keys in the specification (thanks [@rubas](https://github.com/rubas)!).
+**Fix**: Allow missing server variable object in the specification (thanks [@xadhoom](https://github.com/xadhoom)!).
+**Fix**: Keep acronyms intact when naming operations (thanks [@feynmanliang](https://github.com/feynmanliang)!).
 
 ### 0.0.6 (2023-05-17)
 
