@@ -40,7 +40,7 @@ defmodule OpenAPI.Config do
   * `merge` (list of two-tuples): Source and destination modules for schemas that should be merged
     into a single file. See **Merging** below for examples. Defaults to no schemas merged.
 
-  * `operation_default_module` (module): module name that will be appended to the `base_module`
+  * `operation_default_module` (module): Module name that will be appended to the `base_module`
      when generating operation modules and the operation has no tags or `operation_use_tags`
      is set to `false`. Defaults to `Operation`. See **Operations** below for details on
      operations generation.
@@ -49,9 +49,9 @@ defmodule OpenAPI.Config do
     files. This may useful if you want to hide generated operation files in a subdirectory of a
     larger project. Defaults to outputting operation files to the `base_location`.
 
-  * `operation_use_tags` (boolean): whether to use OpenAPI specification tags when generating the
+  * `operation_use_tags` (boolean): Whether to use OpenAPI specification tags when generating the
      operation modules names. Defaults to `true`. See **Operations** below for details on
-     operations generation.
+     operation generation.
 
   * `rename` (list of rename pattern and action tuples): Renaming actions to take on schema names.
     The two elements of each tuple will be fed as the second and third arguments to
@@ -211,31 +211,32 @@ defmodule OpenAPI.Config do
   This generator generates a set of modules with functions in them according to some
   normalization rules:
 
-   * operation tags and ids will be normalized for spaces, slashes, etc
-   * operation tags will be used to generate modules that contains the operation
-   * operations with slashes will be split and components used to generate the
+   * Operation tags and IDs will be normalized for spaces, slashes, etc.
+   * Operation tags will be used to generate modules that group operation functions
+   * Operations with slashes will be split, with each component used to generate the
      module hierarchy of the operation
 
   Examples:
+
     * Operation `foo` with tag `bar` => `Bar.foo`
     * Operation `foo/bar` with tag `baz` => `Baz.foo_bar`
     * Operation `foo/bar` without tags => `Foo.bar`
 
-  Further examples can be found in `OpenAPI.Generator.OperationTest.names/1` test.
+  Further examples can be found in the tests for `OpenAPI.Generator.OperationTest.names/1`.
 
-  To recap, tags are used to generate modules containing the operation, and if
-  not present the modules will be created from operation id name *if* the
-  operation name contains slashes.
+  To summarize, the generator uses tags to create modules containing the operation functions. If
+  tags are not present, module names will be created from the operation's ID if it contains
+  slashes.
 
   If the operation has no slashes and no tags, the generator cannot infer a proper
-  module name, that's where the `operation_default_module` config option comes in place.
-  For such tagless operations, which has no "slashes" in it, the `operation_default_module`
-  will be used as container for the operation.
+  module name. That's where the `operation_default_module` config option comes in place.
+  For such operations, the `operation_default_module` will be used as container for the operation.
 
   Examples:
+
     * Operation `foo` without tags => `[base_module].Operation.foo`
 
-  Since OpenAPI tags are not stricly part of the specification, user can also
+  Since OpenAPI tags are not strictly part of the specification, you can also
   decide to not use them at all with the option `operation_use_tags` set to `false`.
   This will put all operations into a single module specified by `operation_default_module`.
   There's no risk of functions conflict since by definition operation IDs are unique

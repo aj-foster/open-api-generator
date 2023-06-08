@@ -38,9 +38,9 @@ defmodule OpenAPI.Generator.Operation do
     end
   end
 
+  @spec gen_module(State.t(), [String.t()]) :: module
   defp gen_module(state, []) do
     %State{config: %Config{operation_default_module: module}} = state
-
     Module.concat([module])
   end
 
