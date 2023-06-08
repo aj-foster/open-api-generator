@@ -209,11 +209,12 @@ defmodule OpenAPI.Generator.Render do
     operations
     |> Enum.sort_by(fn %{name: name} -> name end)
     |> Enum.map(fn operation ->
+      callback = render_operation_callback(operation, type_overrides)
       docstring = render_operation_docs(operation)
       typespec = render_operation_typespec(operation, type_overrides)
       function = render_operation_function(operation, module_name)
 
-      [docstring, typespec, function]
+      [callback, docstring, typespec, function]
     end)
     |> List.flatten()
   end
@@ -275,7 +276,23 @@ defmodule OpenAPI.Generator.Render do
     end
   end
 
+  defp render_operation_callback(operation, type_overrides) do
+    {name, arguments, return_type} = build_operation_typespec(operation, type_overrides)
+
+    quote do
+      @callback unquote(name)(unquote_splicing(arguments)) :: unquote(return_type)
+    end
+  end
+
   defp render_operation_typespec(operation, type_overrides) do
+    {name, arguments, return_type} = build_operation_typespec(operation, type_overrides)
+
+    quote do
+      @spec unquote(name)(unquote_splicing(arguments)) :: unquote(return_type)
+    end
+  end
+
+  defp build_operation_typespec(operation, type_overrides) do
     name = String.to_atom(operation.name)
 
     path_parameter_arguments =
@@ -289,9 +306,7 @@ defmodule OpenAPI.Generator.Render do
     arguments = clean_list([path_parameter_arguments, body_argument, opts_argument])
     return_type = render_return_type(operation.responses, type_overrides)
 
-    quote do
-      @spec unquote(name)(unquote_splicing(arguments)) :: unquote(return_type)
-    end
+    {name, arguments, return_type}
   end
 
   defp render_operation_typespec_body(nil), do: nil
