@@ -1,14 +1,8 @@
 defmodule OpenAPI.State do
   @moduledoc false
 
-  alias OpenAPI.Config
+  alias OpenAPI.Call
   alias OpenAPI.Spec
-
-  @typedoc "Decode function for raw Yaml."
-  @type decoder :: decoder(term)
-
-  @typedoc "Decode function for raw Yaml."
-  @type decoder(t) :: (t, yaml -> {map, t})
 
   @type file :: %{
           name: String.t(),
@@ -18,21 +12,11 @@ defmodule OpenAPI.State do
           using: [module]
         }
 
-  @typedoc "Key or index of a Yaml document."
-  @type path_segment :: String.t() | integer
-
   @typedoc "OpenAPI generator state."
   @type t :: %__MODULE__{
-          base_file: String.t(),
-          base_file_path: [path_segment],
-          config: Config.t(),
-          current_file: String.t(),
-          current_file_path: [path_segment],
-          last_ref_file: String.t() | nil,
-          last_ref_path: [path_segment],
+          call: Call.t(),
           operations: [map],
           operation_files: %{optional(module) => file},
-          refs: %{optional(String.t()) => map},
           schemas: %{optional(String.t()) => map},
           schema_files: %{optional(module) => file},
           spec: Spec.t() | nil
@@ -42,39 +26,24 @@ defmodule OpenAPI.State do
   @type yaml :: map | list
 
   defstruct [
-    :base_file,
-    :base_file_path,
+    :call,
     :config,
-    :current_file,
-    :current_file_path,
     :files,
-    :last_ref_file,
-    :last_ref_path,
     :operations,
     :operation_files,
-    :refs,
     :schemas,
     :schema_files,
     :spec
   ]
 
-  @doc "Create a new state struct starting from the given `base_filename`."
-  @spec new(String.t(), keyword) :: t
-  def new(base_filename, config) do
-    absolute_path_of_base_file = Path.absname(base_filename, File.cwd!()) |> Path.expand()
-
+  @spec new(Call.t()) :: t
+  def new(%Call{} = call) do
     %__MODULE__{
-      base_file: absolute_path_of_base_file,
-      base_file_path: [],
-      config: Config.new(config),
-      current_file: absolute_path_of_base_file,
-      current_file_path: [],
+      call: call,
+      config: OpenAPI.Config.new(Application.get_env(:oapi_generator, call.profile)),
       files: %{},
-      last_ref_file: nil,
-      last_ref_path: [],
       operations: [],
       operation_files: %{},
-      refs: %{},
       schemas: %{},
       schema_files: %{},
       spec: nil

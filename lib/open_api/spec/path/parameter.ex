@@ -1,6 +1,6 @@
 defmodule OpenAPI.Spec.Path.Parameter do
   @moduledoc false
-  import OpenAPI.Spec.Helper
+  import OpenAPI.Reader.State
 
   alias OpenAPI.Spec.Schema
   alias OpenAPI.Spec.Schema.Example

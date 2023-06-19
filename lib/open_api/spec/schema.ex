@@ -1,6 +1,6 @@
 defmodule OpenAPI.Spec.Schema do
   @moduledoc false
-  import OpenAPI.Spec.Helper
+  import OpenAPI.Reader.State
 
   alias OpenAPI.Spec
   alias OpenAPI.Spec.ExternalDocumentation
