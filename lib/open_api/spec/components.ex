@@ -1,6 +1,6 @@
 defmodule OpenAPI.Spec.Components do
   @moduledoc false
-  import OpenAPI.Spec.Helper
+  import OpenAPI.Reader.State
 
   alias OpenAPI.Spec
   alias OpenAPI.Spec.Schema
@@ -115,4 +115,20 @@ defmodule OpenAPI.Spec.Components do
   end
 
   defp decode_schemas(state, _yaml), do: {state, %{}}
+
+  @spec merge(t, t) :: t
+  def merge(components_one, components_two) do
+    %__MODULE__{
+      schemas: Map.merge(components_one.schemas, components_two.schemas),
+      responses: Map.merge(components_one.responses, components_two.responses),
+      parameters: Map.merge(components_one.parameters, components_two.parameters),
+      examples: Map.merge(components_one.examples, components_two.examples),
+      request_bodies: Map.merge(components_one.request_bodies, components_two.request_bodies),
+      headers: Map.merge(components_one.headers, components_two.headers),
+      security_schemes:
+        Map.merge(components_one.security_schemes, components_two.security_schemes),
+      links: Map.merge(components_one.links, components_two.links),
+      callbacks: Map.merge(components_one.callbacks, components_two.callbacks)
+    }
+  end
 end

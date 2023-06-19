@@ -1,6 +1,6 @@
 defmodule OpenAPI.Spec.RequestBody do
   @moduledoc false
-  import OpenAPI.Spec.Helper
+  import OpenAPI.Reader.State
 
   alias OpenAPI.Spec.Schema.Media
 

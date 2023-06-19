@@ -1,6 +1,6 @@
 defmodule OpenAPI.Spec.Response do
   @moduledoc false
-  import OpenAPI.Spec.Helper
+  import OpenAPI.Reader.State
 
   alias OpenAPI.Spec.Link
   alias OpenAPI.Spec.Path.Header

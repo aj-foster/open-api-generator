@@ -1,7 +1,9 @@
 defmodule OpenAPI.Spec do
   @moduledoc false
-  import OpenAPI.Spec.Helper
+  require Logger
+  import OpenAPI.Reader.State
 
+  alias OpenAPI.Reader.State
   alias OpenAPI.Spec
   alias OpenAPI.Spec.Components
   alias OpenAPI.Spec.ExternalDocumentation
@@ -9,7 +11,6 @@ defmodule OpenAPI.Spec do
   alias OpenAPI.Spec.Path.Item
   alias OpenAPI.Spec.Server
   alias OpenAPI.Spec.Tag
-  alias OpenAPI.State
 
   #
   # Definition
@@ -42,10 +43,11 @@ defmodule OpenAPI.Spec do
   # Decoder
   #
 
-  @spec decode(State.t()) :: State.t()
-  def decode(state) do
-    yaml = state.files[state.base_file]
+  @spec decode(State.t(), String.t()) :: State.t()
+  def decode(state, filename) do
+    yaml = state.files[filename]
 
+    spec_version = Map.fetch!(yaml, "openapi")
     {state, info} = decode_info(state, yaml)
     {state, servers} = decode_servers(state, yaml)
     {state, components} = decode_components(state, yaml)
@@ -54,7 +56,7 @@ defmodule OpenAPI.Spec do
     {state, external_docs} = decode_external_docs(state, yaml)
 
     spec = %__MODULE__{
-      openapi: Map.fetch!(yaml, "openapi"),
+      openapi: spec_version,
       info: info,
       servers: servers,
       paths: paths,
@@ -64,7 +66,7 @@ defmodule OpenAPI.Spec do
       external_docs: external_docs
     }
 
-    %State{state | spec: spec}
+    %State{state | spec: merge(state.spec, spec)}
   end
 
   @spec decode_info(State.t(), State.yaml()) :: {State.t(), Info.t()}
@@ -129,7 +131,39 @@ defmodule OpenAPI.Spec do
   end
 
   defp decode_paths(state, _yaml) do
-    IO.warn("Evaluating spec with no `paths` object; this will likely result in no output")
+    Logger.warning("Evaluating spec with no `paths` object; this will likely result in no output")
     {state, %{}}
+  end
+
+  @spec merge(t | nil, t) :: t
+  defp merge(nil, spec_two), do: spec_two
+
+  defp merge(spec_one, spec_two) do
+    %__MODULE__{
+      openapi: openapi_one,
+      info: info_one,
+      servers: servers_one,
+      components: components_one,
+      security: security_one,
+      tags: tags_one,
+      external_docs: external_docs_one
+    } = spec_one
+
+    %__MODULE__{
+      servers: servers_two,
+      components: components_two,
+      security: security_two,
+      tags: tags_two
+    } = spec_two
+
+    %__MODULE__{
+      openapi: openapi_one,
+      info: info_one,
+      servers: servers_one ++ servers_two,
+      components: Components.merge(components_one, components_two),
+      security: security_one ++ security_two,
+      tags: tags_one ++ tags_two,
+      external_docs: external_docs_one
+    }
   end
 end

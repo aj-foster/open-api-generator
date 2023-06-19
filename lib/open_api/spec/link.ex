@@ -1,6 +1,6 @@
 defmodule OpenAPI.Spec.Link do
   @moduledoc false
-  import OpenAPI.Spec.Helper
+  import OpenAPI.Reader.State
 
   alias OpenAPI.Spec.Server
 
