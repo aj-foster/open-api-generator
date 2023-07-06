@@ -6,13 +6,46 @@ defmodule OpenAPI.Processor.IgnoreTest do
   @profile __MODULE__
 
   setup do
+    operation = %OpenAPI.Spec.Path.Operation{"$oag_base_file_path": [], "$oag_last_ref_path": []}
     schema = %OpenAPI.Spec.Schema{"$oag_base_file_path": [], "$oag_last_ref_path": []}
     state = %OpenAPI.State{call: %OpenAPI.Call{profile: @profile}}
 
-    %{schema: schema, state: state}
+    %{operation: operation, schema: schema, state: state}
   end
 
   describe "ignored?/2" do
+    # Operations
+
+    test "does not ignore operation by default", %{operation: operation, state: state} do
+      refute Ignore.ignored?(state, operation)
+    end
+
+    test "ignores operation by ID", %{operation: operation, state: state} do
+      operation = %OpenAPI.Spec.Path.Operation{operation | operation_id: "IgnoredOperation"}
+      Application.put_env(:oapi_generator, @profile, ignore: ["IgnoredOperation"])
+      assert Ignore.ignored?(state, operation)
+    end
+
+    test "ignores operation by ID pattern", %{operation: operation, state: state} do
+      operation = %OpenAPI.Spec.Path.Operation{operation | operation_id: "IgnoredOperation"}
+      Application.put_env(:oapi_generator, @profile, ignore: [~r/^Ignored/])
+      assert Ignore.ignored?(state, operation)
+    end
+
+    test "ignores operation by path", %{operation: operation, state: state} do
+      operation = %OpenAPI.Spec.Path.Operation{operation | "$oag_path": "/ignore/this"}
+      Application.put_env(:oapi_generator, @profile, ignore: ["/ignore/this"])
+      assert Ignore.ignored?(state, operation)
+    end
+
+    test "ignores operation by path pattern", %{operation: operation, state: state} do
+      operation = %OpenAPI.Spec.Path.Operation{operation | "$oag_path": "/ignore/this"}
+      Application.put_env(:oapi_generator, @profile, ignore: [~r"^/ignore/"])
+      assert Ignore.ignored?(state, operation)
+    end
+
+    # Schemas
+
     test "does not ignore schema by default", %{schema: schema, state: state} do
       refute Ignore.ignored?(state, schema)
     end
