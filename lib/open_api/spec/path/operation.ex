@@ -2,6 +2,7 @@ defmodule OpenAPI.Spec.Path.Operation do
   @moduledoc false
   import OpenAPI.Reader.State
 
+  alias OpenAPI.Reader.State
   alias OpenAPI.Spec.Path.Parameter
   alias OpenAPI.Spec.ExternalDocumentation
   alias OpenAPI.Spec.RequestBody
@@ -9,6 +10,10 @@ defmodule OpenAPI.Spec.Path.Operation do
   alias OpenAPI.Spec.Server
 
   @type t :: %__MODULE__{
+          "$oag_base_file": String.t(),
+          "$oag_base_file_path": [State.path_segment()],
+          "$oag_last_ref_file": String.t() | nil,
+          "$oag_last_ref_path": [State.path_segment()],
           tags: [String.t()],
           summary: String.t() | nil,
           description: String.t() | nil,
@@ -24,6 +29,10 @@ defmodule OpenAPI.Spec.Path.Operation do
         }
 
   defstruct [
+    :"$oag_base_file",
+    :"$oag_base_file_path",
+    :"$oag_last_ref_file",
+    :"$oag_last_ref_path",
     :tags,
     :summary,
     :description,
@@ -47,6 +56,10 @@ defmodule OpenAPI.Spec.Path.Operation do
     {state, servers} = decode_servers(state, yaml)
 
     operation = %__MODULE__{
+      "$oag_base_file": Map.fetch!(state, :base_file),
+      "$oag_base_file_path": Map.fetch!(state, :base_file_path) |> Enum.reverse(),
+      "$oag_last_ref_file": Map.fetch!(state, :last_ref_file),
+      "$oag_last_ref_path": Map.fetch!(state, :last_ref_path) |> Enum.reverse(),
       tags: Map.get(yaml, "tags", []),
       summary: Map.get(yaml, "summary"),
       description: Map.get(yaml, "description"),
