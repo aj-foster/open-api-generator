@@ -79,7 +79,7 @@ defmodule OpenAPI.Generator do
         reduce: state do
       state ->
         operation = Map.get(item, method)
-        Operation.process(state, path, method, operation)
+        Operation.process(state, path, item.parameters, method, operation)
     end
   end
 
