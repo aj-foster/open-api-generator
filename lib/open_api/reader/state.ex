@@ -111,7 +111,7 @@ defmodule OpenAPI.Reader.State do
   @spec with_ref(t, yaml, decoder) :: {t, term}
   def with_ref(state, %{"$ref" => ref}, decoder) do
     [new_file, new_ref_path] = String.split(ref, "#")
-    new_file = Path.join(state.current_file, new_file) |> Path.expand()
+    new_file = Path.join(state.current_file, new_file)
     new_ref_path_segments = String.split(new_ref_path, "/", trim: true)
 
     %__MODULE__{

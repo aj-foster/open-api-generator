@@ -13,8 +13,9 @@ defmodule OpenAPI.Spec.Schema do
   #
 
   @type t :: %__MODULE__{
+          "$oag_base_file": String.t(),
           "$oag_base_file_path": [State.path_segment()],
-          "$oag_last_ref_file": String.t(),
+          "$oag_last_ref_file": String.t() | nil,
           "$oag_last_ref_path": [State.path_segment()],
           title: String.t() | nil,
           multiple_of: pos_integer | nil,
@@ -54,6 +55,7 @@ defmodule OpenAPI.Spec.Schema do
         }
 
   defstruct [
+    :"$oag_base_file",
     :"$oag_base_file_path",
     :"$oag_last_ref_file",
     :"$oag_last_ref_path",
@@ -112,6 +114,7 @@ defmodule OpenAPI.Spec.Schema do
     {state, additional_properties} = decode_additional_properties(state, yaml)
 
     schema = %__MODULE__{
+      "$oag_base_file": Map.fetch!(state, :base_file),
       "$oag_base_file_path": Map.fetch!(state, :base_file_path) |> Enum.reverse(),
       "$oag_last_ref_file": Map.fetch!(state, :last_ref_file),
       "$oag_last_ref_path": Map.fetch!(state, :last_ref_path) |> Enum.reverse(),
