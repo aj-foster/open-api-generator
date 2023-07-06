@@ -17,6 +17,7 @@ defmodule OpenAPI.Processor do
   processor. For this purpose, this module is a Behaviour with most of its critical logic
   implemented as optional callbacks.
   """
+  alias OpenAPI.Processor.State
 
   @doc """
   Run the processing phase of the code generator
@@ -25,8 +26,6 @@ defmodule OpenAPI.Processor do
   function directly, unless you are reimplementing one of the core functions. If this happens,
   please share your use-case with the maintainers; a plugin might be warranted.
   """
-  alias OpenAPI.Processor.State
-
   @spec run(OpenAPI.State.t()) :: OpenAPI.State.t()
   def run(state) do
     state
@@ -35,17 +34,30 @@ defmodule OpenAPI.Processor do
   end
 
   #
-  # Callbacks
+  # Integration
   #
 
   defmacro __using__(_opts) do
     quote do
+      defdelegate include_operation?(state, operation), to: OpenAPI.Processor
       defdelegate include_schema?(state, schema), to: OpenAPI.Processor
-      defoverridable include_schema?: 2
+
+      defoverridable include_operation?: 2, include_schema?: 2
     end
   end
 
-  @optional_callbacks include_schema?: 2
+  #
+  # Callbacks
+  #
+
+  @optional_callbacks include_operation?: 2, include_schema?: 2
+
+  @doc """
+  Whether to render the given operation in the generated code
+
+  If this function returns `false`, the operation will not appear in the generated code.
+  """
+  @callback include_operation?(State.t(), OpenAPI.Spec.Path.Operation.t()) :: boolean
 
   @doc """
   Whether to render the given schema in the generated code
@@ -54,6 +66,15 @@ defmodule OpenAPI.Processor do
   passes this test when presented in another context) and a plain `map` will be used as its type.
   """
   @callback include_schema?(State.t(), OpenAPI.Spec.Schema.t()) :: boolean
+
+  #
+  # Default Implementations
+  #
+
+  @spec include_operation?(State.t(), OpenAPI.Spec.Path.Operation.t()) :: boolean
+  def include_operation?(state, operation) do
+    not OpenAPI.Processor.Ignore.ignored?(state, operation)
+  end
 
   @spec include_schema?(State.t(), OpenAPI.Spec.Schema.t()) :: boolean
   def include_schema?(state, schema) do
