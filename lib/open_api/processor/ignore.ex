@@ -10,8 +10,22 @@ defmodule OpenAPI.Processor.Ignore do
 
   @spec ignored?(OpenAPI.State.t(), Operation.t()) :: boolean
   @spec ignored?(OpenAPI.State.t(), Schema.t()) :: boolean
-  def ignored?(_state, %Operation{} = _operation) do
-    false
+  def ignored?(state, %Operation{} = operation) do
+    %Operation{"$oag_path": operation_path, operation_id: operation_id} = operation
+
+    patterns_to_ignore = config(state)
+
+    combinations_to_check =
+      for x <- [operation_path, operation_id], y <- patterns_to_ignore do
+        {x, y}
+      end
+
+    Enum.any?(combinations_to_check, fn
+      {nil, _pattern} -> false
+      {value, %Regex{} = regex} -> Regex.match?(regex, value)
+      {value, value} -> true
+      {_value, _string_pattern} -> false
+    end)
   end
 
   def ignored?(state, %Schema{} = schema) do
