@@ -8,7 +8,7 @@ defmodule OpenAPI.Processor.IgnoreTest do
   setup do
     operation = %OpenAPI.Spec.Path.Operation{"$oag_base_file_path": [], "$oag_last_ref_path": []}
     schema = %OpenAPI.Spec.Schema{"$oag_base_file_path": [], "$oag_last_ref_path": []}
-    state = %OpenAPI.State{call: %OpenAPI.Call{profile: @profile}}
+    state = %OpenAPI.Processor.State{profile: @profile}
 
     %{operation: operation, schema: schema, state: state}
   end
