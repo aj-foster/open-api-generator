@@ -92,7 +92,7 @@ defmodule OpenAPI.Reader do
   alias OpenAPI.Spec
 
   @doc "Run the reading phase of the code generator"
-  @spec run(OpenAPI.State.t()) :: term
+  @spec run(OpenAPI.State.t()) :: OpenAPI.State.t()
   def run(state) do
     reader_result =
       state
@@ -126,6 +126,7 @@ defmodule OpenAPI.Reader do
     end
   end
 
+  @spec decode_all(State.t()) :: State.t()
   defp decode_all(%State{files: files} = state) do
     files
     |> Map.keys()
@@ -135,20 +136,14 @@ defmodule OpenAPI.Reader do
     end)
   end
 
-  @spec read(map, String.t()) :: State.t()
-  def read(state, filename) do
-    filename = Path.join(state.current_file, filename) |> Path.expand()
-    parsed_file = YamlElixir.read_from_file!(filename)
-
-    %State{state | files: Map.put(state.files, filename, parsed_file)}
-  end
-
   @spec ensure_file(map, String.t()) :: map
   def ensure_file(state, file) do
-    if Map.has_key?(state.files, file) do
+    filename = Path.absname(file) |> Path.expand()
+
+    if Map.has_key?(state.files, filename) do
       state
     else
-      read(state, file)
+      read_file(state, filename)
     end
   end
 end
