@@ -8,8 +8,8 @@ defmodule OpenAPI.Processor.Ignore do
   @typedoc "Definition of a module to ignore"
   @type definition :: String.t() | Regex.t()
 
-  @spec ignored?(OpenAPI.State.t(), Operation.t()) :: boolean
-  @spec ignored?(OpenAPI.State.t(), Schema.t()) :: boolean
+  @spec ignored?(OpenAPI.Processor.State.t(), Operation.t()) :: boolean
+  @spec ignored?(OpenAPI.Processor.State.t(), Schema.t()) :: boolean
   def ignored?(state, %Operation{} = operation) do
     %Operation{"$oag_path": operation_path, operation_id: operation_id} = operation
 
@@ -50,9 +50,9 @@ defmodule OpenAPI.Processor.Ignore do
     end)
   end
 
-  @spec config(OpenAPI.State.t()) :: [definition]
+  @spec config(OpenAPI.Processor.State.t()) :: [definition]
   defp config(state) do
-    %OpenAPI.State{call: %OpenAPI.Call{profile: profile}} = state
+    %OpenAPI.Processor.State{profile: profile} = state
 
     Application.get_env(:oapi_generator, profile, [])
     |> Keyword.get(:ignore, [])
