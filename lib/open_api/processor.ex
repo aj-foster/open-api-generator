@@ -40,11 +40,12 @@ defmodule OpenAPI.Processor do
 
   defmacro __using__(_opts) do
     quote do
-      defoverridable include_schema?: 1
+      defdelegate include_schema?(state, schema), to: OpenAPI.Processor
+      defoverridable include_schema?: 2
     end
   end
 
-  @optional_callbacks include_schema?: 1
+  @optional_callbacks include_schema?: 2
 
   @doc """
   Whether to render the given schema in the generated code
@@ -52,5 +53,10 @@ defmodule OpenAPI.Processor do
   If this function returns `false`, the schema will not appear in the generated code (unless it
   passes this test when presented in another context) and a plain `map` will be used as its type.
   """
-  @callback include_schema?(OpenAPI.Spec.Schema.t()) :: boolean
+  @callback include_schema?(State.t(), OpenAPI.Spec.Schema.t()) :: boolean
+
+  @spec include_schema?(State.t(), OpenAPI.Spec.Schema.t()) :: boolean
+  def include_schema?(state, schema) do
+    not OpenAPI.Processor.Ignore.ignored?(state, schema)
+  end
 end
