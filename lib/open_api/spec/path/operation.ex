@@ -14,6 +14,8 @@ defmodule OpenAPI.Spec.Path.Operation do
           "$oag_base_file_path": [State.path_segment()],
           "$oag_last_ref_file": String.t() | nil,
           "$oag_last_ref_path": [State.path_segment()],
+          "$oag_path": String.t(),
+          "$oag_path_method": String.t(),
           tags: [String.t()],
           summary: String.t() | nil,
           description: String.t() | nil,
@@ -33,6 +35,8 @@ defmodule OpenAPI.Spec.Path.Operation do
     :"$oag_base_file_path",
     :"$oag_last_ref_file",
     :"$oag_last_ref_path",
+    :"$oag_path",
+    :"$oag_path_method",
     :tags,
     :summary,
     :description,
@@ -55,11 +59,16 @@ defmodule OpenAPI.Spec.Path.Operation do
     {state, responses} = decode_responses(state, yaml)
     {state, servers} = decode_servers(state, yaml)
 
+    reverse_base_file_path = Map.fetch!(state, :base_file_path)
+    [method, path | _] = reverse_base_file_path
+
     operation = %__MODULE__{
       "$oag_base_file": Map.fetch!(state, :base_file),
-      "$oag_base_file_path": Map.fetch!(state, :base_file_path) |> Enum.reverse(),
+      "$oag_base_file_path": reverse_base_file_path |> Enum.reverse(),
       "$oag_last_ref_file": Map.fetch!(state, :last_ref_file),
       "$oag_last_ref_path": Map.fetch!(state, :last_ref_path) |> Enum.reverse(),
+      "$oag_path": path,
+      "$oag_path_method": method,
       tags: Map.get(yaml, "tags", []),
       summary: Map.get(yaml, "summary"),
       description: Map.get(yaml, "description"),
