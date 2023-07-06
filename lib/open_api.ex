@@ -9,12 +9,12 @@ defmodule OpenAPI do
   For a list of valid options to pass as configuration, see `OpenAPI.Config`.
   """
   alias OpenAPI.Call
-  alias OpenAPI.Generator
+  alias OpenAPI.Processor
   alias OpenAPI.Reader
   alias OpenAPI.State
 
   @doc """
-  Using the configuration `profile`, read the OpenAPI description contained in `files` and
+  Using the given configuration `profile`, read the OpenAPI description contained in `files` and
   generate client code
   """
   @spec run(String.t(), [String.t()]) :: term
@@ -22,6 +22,6 @@ defmodule OpenAPI do
     Call.new(profile, files)
     |> State.new()
     |> Reader.run()
-    |> Generator.run()
+    |> Processor.run()
   end
 end
