@@ -27,7 +27,12 @@ defmodule OpenAPI.Generator.Operation do
           method: method,
           module: gen_module(state, modules),
           name: function,
-          path: path,
+          path:
+            path_params
+            |> Enum.reduce(path, fn {name, var, _, _}, path ->
+              path
+              |> String.replace(name, var)
+            end),
           path_params: path_params,
           query_params: query_params,
           responses: responses,
@@ -133,7 +138,7 @@ defmodule OpenAPI.Generator.Operation do
     |> Enum.map(fn name ->
       schema = all_params[name].schema
       type = Typing.schema_to_type(state, schema)
-      {name, schema, type}
+      {name, Macro.underscore(name), schema, type}
     end)
   end
 

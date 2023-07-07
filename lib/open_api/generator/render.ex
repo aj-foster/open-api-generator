@@ -253,8 +253,8 @@ defmodule OpenAPI.Generator.Render do
 
   defp render_operation_function(operation, module_name) do
     path_parameter_arguments =
-      Enum.map(operation.path_params, fn {name, _spec, _type} ->
-        {String.to_atom(name), [], nil}
+      Enum.map(operation.path_params, fn {_name, var, _spec, _type} ->
+        {String.to_atom(var), [], nil}
       end)
 
     body_argument = if operation.body, do: quote(do: body)
@@ -279,7 +279,7 @@ defmodule OpenAPI.Generator.Render do
     name = String.to_atom(operation.name)
 
     path_parameter_arguments =
-      Enum.map(operation.path_params, fn {_, _, type} ->
+      Enum.map(operation.path_params, fn {_, _, _, type} ->
         quote(do: unquote(to_type(type)))
       end)
 
@@ -324,9 +324,9 @@ defmodule OpenAPI.Generator.Render do
     args =
       if length(operation.path_params) > 0 or not is_nil(operation.body) do
         args =
-          Enum.map(operation.path_params, fn {name, _spec, _type} ->
+          Enum.map(operation.path_params, fn {name, var, _spec, _type} ->
             arg_as_atom = String.to_atom(name)
-            {arg_as_atom, {arg_as_atom, [], nil}}
+            {arg_as_atom, {String.to_atom(var), [], nil}}
           end)
 
         body_arg = unless is_nil(operation.body), do: {:body, {:body, [], nil}}
