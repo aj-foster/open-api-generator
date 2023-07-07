@@ -10,11 +10,11 @@ defmodule OpenAPI.Generator.Operation do
   alias OpenAPI.Spec.Response
   alias OpenAPI.{Config, State}
 
-  @spec process(State.t(), String.t(), atom, Operation.t()) :: {State.t(), term}
-  def process(state, path, method, operation) do
+  @spec process(State.t(), String.t(), [Parameter.t()], atom, Operation.t()) :: {State.t(), term}
+  def process(state, path, params_from_path, method, operation) do
     {state, body} = process_body(state, operation)
     {state, responses} = responses(state, operation)
-    path_params = path_params(state, path, operation)
+    path_params = path_params(state, path, params_from_path, operation)
     query_params = query_params(state, operation)
     operation = maybe_with_tags(state, operation)
 
@@ -123,9 +123,10 @@ defmodule OpenAPI.Generator.Operation do
     end)
   end
 
-  defp path_params(state, path, %Operation{parameters: parameters}) do
+  defp path_params(state, path, params_from_path, %Operation{parameters: params_from_operation}) do
     all_params =
-      Enum.map(parameters, &parameter(state, &1))
+      (params_from_path ++ params_from_operation)
+      |> Enum.map(&parameter(state, &1))
       |> Enum.into(%{})
 
     String.split(path, ~r/(^|\})[^\{\}]*(\{|$)/, trim: true)
