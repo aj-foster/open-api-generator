@@ -14,7 +14,7 @@ defmodule OpenAPI.Generator.Operation do
   def process(state, path, params_from_path, method, operation) do
     {state, body} = process_body(state, operation)
     {state, responses} = responses(state, operation)
-    path_params = path_params(state, path, params_from_path, operation)
+    {path_params, updated_path} = path_params(state, path, params_from_path, operation)
     query_params = query_params(state, operation)
     operation = maybe_with_tags(state, operation)
 
@@ -27,12 +27,7 @@ defmodule OpenAPI.Generator.Operation do
           method: method,
           module: gen_module(state, modules),
           name: function,
-          path:
-            path_params
-            |> Enum.reduce(path, fn {name, var, _, _}, path ->
-              path
-              |> String.replace(name, var)
-            end),
+          path: updated_path,
           path_params: path_params,
           query_params: query_params,
           responses: responses,
@@ -134,12 +129,22 @@ defmodule OpenAPI.Generator.Operation do
       |> Enum.map(&parameter(state, &1))
       |> Enum.into(%{})
 
-    String.split(path, ~r/(^|\})[^\{\}]*(\{|$)/, trim: true)
-    |> Enum.map(fn name ->
-      schema = all_params[name].schema
-      type = Typing.schema_to_type(state, schema)
-      {name, Macro.underscore(name), schema, type}
-    end)
+    path_param_names = String.split(path, ~r/(^|\})[^\{\}]*(\{|$)/, trim: true)
+
+    params =
+      Enum.map(path_param_names, fn name ->
+        schema = all_params[name].schema
+        type = Typing.schema_to_type(state, schema)
+        {Macro.underscore(name), schema, type}
+      end)
+
+    path =
+      Enum.reduce(path_param_names, path, fn original_name, path ->
+        underscored_name = Macro.underscore(original_name)
+        String.replace(path, "{#{original_name}}", "{#{underscored_name}}")
+      end)
+
+    {params, path}
   end
 
   defp query_params(state, %Operation{parameters: parameters}) do
