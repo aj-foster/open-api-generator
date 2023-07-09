@@ -3,6 +3,7 @@ defmodule OpenAPI.Reader.State do
   require Logger
 
   alias OpenAPI.Reader.Config
+  alias OpenAPI.Spec.Path.Parameter
 
   @typedoc "Decode function for raw Yaml"
   @type decoder :: decoder(term)
@@ -23,6 +24,7 @@ defmodule OpenAPI.Reader.State do
           files: %{optional(String.t()) => yaml | nil},
           last_ref_file: String.t() | nil,
           last_ref_path: [path_segment],
+          path_parameters: [Parameter.t()],
           refs: %{optional(String.t()) => map},
           spec: Spec.t() | nil
         }
@@ -39,6 +41,7 @@ defmodule OpenAPI.Reader.State do
     :files,
     :last_ref_file,
     :last_ref_path,
+    :path_parameters,
     :refs,
     :spec
   ]
@@ -58,6 +61,7 @@ defmodule OpenAPI.Reader.State do
       files: files(config),
       last_ref_file: nil,
       last_ref_path: [],
+      path_parameters: [],
       refs: %{},
       spec: nil
     }

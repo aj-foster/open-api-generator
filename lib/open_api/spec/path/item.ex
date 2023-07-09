@@ -38,6 +38,10 @@ defmodule OpenAPI.Spec.Path.Item do
 
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
+    {state, parameters} = decode_parameters(state, yaml)
+    {state, servers} = decode_servers(state, yaml)
+
+    state = %{state | path_parameters: parameters}
     {state, get} = decode_get(state, yaml)
     {state, put} = decode_put(state, yaml)
     {state, post} = decode_post(state, yaml)
@@ -46,8 +50,7 @@ defmodule OpenAPI.Spec.Path.Item do
     {state, head} = decode_head(state, yaml)
     {state, patch} = decode_patch(state, yaml)
     {state, trace} = decode_trace(state, yaml)
-    {state, servers} = decode_servers(state, yaml)
-    {state, parameters} = decode_parameters(state, yaml)
+    state = %{state | path_parameters: []}
 
     item = %__MODULE__{
       summary: Map.get(yaml, "summary"),
