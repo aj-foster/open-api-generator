@@ -20,7 +20,7 @@ defmodule OpenAPI.Processor.Operation do
   ]
 
   @doc """
-  Create the contents of an @doc string for the given operation
+  Create the contents of an `@doc` string for the given operation
   """
   @spec docstring(Operation.t(), [Param.t()]) :: String.t()
   def docstring(operation, query_params) do
