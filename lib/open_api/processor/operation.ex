@@ -6,6 +6,28 @@ defmodule OpenAPI.Processor.Operation do
   """
   alias OpenAPI.Processor.Operation.Param
   alias OpenAPI.Spec.Path.Operation, as: OperationSpec
+  alias OpenAPI.Spec.RequestBody, as: RequestBodySpec
+  alias OpenAPI.Spec.Schema, as: SchemaSpec
+  alias OpenAPI.Spec.Schema.Media, as: MediaSpec
+
+  @typedoc "HTTP method"
+  @type method :: :get | :put | :post | :delete | :options | :head | :patch | :trace
+
+  @typedoc "Request content types and their associated schemas"
+  @type request_body :: [{content_type :: String.t(), schema :: SchemaSpec.t()}]
+
+  @typedoc "Processed operation data used by the renderer"
+  @type t :: %__MODULE__{
+          docstring: String.t(),
+          function_name: atom,
+          module_name: atom,
+          request_body: term,
+          request_method: atom,
+          request_path: String.t(),
+          request_path_parameters: [Param.t()],
+          request_query_parameters: [Param.t()],
+          responses: [term]
+        }
 
   defstruct [
     :docstring,
@@ -94,4 +116,28 @@ defmodule OpenAPI.Processor.Operation do
       "#{summary}#{description}"
     end
   end
+
+  @doc """
+  Collect request content types and their associated schemas
+  """
+  @spec request_body(OperationSpec.t()) :: request_body
+  def request_body(%OperationSpec{request_body: %RequestBodySpec{content: content}})
+      when is_map(content) do
+    Enum.map(content, fn {content_type, %MediaSpec{schema: schema}} -> {content_type, schema} end)
+  end
+
+  def request_body(_operation_spec), do: []
+
+  @doc """
+  Casts the HTTP method to an atom
+  """
+  @spec request_method(OperationSpec.t()) :: method
+  def request_method(%OperationSpec{"$oag_path_method": "get"}), do: :get
+  def request_method(%OperationSpec{"$oag_path_method": "put"}), do: :put
+  def request_method(%OperationSpec{"$oag_path_method": "post"}), do: :post
+  def request_method(%OperationSpec{"$oag_path_method": "delete"}), do: :delete
+  def request_method(%OperationSpec{"$oag_path_method": "options"}), do: :options
+  def request_method(%OperationSpec{"$oag_path_method": "head"}), do: :head
+  def request_method(%OperationSpec{"$oag_path_method": "patch"}), do: :patch
+  def request_method(%OperationSpec{"$oag_path_method": "trace"}), do: :trace
 end
