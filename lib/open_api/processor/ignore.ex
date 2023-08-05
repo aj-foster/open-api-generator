@@ -2,16 +2,18 @@ defmodule OpenAPI.Processor.Ignore do
   @moduledoc """
   Default plugin for ignoring schemas and operations
   """
-  alias OpenAPI.Spec.Path.Operation
-  alias OpenAPI.Spec.Schema
+  alias OpenAPI.Spec.Path.Operation, as: OperationSpec
+  alias OpenAPI.Spec.Schema, as: SchemaSpec
 
   @typedoc "Definition of a module to ignore"
   @type definition :: String.t() | Regex.t()
 
-  @spec ignored?(OpenAPI.Processor.State.t(), Operation.t()) :: boolean
-  @spec ignored?(OpenAPI.Processor.State.t(), Schema.t()) :: boolean
-  def ignored?(state, %Operation{} = operation) do
-    %Operation{"$oag_path": operation_path, operation_id: operation_id} = operation
+  @doc """
+  Ignore operations based on configured patterns of IDs and paths
+  """
+  @spec ignore_operation?(OpenAPI.Processor.State.t(), OperationSpec.t()) :: boolean
+  def ignore_operation?(state, %OperationSpec{} = operation) do
+    %OperationSpec{"$oag_path": operation_path, operation_id: operation_id} = operation
 
     patterns_to_ignore = config(state)
 
@@ -28,8 +30,12 @@ defmodule OpenAPI.Processor.Ignore do
     end)
   end
 
-  def ignored?(state, %Schema{} = schema) do
-    %Schema{"$oag_base_file_path": base_path, "$oag_last_ref_path": ref_path, title: title} =
+  @doc """
+  Ignore schemas based on configured patterns of paths and titles
+  """
+  @spec ignore_schema?(OpenAPI.Processor.State.t(), SchemaSpec.t()) :: boolean
+  def ignore_schema?(state, %SchemaSpec{} = schema) do
+    %SchemaSpec{"$oag_base_file_path": base_path, "$oag_last_ref_path": ref_path, title: title} =
       schema
 
     patterns_to_ignore = config(state)
