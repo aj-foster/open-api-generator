@@ -7,6 +7,7 @@ defmodule OpenAPI.Processor.Operation do
   alias OpenAPI.Processor.Operation.Param
   alias OpenAPI.Spec.Path.Operation, as: OperationSpec
   alias OpenAPI.Spec.RequestBody, as: RequestBodySpec
+  alias OpenAPI.Spec.Response, as: ResponseSpec
   alias OpenAPI.Spec.Schema, as: SchemaSpec
   alias OpenAPI.Spec.Schema.Media, as: MediaSpec
 
@@ -15,6 +16,9 @@ defmodule OpenAPI.Processor.Operation do
 
   @typedoc "Request content types and their associated schemas"
   @type request_body :: [{content_type :: String.t(), schema :: SchemaSpec.t()}]
+
+  @typedoc "Response status codes and their associated schemas"
+  @type response_body :: [{status_code :: integer | :default, schema :: [SchemaSpec.t()]}]
 
   @typedoc "Processed operation data used by the renderer"
   @type t :: %__MODULE__{
@@ -129,7 +133,7 @@ defmodule OpenAPI.Processor.Operation do
   def request_body(_operation_spec), do: []
 
   @doc """
-  Casts the HTTP method to an atom
+  Cast the HTTP method to an atom
   """
   @spec request_method(OperationSpec.t()) :: method
   def request_method(%OperationSpec{"$oag_path_method": "get"}), do: :get
@@ -140,4 +144,19 @@ defmodule OpenAPI.Processor.Operation do
   def request_method(%OperationSpec{"$oag_path_method": "head"}), do: :head
   def request_method(%OperationSpec{"$oag_path_method": "patch"}), do: :patch
   def request_method(%OperationSpec{"$oag_path_method": "trace"}), do: :trace
+
+  @doc """
+  Collect response status codes and their associated schemas
+
+  In this implementation, all schemas are returned regardless of content type. It is possible for
+  the same status code to have multiple schemas, in which case the renderer should compose a
+  union type for the response.
+  """
+  @spec response_body(OperationSpec.t()) :: response_body
+  def response_body(%OperationSpec{responses: responses}) when is_map(responses) do
+    Enum.map(responses, fn {status_or_default, %ResponseSpec{content: content}} ->
+      schemas = Enum.map(content, fn {_content_type, %MediaSpec{schema: schema}} -> schema end)
+      {status_or_default, schemas}
+    end)
+  end
 end
