@@ -5,7 +5,7 @@ defmodule OpenAPI.Processor.Operation do
   This module also provides the Operation struct that is used by the renderer.
   """
   alias OpenAPI.Processor.Operation.Param
-  alias OpenAPI.Spec.Path.Operation
+  alias OpenAPI.Spec.Path.Operation, as: OperationSpec
 
   defstruct [
     :docstring,
@@ -21,10 +21,30 @@ defmodule OpenAPI.Processor.Operation do
 
   @doc """
   Create the contents of an `@doc` string for the given operation
+
+  The docstring constructed by this function will contain a summary line provided by the operation
+  summary (if available) or the request method and path otherwise. It will incorporate the
+  operation description (if available) and link to any included external documentation. Finally,
+  all query parameters (which are part of the `opts` argument) are documented.
+
+      @doc \"\"\"
+      Summary of the operation or method and path
+
+      Description of the operation, which generally provides more information.
+
+      ## Options
+
+        * `param`: query parameter description
+
+      ## Resources
+
+        * [External Doc Description](link to external documentation)
+
+      \"\"\"
   """
-  @spec docstring(Operation.t(), [Param.t()]) :: String.t()
+  @spec docstring(OperationSpec.t(), [Param.t()]) :: String.t()
   def docstring(operation, query_params) do
-    %Operation{
+    %OperationSpec{
       "$oag_path": request_path,
       "$oag_path_method": request_method,
       description: description,
@@ -43,9 +63,9 @@ defmodule OpenAPI.Processor.Operation do
 
     options =
       if length(query_params) > 0 do
-        for %Param{description: description, name: name, value_type: type} <- query_params,
+        for %Param{description: description, name: name} <- query_params,
             into: "\n## Options\n\n" do
-          "  * `#{name}` (#{type}): #{description}\n"
+          "  * `#{name}`: #{description}\n"
         end
       end
 
