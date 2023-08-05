@@ -2,6 +2,7 @@ defmodule OpenAPI.Processor.Naming do
   @moduledoc """
   Default plugin for naming operations and schemas
   """
+  alias OpenAPI.Processor.State
   alias OpenAPI.Spec.Path.Operation, as: OperationSpec
 
   @doc """
@@ -13,8 +14,8 @@ defmodule OpenAPI.Processor.Naming do
 
   Note that this function creates new atoms, and should not be run in a production environment.
   """
-  @spec operation_function(OperationSpec.t()) :: atom
-  def operation_function(operation_spec) do
+  @spec operation_function(State.t(), OperationSpec.t()) :: atom
+  def operation_function(_state, operation_spec) do
     %OperationSpec{operation_id: id} = operation_spec
 
     id

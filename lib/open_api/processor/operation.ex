@@ -5,6 +5,7 @@ defmodule OpenAPI.Processor.Operation do
   This module also provides the Operation struct that is used by the renderer.
   """
   alias OpenAPI.Processor.Operation.Param
+  alias OpenAPI.Processor.State
   alias OpenAPI.Spec.Path.Operation, as: OperationSpec
   alias OpenAPI.Spec.RequestBody, as: RequestBodySpec
   alias OpenAPI.Spec.Response, as: ResponseSpec
@@ -68,8 +69,8 @@ defmodule OpenAPI.Processor.Operation do
 
       \"\"\"
   """
-  @spec docstring(OperationSpec.t(), [Param.t()]) :: String.t()
-  def docstring(operation, query_params) do
+  @spec docstring(State.t(), OperationSpec.t(), [Param.t()]) :: String.t()
+  def docstring(_state, operation, query_params) do
     %OperationSpec{
       "$oag_path": request_path,
       "$oag_path_method": request_method,
@@ -124,26 +125,26 @@ defmodule OpenAPI.Processor.Operation do
   @doc """
   Collect request content types and their associated schemas
   """
-  @spec request_body(OperationSpec.t()) :: request_body
-  def request_body(%OperationSpec{request_body: %RequestBodySpec{content: content}})
+  @spec request_body(State.t(), OperationSpec.t()) :: request_body
+  def request_body(_state, %OperationSpec{request_body: %RequestBodySpec{content: content}})
       when is_map(content) do
     Enum.map(content, fn {content_type, %MediaSpec{schema: schema}} -> {content_type, schema} end)
   end
 
-  def request_body(_operation_spec), do: []
+  def request_body(_state, _operation_spec), do: []
 
   @doc """
   Cast the HTTP method to an atom
   """
-  @spec request_method(OperationSpec.t()) :: method
-  def request_method(%OperationSpec{"$oag_path_method": "get"}), do: :get
-  def request_method(%OperationSpec{"$oag_path_method": "put"}), do: :put
-  def request_method(%OperationSpec{"$oag_path_method": "post"}), do: :post
-  def request_method(%OperationSpec{"$oag_path_method": "delete"}), do: :delete
-  def request_method(%OperationSpec{"$oag_path_method": "options"}), do: :options
-  def request_method(%OperationSpec{"$oag_path_method": "head"}), do: :head
-  def request_method(%OperationSpec{"$oag_path_method": "patch"}), do: :patch
-  def request_method(%OperationSpec{"$oag_path_method": "trace"}), do: :trace
+  @spec request_method(State.t(), OperationSpec.t()) :: method
+  def request_method(_state, %OperationSpec{"$oag_path_method": "get"}), do: :get
+  def request_method(_state, %OperationSpec{"$oag_path_method": "put"}), do: :put
+  def request_method(_state, %OperationSpec{"$oag_path_method": "post"}), do: :post
+  def request_method(_state, %OperationSpec{"$oag_path_method": "delete"}), do: :delete
+  def request_method(_state, %OperationSpec{"$oag_path_method": "options"}), do: :options
+  def request_method(_state, %OperationSpec{"$oag_path_method": "head"}), do: :head
+  def request_method(_state, %OperationSpec{"$oag_path_method": "patch"}), do: :patch
+  def request_method(_state, %OperationSpec{"$oag_path_method": "trace"}), do: :trace
 
   @doc """
   Collect response status codes and their associated schemas
@@ -152,8 +153,8 @@ defmodule OpenAPI.Processor.Operation do
   the same status code to have multiple schemas, in which case the renderer should compose a
   union type for the response.
   """
-  @spec response_body(OperationSpec.t()) :: response_body
-  def response_body(%OperationSpec{responses: responses}) when is_map(responses) do
+  @spec response_body(State.t(), OperationSpec.t()) :: response_body
+  def response_body(_state, %OperationSpec{responses: responses}) when is_map(responses) do
     Enum.map(responses, fn {status_or_default, %ResponseSpec{content: content}} ->
       schemas = Enum.map(content, fn {_content_type, %MediaSpec{schema: schema}} -> schema end)
       {status_or_default, schemas}

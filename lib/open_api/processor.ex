@@ -48,19 +48,19 @@ defmodule OpenAPI.Processor do
     quote do
       defdelegate ignore_operation?(state, operation), to: OpenAPI.Processor
       defdelegate ignore_schema?(state, schema), to: OpenAPI.Processor
-      defdelegate operation_docstring(operation_spec, params), to: OpenAPI.Processor
-      defdelegate operation_function_name(operation_spec), to: OpenAPI.Processor
-      defdelegate operation_request_body(operation_spec), to: OpenAPI.Processor
-      defdelegate operation_request_method(operation_spec), to: OpenAPI.Processor
-      defdelegate operation_response_body(operation_spec), to: OpenAPI.Processor
+      defdelegate operation_docstring(state, operation_spec, params), to: OpenAPI.Processor
+      defdelegate operation_function_name(state, operation_spec), to: OpenAPI.Processor
+      defdelegate operation_request_body(state, operation_spec), to: OpenAPI.Processor
+      defdelegate operation_request_method(state, operation_spec), to: OpenAPI.Processor
+      defdelegate operation_response_body(state, operation_spec), to: OpenAPI.Processor
 
       defoverridable ignore_operation?: 2,
                      ignore_schema?: 2,
-                     operation_docstring: 2,
-                     operation_function_name: 1,
-                     operation_request_body: 1,
-                     operation_request_method: 1,
-                     operation_response_body: 1
+                     operation_docstring: 3,
+                     operation_function_name: 2,
+                     operation_request_body: 2,
+                     operation_request_method: 2,
+                     operation_response_body: 2
     end
   end
 
@@ -70,11 +70,11 @@ defmodule OpenAPI.Processor do
 
   @optional_callbacks ignore_operation?: 2,
                       ignore_schema?: 2,
-                      operation_docstring: 2,
-                      operation_function_name: 1,
-                      operation_request_body: 1,
-                      operation_request_method: 1,
-                      operation_response_body: 1
+                      operation_docstring: 3,
+                      operation_function_name: 2,
+                      operation_request_body: 2,
+                      operation_request_method: 2,
+                      operation_response_body: 2
 
   @doc """
   Whether to render the given operation in the generated code
@@ -103,7 +103,7 @@ defmodule OpenAPI.Processor do
 
   See `OpenAPI.Processor.Operation.docstring/2` for the default implementation.
   """
-  @callback operation_docstring(OperationSpec.t(), [Param.t()]) :: String.t()
+  @callback operation_docstring(State.t(), OperationSpec.t(), [Param.t()]) :: String.t()
 
   @doc """
   Choose the name of the client function for the given operation
@@ -111,9 +111,9 @@ defmodule OpenAPI.Processor do
   This function accepts the operation spec and chooses a name for the client function that will
   be generated. The name must be unique within its module (see `c:operation_module_name/1`).
 
-  See `OpenAPI.Processor.Naming.operation_function/1` for the default implementation.
+  See `OpenAPI.Processor.Naming.operation_function/2` for the default implementation.
   """
-  @callback operation_function_name(OperationSpec.t()) :: atom
+  @callback operation_function_name(State.t(), OperationSpec.t()) :: atom
 
   @doc """
   Collect a list of request content types and their associated schemas
@@ -123,7 +123,7 @@ defmodule OpenAPI.Processor do
 
   See `OpenAPI.Processor.Operation.request_body/1` for the default implementation.
   """
-  @callback operation_request_body(OperationSpec.t()) :: Operation.request_body()
+  @callback operation_request_body(State.t(), OperationSpec.t()) :: Operation.request_body()
 
   @doc """
   Choose and cast the request method for the given operation
@@ -133,7 +133,7 @@ defmodule OpenAPI.Processor do
 
   See `OpenAPI.Processor.Operation.request_method/1` for the default implementation.
   """
-  @callback operation_request_method(OperationSpec.t()) :: Operation.method()
+  @callback operation_request_method(State.t(), OperationSpec.t()) :: Operation.method()
 
   @doc """
   Collect a list of response status codes and their associated schemas
@@ -143,7 +143,7 @@ defmodule OpenAPI.Processor do
 
   See `OpenAPI.Processor.Operation.response_body/1` for the default implementation.
   """
-  @callback operation_response_body(OperationSpec.t()) :: Operation.response_body()
+  @callback operation_response_body(State.t(), OperationSpec.t()) :: Operation.response_body()
 
   #
   # Default Implementations
@@ -152,23 +152,23 @@ defmodule OpenAPI.Processor do
   defdelegate ignore_operation?(state, operation_spec), to: OpenAPI.Processor.Ignore
   defdelegate ignore_schema?(state, schema_spec), to: OpenAPI.Processor.Ignore
 
-  defdelegate operation_docstring(operation_spec, params),
+  defdelegate operation_docstring(state, operation_spec, params),
     to: OpenAPI.Processor.Operation,
     as: :docstring
 
-  defdelegate operation_function_name(operation_spec),
+  defdelegate operation_function_name(state, operation_spec),
     to: OpenAPI.Processor.Naming,
     as: :operation_function
 
-  defdelegate operation_request_body(operation_spec),
+  defdelegate operation_request_body(state, operation_spec),
     to: OpenAPI.Processor.Operation,
     as: :request_body
 
-  defdelegate operation_request_method(operation_spec),
+  defdelegate operation_request_method(state, operation_spec),
     to: OpenAPI.Processor.Operation,
     as: :request_method
 
-  defdelegate operation_response_body(operation_spec),
+  defdelegate operation_response_body(state, operation_spec),
     to: OpenAPI.Processor.Operation,
     as: :response_body
 
@@ -209,24 +209,28 @@ defmodule OpenAPI.Processor do
     path_params = Enum.filter(all_params, &(&1.location == :path))
     query_params = Enum.filter(all_params, &(&1.location == :query))
 
+    docstring = implementation.operation_docstring(state, operation_spec, query_params)
+
     # TODO: Process schemas here
     request_body =
-      implementation.operation_request_body(operation_spec)
+      implementation.operation_request_body(state, operation_spec)
       |> Enum.sort_by(fn {content_type, _schema} -> content_type end)
       |> Enum.map(fn {content_type, schema} -> {content_type, schema} end)
 
+    request_method = implementation.operation_request_method(state, operation_spec)
+
     # TODO: Process schemas here
     response_body =
-      implementation.operation_response_body(operation_spec)
+      implementation.operation_response_body(state, operation_spec)
       |> Enum.sort_by(fn {status_code, _schemas} -> status_code end)
       |> Enum.map(fn {status_code, schemas} -> {status_code, schemas} end)
 
     %Operation{
-      docstring: implementation.operation_docstring(operation_spec, query_params),
+      docstring: docstring,
       function_name: implementation.operation_function_name(operation_spec),
       module_name: ToDo,
       request_body: request_body,
-      request_method: implementation.operation_request_method(operation_spec),
+      request_method: request_method,
       request_path: request_path,
       request_path_parameters: path_params,
       request_query_parameters: query_params,
