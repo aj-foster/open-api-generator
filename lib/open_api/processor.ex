@@ -46,16 +46,16 @@ defmodule OpenAPI.Processor do
 
   defmacro __using__(_opts) do
     quote do
-      defdelegate include_operation?(state, operation), to: OpenAPI.Processor
-      defdelegate include_schema?(state, schema), to: OpenAPI.Processor
+      defdelegate ignore_operation?(state, operation), to: OpenAPI.Processor
+      defdelegate ignore_schema?(state, schema), to: OpenAPI.Processor
       defdelegate operation_docstring(operation_spec, params), to: OpenAPI.Processor
       defdelegate operation_function_name(operation_spec), to: OpenAPI.Processor
       defdelegate operation_request_body(operation_spec), to: OpenAPI.Processor
       defdelegate operation_request_method(operation_spec), to: OpenAPI.Processor
       defdelegate operation_response_body(operation_spec), to: OpenAPI.Processor
 
-      defoverridable include_operation?: 2,
-                     include_schema?: 2,
+      defoverridable ignore_operation?: 2,
+                     ignore_schema?: 2,
                      operation_docstring: 2,
                      operation_function_name: 1,
                      operation_request_body: 1,
@@ -68,8 +68,8 @@ defmodule OpenAPI.Processor do
   # Callbacks
   #
 
-  @optional_callbacks include_operation?: 2,
-                      include_schema?: 2,
+  @optional_callbacks ignore_operation?: 2,
+                      ignore_schema?: 2,
                       operation_docstring: 2,
                       operation_function_name: 1,
                       operation_request_body: 1,
@@ -79,21 +79,21 @@ defmodule OpenAPI.Processor do
   @doc """
   Whether to render the given operation in the generated code
 
-  If this function returns `false`, the operation will not appear in the generated code.
+  If this function returns `true`, the operation will not appear in the generated code.
 
-  See `OpenAPI.Processor.include_operation?/2` for the default implementation.
+  See `OpenAPI.Processor.ignore_operation?/2` for the default implementation.
   """
-  @callback include_operation?(State.t(), OperationSpec.t()) :: boolean
+  @callback ignore_operation?(State.t(), OperationSpec.t()) :: boolean
 
   @doc """
   Whether to render the given schema in the generated code
 
-  If this function returns `false`, the schema will not appear in the generated code (unless it
-  passes this test when presented in another context) and a plain `map` will be used as its type.
+  If this function returns `true`, the schema will not appear in the generated code (unless it
+  returns `false` when presented in another context) and a plain `map` will be used as its type.
 
-  See `OpenAPI.Processor.include_schema?/2` for the default implementation.
+  See `OpenAPI.Processor.ignore_schema?/2` for the default implementation.
   """
-  @callback include_schema?(State.t(), OpenAPI.Spec.Schema.t()) :: boolean
+  @callback ignore_schema?(State.t(), SchemaSpec.t()) :: boolean
 
   @doc """
   Construct a docstring for the given operation
@@ -149,15 +149,8 @@ defmodule OpenAPI.Processor do
   # Default Implementations
   #
 
-  @spec include_operation?(State.t(), OperationSpec.t()) :: boolean
-  def include_operation?(state, operation) do
-    not OpenAPI.Processor.Ignore.ignored?(state, operation)
-  end
-
-  @spec include_schema?(State.t(), OpenAPI.Spec.Schema.t()) :: boolean
-  def include_schema?(state, schema) do
-    not OpenAPI.Processor.Ignore.ignored?(state, schema)
-  end
+  defdelegate ignore_operation?(state, operation_spec), to: OpenAPI.Processor.Ignore
+  defdelegate ignore_schema?(state, schema_spec), to: OpenAPI.Processor.Ignore
 
   defdelegate operation_docstring(operation_spec, params),
     to: OpenAPI.Processor.Operation,
@@ -192,13 +185,11 @@ defmodule OpenAPI.Processor do
     for {_path, item} <- paths,
         method <- @methods,
         operation_spec = Map.get(item, method),
-        implementation.include_operation?(state, operation_spec),
+        not implementation.ignore_operation?(state, operation_spec),
         reduce: state do
       state ->
         process_operation(state, operation_spec)
         |> IO.inspect(pretty: true, syntax_colors: IO.ANSI.syntax_colors())
-
-        # collect_response_body(operation_spec)
 
         state
     end
