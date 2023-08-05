@@ -22,8 +22,6 @@ defmodule OpenAPI.Processor do
   alias OpenAPI.Processor.State
   alias OpenAPI.Spec
   alias OpenAPI.Spec.Path.Operation, as: OperationSpec
-  alias OpenAPI.Spec.Response, as: ResponseSpec
-  alias OpenAPI.Spec.Schema.Media, as: MediaSpec
 
   @doc """
   Run the processing phase of the code generator
@@ -54,13 +52,15 @@ defmodule OpenAPI.Processor do
       defdelegate operation_function_name(operation_spec), to: OpenAPI.Processor
       defdelegate operation_request_body(operation_spec), to: OpenAPI.Processor
       defdelegate operation_request_method(operation_spec), to: OpenAPI.Processor
+      defdelegate operation_response_body(operation_spec), to: OpenAPI.Processor
 
       defoverridable include_operation?: 2,
                      include_schema?: 2,
                      operation_docstring: 2,
                      operation_function_name: 1,
                      operation_request_body: 1,
-                     operation_request_method: 1
+                     operation_request_method: 1,
+                     operation_response_body: 1
     end
   end
 
@@ -73,7 +73,8 @@ defmodule OpenAPI.Processor do
                       operation_docstring: 2,
                       operation_function_name: 1,
                       operation_request_body: 1,
-                      operation_request_method: 1
+                      operation_request_method: 1,
+                      operation_response_body: 1
 
   @doc """
   Whether to render the given operation in the generated code
@@ -134,6 +135,16 @@ defmodule OpenAPI.Processor do
   """
   @callback operation_request_method(OperationSpec.t()) :: Operation.method()
 
+  @doc """
+  Collect a list of response status codes and their associated schemas
+
+  This function accepts the operation spec and returns a list of tuples containing the status
+  codes (ex. `200` or `:default`) and the schema associated with that code.
+
+  See `OpenAPI.Processor.Operation.response_body/1` for the default implementation.
+  """
+  @callback operation_response_body(OperationSpec.t()) :: Operation.response_body()
+
   #
   # Default Implementations
   #
@@ -163,6 +174,10 @@ defmodule OpenAPI.Processor do
   defdelegate operation_request_method(operation_spec),
     to: OpenAPI.Processor.Operation,
     as: :request_method
+
+  defdelegate operation_response_body(operation_spec),
+    to: OpenAPI.Processor.Operation,
+    as: :response_body
 
   #
   # Helpers
@@ -209,6 +224,12 @@ defmodule OpenAPI.Processor do
       |> Enum.sort_by(fn {content_type, _schema} -> content_type end)
       |> Enum.map(fn {content_type, schema} -> {content_type, schema} end)
 
+    # TODO: Process schemas here
+    response_body =
+      implementation.operation_response_body(operation_spec)
+      |> Enum.sort_by(fn {status_code, _schemas} -> status_code end)
+      |> Enum.map(fn {status_code, schemas} -> {status_code, schemas} end)
+
     %Operation{
       docstring: implementation.operation_docstring(operation_spec, query_params),
       function_name: implementation.operation_function_name(operation_spec),
@@ -218,16 +239,7 @@ defmodule OpenAPI.Processor do
       request_path: request_path,
       request_path_parameters: path_params,
       request_query_parameters: query_params,
-      responses: []
+      responses: response_body
     }
-  end
-
-  @spec collect_response_body(OperationSpec.t()) :: [OpenAPI.Spec.Schema.t()]
-  defp collect_response_body(%OperationSpec{responses: responses}) when is_map(responses) do
-    Enum.map(responses, fn {_status_or_default, %ResponseSpec{content: content}} ->
-      Enum.map(content, fn {_content_type, %MediaSpec{schema: schema}} ->
-        schema
-      end)
-    end)
   end
 end
