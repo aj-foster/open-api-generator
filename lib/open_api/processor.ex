@@ -50,6 +50,7 @@ defmodule OpenAPI.Processor do
       defdelegate ignore_schema?(state, schema), to: OpenAPI.Processor
       defdelegate operation_docstring(state, operation_spec, params), to: OpenAPI.Processor
       defdelegate operation_function_name(state, operation_spec), to: OpenAPI.Processor
+      defdelegate operation_module_names(state, operation_spec), to: OpenAPI.Processor
       defdelegate operation_request_body(state, operation_spec), to: OpenAPI.Processor
       defdelegate operation_request_method(state, operation_spec), to: OpenAPI.Processor
       defdelegate operation_response_body(state, operation_spec), to: OpenAPI.Processor
@@ -58,6 +59,7 @@ defmodule OpenAPI.Processor do
                      ignore_schema?: 2,
                      operation_docstring: 3,
                      operation_function_name: 2,
+                     operation_module_names: 2,
                      operation_request_body: 2,
                      operation_request_method: 2,
                      operation_response_body: 2
@@ -72,6 +74,7 @@ defmodule OpenAPI.Processor do
                       ignore_schema?: 2,
                       operation_docstring: 3,
                       operation_function_name: 2,
+                      operation_module_names: 2,
                       operation_request_body: 2,
                       operation_request_method: 2,
                       operation_response_body: 2
@@ -114,6 +117,16 @@ defmodule OpenAPI.Processor do
   See `OpenAPI.Processor.Naming.operation_function/2` for the default implementation.
   """
   @callback operation_function_name(State.t(), OperationSpec.t()) :: atom
+
+  @doc """
+  Choose the names of the client function modules for the given operation
+
+  Each operation may have multiple client functions in different modules. This function accepts
+  the operation spec and returns a list of all of its operation modules.
+
+  See `OpenAPI.Processor.Naming.operation_modules/2` for the default implementation.
+  """
+  @callback operation_module_names(State.t(), OperationSpec.t()) :: [module]
 
   @doc """
   Collect a list of request content types and their associated schemas
@@ -160,6 +173,10 @@ defmodule OpenAPI.Processor do
     to: OpenAPI.Processor.Naming,
     as: :operation_function
 
+  defdelegate operation_module_names(state, operation_spec),
+    to: OpenAPI.Processor.Naming,
+    as: :operation_modules
+
   defdelegate operation_request_body(state, operation_spec),
     to: OpenAPI.Processor.Operation,
     as: :request_body
@@ -189,13 +206,13 @@ defmodule OpenAPI.Processor do
         reduce: state do
       state ->
         process_operation(state, operation_spec)
-        |> IO.inspect(pretty: true, syntax_colors: IO.ANSI.syntax_colors())
+        # |> IO.inspect(pretty: true, syntax_colors: IO.ANSI.syntax_colors())
 
         state
     end
   end
 
-  @spec process_operation(State.t(), OperationSpec.t()) :: Operation.t()
+  @spec process_operation(State.t(), OperationSpec.t()) :: [Operation.t()]
   defp process_operation(state, operation_spec) do
     %State{implementation: implementation} = state
 
@@ -210,6 +227,7 @@ defmodule OpenAPI.Processor do
     query_params = Enum.filter(all_params, &(&1.location == :query))
 
     docstring = implementation.operation_docstring(state, operation_spec, query_params)
+    module_names = implementation.operation_module_names(state, operation_spec)
 
     # TODO: Process schemas here
     request_body =
@@ -225,16 +243,28 @@ defmodule OpenAPI.Processor do
       |> Enum.sort_by(fn {status_code, _schemas} -> status_code end)
       |> Enum.map(fn {status_code, schemas} -> {status_code, schemas} end)
 
-    %Operation{
-      docstring: docstring,
-      function_name: implementation.operation_function_name(operation_spec),
-      module_name: ToDo,
-      request_body: request_body,
-      request_method: request_method,
-      request_path: request_path,
-      request_path_parameters: path_params,
-      request_query_parameters: query_params,
-      responses: response_body
-    }
+    for module_name <- module_names do
+      function_name = implementation.operation_function_name(state, operation_spec)
+      IO.puts("#{inspect(module_name)}.#{function_name}")
+
+      %Operation{
+        docstring: docstring,
+        function_name: function_name,
+        module_name: module_name,
+        request_body: request_body,
+        request_method: request_method,
+        request_path: request_path,
+        request_path_parameters: path_params,
+        request_query_parameters: query_params,
+        responses: response_body
+      }
+    end
   end
 end
+
+# Create module name callback that returns all possible module names (based on operation ID first,
+# tags second, default configured module third). Modify function name callback to accept the
+# module name and trim the beginning of the function name if necessary. Then create an operation
+# struct for each name.
+#
+# Save the operations and start processing schemas.

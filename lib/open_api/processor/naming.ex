@@ -25,6 +25,61 @@ defmodule OpenAPI.Processor.Naming do
     |> String.to_atom()
   end
 
+  @doc """
+  Choose the names of modules containing the given operation
+
+  Each operation may exist in multiple modules depending on the quantity of tags and the format
+  of the operation ID. This implementation looks for slash characters in the operation ID and
+  uses the initial segments (everything except the last segment) as segments of a module. It is
+  assumed that the last segment will form the function name.
+
+  It also uses each tag as a module, similarly turning slash characters into module namespaces. If
+  the operation does not have slashes in its ID and does not have any tags, then it will use the
+  configured `:default_operation_module` or `Operations` by default.
+
+  ## Configuration
+
+      config :oapi_generator, default: [
+        naming: [default_operation_module: Operations]
+      ]
+
+  """
+  @spec operation_modules(State.t(), OperationSpec.t()) :: [module]
+  def operation_modules(state, operation_spec) do
+    %OperationSpec{operation_id: id, tags: tags} = operation_spec
+    [_function | modules] = String.split(id, "/", trim: true) |> Enum.reverse()
+
+    id_name =
+      if length(modules) > 0 do
+        modules
+        |> Enum.reverse()
+        |> Enum.map(&normalize_identifier/1)
+        |> Enum.map(&Macro.camelize/1)
+        |> Module.concat()
+      end
+
+    tag_names =
+      Enum.map(tags, fn tag ->
+        tag
+        |> String.split("/", trim: true)
+        |> Enum.map(&normalize_identifier/1)
+        |> Enum.map(&Macro.camelize/1)
+        |> Module.concat()
+      end)
+
+    all_names =
+      [id_name | tag_names]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+
+    if length(all_names) > 0 do
+      all_names
+    else
+      default = config(state)[:default_operation_module] || Operations
+      [default]
+    end
+  end
+
   #
   # Helpers
   #
@@ -48,5 +103,13 @@ defmodule OpenAPI.Processor.Naming do
       |> String.replace(~r/[^A-Za-z0-9]+$/, "")
       |> String.downcase()
     end)
+  end
+
+  @spec config(State.t()) :: keyword
+  defp config(state) do
+    %OpenAPI.Processor.State{profile: profile} = state
+
+    Application.get_env(:oapi_generator, profile, [])
+    |> Keyword.get(:naming, [])
   end
 end
