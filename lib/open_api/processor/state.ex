@@ -1,16 +1,24 @@
 defmodule OpenAPI.Processor.State do
   @moduledoc false
+  alias OpenAPI.Processor.Operation
+  alias OpenAPI.Spec.Schema, as: SchemaSpec
 
   @type t :: %__MODULE__{
           implementation: module,
-          spec: OpenAPI.Spec.t(),
-          profile: atom
+          operations: [Operation.t()],
+          profile: atom,
+          schemas: %{reference => SchemaSpec.t()},
+          schema_registry: %{term => reference},
+          spec: OpenAPI.Spec.t()
         }
 
   defstruct [
     :implementation,
-    :spec,
-    :profile
+    :operations,
+    :profile,
+    :schemas,
+    :schema_registry,
+    :spec
   ]
 
   @spec new(OpenAPI.State.t()) :: t
@@ -19,8 +27,11 @@ defmodule OpenAPI.Processor.State do
 
     %__MODULE__{
       implementation: implementation(profile),
-      spec: state.spec,
-      profile: profile
+      operations: [],
+      profile: profile,
+      schemas: %{},
+      schema_registry: %{},
+      spec: state.spec
     }
   end
 
