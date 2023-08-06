@@ -131,7 +131,13 @@ defmodule OpenAPI.Reader do
     files
     |> Map.keys()
     |> Enum.reduce(state, fn relative_filename, state ->
-      state = %State{state | base_file: relative_filename, current_file: relative_filename}
+      state = %State{
+        state
+        | base_file: relative_filename,
+          current_file: relative_filename,
+          last_ref_file: relative_filename
+      }
+
       Spec.decode(state, relative_filename)
     end)
   end
