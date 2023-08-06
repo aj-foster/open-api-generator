@@ -15,11 +15,17 @@ defmodule OpenAPI.Processor.Operation do
   @typedoc "HTTP method"
   @type method :: :get | :put | :post | :delete | :options | :head | :patch | :trace
 
+  @typedoc "Request content types and their associated schema specs"
+  @type request_body_unprocessed :: [{content_type :: String.t(), schema :: SchemaSpec.t()}]
+
   @typedoc "Request content types and their associated schemas"
-  @type request_body :: [{content_type :: String.t(), schema :: SchemaSpec.t()}]
+  @type request_body :: [{content_type :: String.t(), schema :: reference}]
+
+  @typedoc "Response status codes and their associated schema specs"
+  @type response_body_unprocessed :: [{status :: integer | :default, schemas :: [SchemaSpec.t()]}]
 
   @typedoc "Response status codes and their associated schemas"
-  @type response_body :: [{status_code :: integer | :default, schema :: [SchemaSpec.t()]}]
+  @type response_body :: [{status :: integer | :default, schemas :: [reference]}]
 
   @typedoc "Processed operation data used by the renderer"
   @type t :: %__MODULE__{
@@ -125,7 +131,7 @@ defmodule OpenAPI.Processor.Operation do
   @doc """
   Collect request content types and their associated schemas
   """
-  @spec request_body(State.t(), OperationSpec.t()) :: request_body
+  @spec request_body(State.t(), OperationSpec.t()) :: request_body_unprocessed
   def request_body(_state, %OperationSpec{request_body: %RequestBodySpec{content: content}})
       when is_map(content) do
     Enum.map(content, fn {content_type, %MediaSpec{schema: schema}} -> {content_type, schema} end)
@@ -153,7 +159,7 @@ defmodule OpenAPI.Processor.Operation do
   the same status code to have multiple schemas, in which case the renderer should compose a
   union type for the response.
   """
-  @spec response_body(State.t(), OperationSpec.t()) :: response_body
+  @spec response_body(State.t(), OperationSpec.t()) :: response_body_unprocessed
   def response_body(_state, %OperationSpec{responses: responses}) when is_map(responses) do
     Enum.map(responses, fn {status_or_default, %ResponseSpec{content: content}} ->
       schemas = Enum.map(content, fn {_content_type, %MediaSpec{schema: schema}} -> schema end)

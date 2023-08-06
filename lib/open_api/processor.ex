@@ -22,6 +22,7 @@ defmodule OpenAPI.Processor do
   alias OpenAPI.Processor.State
   alias OpenAPI.Spec
   alias OpenAPI.Spec.Path.Operation, as: OperationSpec
+  alias OpenAPI.Spec.Schema, as: SchemaSpec
 
   @doc """
   Run the processing phase of the code generator
@@ -136,7 +137,8 @@ defmodule OpenAPI.Processor do
 
   See `OpenAPI.Processor.Operation.request_body/1` for the default implementation.
   """
-  @callback operation_request_body(State.t(), OperationSpec.t()) :: Operation.request_body()
+  @callback operation_request_body(State.t(), OperationSpec.t()) ::
+              Operation.request_body_unprocessed()
 
   @doc """
   Choose and cast the request method for the given operation
@@ -156,7 +158,8 @@ defmodule OpenAPI.Processor do
 
   See `OpenAPI.Processor.Operation.response_body/1` for the default implementation.
   """
-  @callback operation_response_body(State.t(), OperationSpec.t()) :: Operation.response_body()
+  @callback operation_response_body(State.t(), OperationSpec.t()) ::
+              Operation.response_body_unprocessed()
 
   #
   # Default Implementations
@@ -206,13 +209,10 @@ defmodule OpenAPI.Processor do
         reduce: state do
       state ->
         process_operation(state, operation_spec)
-        # |> IO.inspect(pretty: true, syntax_colors: IO.ANSI.syntax_colors())
-
-        state
     end
   end
 
-  @spec process_operation(State.t(), OperationSpec.t()) :: [Operation.t()]
+  @spec process_operation(State.t(), OperationSpec.t()) :: State.t()
   defp process_operation(state, operation_spec) do
     %State{implementation: implementation} = state
 
@@ -229,42 +229,79 @@ defmodule OpenAPI.Processor do
     docstring = implementation.operation_docstring(state, operation_spec, query_params)
     module_names = implementation.operation_module_names(state, operation_spec)
 
-    # TODO: Process schemas here
-    request_body =
+    {state, request_body} =
       implementation.operation_request_body(state, operation_spec)
-      |> Enum.sort_by(fn {content_type, _schema} -> content_type end)
-      |> Enum.map(fn {content_type, schema} -> {content_type, schema} end)
+      |> process_request_body(state)
 
     request_method = implementation.operation_request_method(state, operation_spec)
 
-    # TODO: Process schemas here
-    response_body =
+    {state, response_body} =
       implementation.operation_response_body(state, operation_spec)
-      |> Enum.sort_by(fn {status_code, _schemas} -> status_code end)
-      |> Enum.map(fn {status_code, schemas} -> {status_code, schemas} end)
+      |> process_response_body(state)
 
-    for module_name <- module_names do
-      function_name = implementation.operation_function_name(state, operation_spec)
-      IO.puts("#{inspect(module_name)}.#{function_name}")
+    operations =
+      for module_name <- module_names do
+        function_name = implementation.operation_function_name(state, operation_spec)
 
-      %Operation{
-        docstring: docstring,
-        function_name: function_name,
-        module_name: module_name,
-        request_body: request_body,
-        request_method: request_method,
-        request_path: request_path,
-        request_path_parameters: path_params,
-        request_query_parameters: query_params,
-        responses: response_body
-      }
+        %Operation{
+          docstring: docstring,
+          function_name: function_name,
+          module_name: module_name,
+          request_body: request_body,
+          request_method: request_method,
+          request_path: request_path,
+          request_path_parameters: path_params,
+          request_query_parameters: query_params,
+          responses: response_body
+        }
+      end
+
+    %State{state | operations: Enum.concat(operations, state.operations)}
+  end
+
+  @spec process_request_body(Operation.request_body_unprocessed(), State.t()) ::
+          {State.t(), Operation.request_body()}
+  defp process_request_body(request_body, state) do
+    request_body
+    |> Enum.sort_by(fn {content_type, _schema} -> content_type end, :desc)
+    |> Enum.reduce({state, []}, fn {content_type, schema_spec}, {state, request_body} ->
+      {state, schema_ref} = process_schema(state, schema_spec)
+      {state, [{content_type, schema_ref} | request_body]}
+    end)
+  end
+
+  @spec process_response_body(Operation.response_body_unprocessed(), State.t()) ::
+          {State.t(), Operation.response_body()}
+  defp process_response_body(response_body, state) do
+    response_body
+    |> Enum.sort_by(fn {content_type, _schema} -> content_type end, :desc)
+    |> Enum.reduce({state, []}, fn {status_code, schema_specs}, {state, response_body} ->
+      {state, schema_refs} =
+        schema_specs
+        |> Enum.reverse()
+        |> Enum.reduce({state, []}, fn schema_spec, {state, schema_refs} ->
+          {state, schema_ref} = process_schema(state, schema_spec)
+          {state, [schema_ref | schema_refs]}
+        end)
+
+      {state, [{status_code, schema_refs} | response_body]}
+    end)
+  end
+
+  @spec process_schema(State.t(), SchemaSpec.t()) :: {State.t(), reference}
+  defp process_schema(state, schema_spec) do
+    %SchemaSpec{
+      "$oag_last_ref_file": last_ref_file,
+      "$oag_last_ref_path": last_ref_path
+    } = schema_spec
+
+    if Map.has_key?(state.schema_registry, {last_ref_file, last_ref_path}) do
+      {state, Map.fetch!(state.schema_registry, {last_ref_file, last_ref_path})}
+    else
+      ref = make_ref()
+      schemas = Map.put(state.schemas, ref, schema_spec)
+      schema_registry = Map.put(state.schema_registry, {last_ref_file, last_ref_path}, ref)
+      {%State{state | schemas: schemas, schema_registry: schema_registry}, ref}
     end
   end
 end
-
-# Create module name callback that returns all possible module names (based on operation ID first,
-# tags second, default configured module third). Modify function name callback to accept the
-# module name and trim the beginning of the function name if necessary. Then create an operation
-# struct for each name.
-#
-# Save the operations and start processing schemas.
