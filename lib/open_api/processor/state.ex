@@ -47,4 +47,23 @@ defmodule OpenAPI.Processor.State do
 
     profile
   end
+
+  #
+  # Manipulation
+  #
+
+  @doc """
+  Get a schema reference by the last ref file/path
+  """
+  @spec get_schema_reference(%__MODULE__{}, SchemaSpec.t()) :: reference | nil
+  def get_schema_reference(state, schema_spec) do
+    %__MODULE__{schema_registry: registry} = state
+
+    %SchemaSpec{
+      "$oag_last_ref_file": last_ref_file,
+      "$oag_last_ref_path": last_ref_path
+    } = schema_spec
+
+    Map.get(registry, {last_ref_file, last_ref_path})
+  end
 end
