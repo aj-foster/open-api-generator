@@ -7,8 +7,8 @@ defmodule OpenAPI.Processor.State do
           implementation: module,
           operations: [Operation.t()],
           profile: atom,
-          schemas: %{reference => SchemaSpec.t()},
-          schema_registry: %{term => reference},
+          schema_specs_by_ref: %{reference => SchemaSpec.t()},
+          schema_refs_by_path: %{term => reference},
           spec: OpenAPI.Spec.t()
         }
 
@@ -16,8 +16,8 @@ defmodule OpenAPI.Processor.State do
     :implementation,
     :operations,
     :profile,
-    :schemas,
-    :schema_registry,
+    :schema_specs_by_ref,
+    :schema_refs_by_path,
     :spec
   ]
 
@@ -29,8 +29,8 @@ defmodule OpenAPI.Processor.State do
       implementation: implementation(profile),
       operations: [],
       profile: profile,
-      schemas: %{},
-      schema_registry: %{},
+      schema_specs_by_ref: %{},
+      schema_refs_by_path: %{},
       spec: state.spec
     }
   end
@@ -55,9 +55,9 @@ defmodule OpenAPI.Processor.State do
   @doc """
   Get a schema reference by the last ref file/path
   """
-  @spec get_schema_reference(%__MODULE__{}, SchemaSpec.t()) :: reference | nil
-  def get_schema_reference(state, schema_spec) do
-    %__MODULE__{schema_registry: registry} = state
+  @spec get_schema_ref_by_path(t, SchemaSpec.t()) :: reference | nil
+  def get_schema_ref_by_path(state, schema_spec) do
+    %__MODULE__{schema_refs_by_path: registry} = state
 
     %SchemaSpec{
       "$oag_last_ref_file": last_ref_file,
@@ -65,5 +65,27 @@ defmodule OpenAPI.Processor.State do
     } = schema_spec
 
     Map.get(registry, {last_ref_file, last_ref_path})
+  end
+
+  @doc """
+  Add a schema spec to the processor state and generate a reference for it
+  """
+  @spec put_schema_spec(t, SchemaSpec.t()) :: {t, reference}
+  def put_schema_spec(state, schema_spec) do
+    %SchemaSpec{
+      "$oag_last_ref_file": last_ref_file,
+      "$oag_last_ref_path": last_ref_path
+    } = schema_spec
+
+    path = {last_ref_file, last_ref_path}
+    ref = make_ref()
+
+    state = %__MODULE__{
+      state
+      | schema_refs_by_path: Map.put(state.schema_refs_by_path, path, ref),
+        schema_specs_by_ref: Map.put(state.schema_specs_by_ref, ref, schema_spec)
+    }
+
+    {state, ref}
   end
 end

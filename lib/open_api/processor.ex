@@ -37,7 +37,7 @@ defmodule OpenAPI.Processor do
     state
     |> State.new()
     |> collect_operations_and_schemas()
-    |> Map.get(:schema_registry)
+    |> Map.get(:schema_refs_by_path)
     |> IO.inspect(pretty: true, syntax_colors: IO.ANSI.syntax_colors())
 
     state

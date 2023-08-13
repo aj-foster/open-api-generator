@@ -176,18 +176,10 @@ defmodule OpenAPI.Processor.Type do
   # Objects
   #
   def from_schema(state, %Schema{properties: properties} = schema_spec) when is_map(properties) do
-    %Schema{
-      "$oag_last_ref_file": last_ref_file,
-      "$oag_last_ref_path": last_ref_path
-    } = schema_spec
-
-    if Map.has_key?(state.schema_registry, {last_ref_file, last_ref_path}) do
-      {state, Map.fetch!(state.schema_registry, {last_ref_file, last_ref_path})}
+    if ref = State.get_schema_ref_by_path(state, schema_spec) do
+      {state, ref}
     else
-      ref = make_ref()
-      schemas = Map.put(state.schemas, ref, schema_spec)
-      schema_registry = Map.put(state.schema_registry, {last_ref_file, last_ref_path}, ref)
-      {%State{state | schemas: schemas, schema_registry: schema_registry}, ref}
+      State.put_schema_spec(state, schema_spec)
     end
   end
 
