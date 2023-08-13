@@ -49,9 +49,6 @@ defmodule OpenAPI.Processor.Type do
           | {:string, string_format}
           | :null
 
-  @typedoc "Name of a field in an object type"
-  @type object_key :: atom | {:optional, atom} | {:additional, :_}
-
   @typedoc """
   Internal representation of types
 
@@ -66,46 +63,100 @@ defmodule OpenAPI.Processor.Type do
           | {:array, t}
           | {:const, literal}
           | {:enum, [literal]}
-          | {:object, %{object_key => t}}
           | {:union, [t]}
           | reference
 
-  @doc """
-  Create an internal type representation of the given schema
-
-  This variant of the function does not support schema references. If the schema may contain a
-  reference stored in the processor state, use `from_schema/2` instead.
-  """
-  @spec from_schema(Schema.t()) :: t
-  def from_schema(schema) do
-    from_schema(%State{schemas: %{}, schema_registry: %{}}, schema)
-  end
+  defguard is_primitive(schema)
+           when not is_nil(schema.const) or is_list(schema.enum) or
+                  schema.type in ["boolean", "integer", "number", "null", "string"]
 
   @doc """
   Create an internal type representation of the given schema
+
+  This function does not support objects or other schemas that would be stored in the processor
+  state. If a schema may contain such a reference, use `from_schema/2` instead.
+
+  It is expected that this function is called in cases when the range of possible types are known
+  to be limited, such as query or path parameters.
   """
-  @spec from_schema(%State{}, Schema.t()) :: t
-  def from_schema(state, schema)
+  @spec primitive_from_schema(Schema.t()) :: t
+  def primitive_from_schema(schema)
 
   # Literals
   #
 
-  def from_schema(_state, %Schema{const: value}) when not is_nil(value), do: {:const, value}
-  def from_schema(_state, %Schema{enum: [value]}), do: {:const, value}
-  def from_schema(_state, %Schema{enum: values}) when is_list(values), do: {:enum, values}
+  def primitive_from_schema(%Schema{const: value}) when not is_nil(value), do: {:const, value}
+  def primitive_from_schema(%Schema{enum: [value]}), do: {:const, value}
+  def primitive_from_schema(%Schema{enum: values}) when is_list(values), do: {:enum, values}
 
   # Primitives
   #
-  def from_schema(_state, %Schema{type: "boolean"}), do: :boolean
-  def from_schema(_state, %Schema{type: "integer"}), do: :integer
-  def from_schema(_state, %Schema{type: "number"}), do: :number
-  def from_schema(_state, %Schema{type: "null"}), do: :null
-  def from_schema(_state, %Schema{type: "string"} = schema), do: string_type(schema)
+  def primitive_from_schema(%Schema{type: "boolean"}), do: :boolean
+  def primitive_from_schema(%Schema{type: "integer"}), do: :integer
+  def primitive_from_schema(%Schema{type: "number"}), do: :number
+  def primitive_from_schema(%Schema{type: "null"}), do: :null
+  def primitive_from_schema(%Schema{type: "string"} = schema), do: string_type(schema)
+
+  # Arrays
+  #
+  def primitive_from_schema(%Schema{type: "array", items: items}) do
+    {:array, primitive_from_schema(items)}
+  end
+
+  # Unions
+  #
+  def primitive_from_schema(%Schema{type: types} = schema) when is_list(types) do
+    types
+    |> Enum.map(&%Schema{schema | type: &1})
+    |> then(&create_primitive_union/1)
+  end
+
+  def primitive_from_schema(%Schema{any_of: types}) when is_list(types),
+    do: create_primitive_union(types)
+
+  def primitive_from_schema(%Schema{one_of: types}) when is_list(types),
+    do: create_primitive_union(types)
+
+  # Fallback
+  #
+  def primitive_from_schema(schema) do
+    raise "Invalid primitive type: #{inspect(schema)}"
+  end
+
+  @spec create_primitive_union([Schema.t()]) :: t
+  defp create_primitive_union(types) do
+    types
+    |> Enum.map(&primitive_from_schema/1)
+    |> Enum.uniq()
+    |> Enum.sort()
+    |> case do
+      [] -> :null
+      [:null] -> :null
+      types -> {:union, types}
+    end
+  end
+
+  @doc """
+  Create an internal type representation of the given schema
+
+  This function supports referencing object schemas in the processor state. As a result, if it
+  encounters an object schema as a sub-field of the given schema, it will potentially modify the
+  processor state in order to stash a new reference.
+  """
+  @spec from_schema(%State{}, Schema.t()) :: {State.t(), t}
+  def from_schema(state, schema)
+
+  # Primitives
+  #
+  def from_schema(state, schema) when is_primitive(schema) do
+    {state, primitive_from_schema(schema)}
+  end
 
   # Arrays
   #
   def from_schema(state, %Schema{type: "array", items: items}) do
-    {:array, from_schema(state, items)}
+    {state, type} = from_schema(state, items)
+    {state, {:array, type}}
   end
 
   # Unions
@@ -124,27 +175,20 @@ defmodule OpenAPI.Processor.Type do
 
   # Objects
   #
-  def from_schema(state, %Schema{properties: properties, required: required}) do
-    fields =
-      Map.new(properties, fn {string_key, type} ->
-        key =
-          if is_list(required) and string_key in required do
-            String.to_atom(string_key)
-          else
-            {:optional, String.to_atom(string_key)}
-          end
+  def from_schema(state, %Schema{properties: properties} = schema_spec) when is_map(properties) do
+    %Schema{
+      "$oag_last_ref_file": last_ref_file,
+      "$oag_last_ref_path": last_ref_path
+    } = schema_spec
 
-        type =
-          if ref = State.get_schema_reference(state, type) do
-            ref
-          else
-            from_schema(state, type)
-          end
-
-        {key, type}
-      end)
-
-    {:object, fields}
+    if Map.has_key?(state.schema_registry, {last_ref_file, last_ref_path}) do
+      {state, Map.fetch!(state.schema_registry, {last_ref_file, last_ref_path})}
+    else
+      ref = make_ref()
+      schemas = Map.put(state.schemas, ref, schema_spec)
+      schema_registry = Map.put(state.schema_registry, {last_ref_file, last_ref_path}, ref)
+      {%State{state | schemas: schemas, schema_registry: schema_registry}, ref}
+    end
   end
 
   # Fallback
@@ -181,14 +225,22 @@ defmodule OpenAPI.Processor.Type do
 
   @spec create_union(State.t(), [Schema.t()]) :: t
   defp create_union(state, types) do
-    types
-    |> Enum.map(&from_schema(state, &1))
-    |> Enum.uniq()
-    |> Enum.sort()
-    |> case do
-      [] -> :null
-      [:null] -> :null
-      types -> {:union, types}
-    end
+    {state, types} =
+      Enum.reduce(types, {state, []}, fn type, {state, types} ->
+        {state, type} = from_schema(state, type)
+        {state, [type | types]}
+      end)
+
+    types =
+      types
+      |> Enum.uniq()
+      |> Enum.sort()
+      |> case do
+        [] -> :null
+        [:null] -> :null
+        types -> {:union, types}
+      end
+
+    {state, types}
   end
 end
