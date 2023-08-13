@@ -6,6 +6,7 @@ defmodule OpenAPI.Processor.Operation do
   """
   alias OpenAPI.Processor.Operation.Param
   alias OpenAPI.Processor.State
+  alias OpenAPI.Processor.Type
   alias OpenAPI.Spec.Path.Operation, as: OperationSpec
   alias OpenAPI.Spec.RequestBody, as: RequestBodySpec
   alias OpenAPI.Spec.Response, as: ResponseSpec
@@ -19,25 +20,25 @@ defmodule OpenAPI.Processor.Operation do
   @type request_body_unprocessed :: [{content_type :: String.t(), schema :: SchemaSpec.t()}]
 
   @typedoc "Request content types and their associated schemas"
-  @type request_body :: [{content_type :: String.t(), schema :: reference}]
+  @type request_body :: [{content_type :: String.t(), schema :: Type.t()}]
 
   @typedoc "Response status codes and their associated schema specs"
   @type response_body_unprocessed :: [{status :: integer | :default, schemas :: [SchemaSpec.t()]}]
 
   @typedoc "Response status codes and their associated schemas"
-  @type response_body :: [{status :: integer | :default, schemas :: [reference]}]
+  @type response_body :: [{status :: integer | :default, schemas :: [Type.t()]}]
 
   @typedoc "Processed operation data used by the renderer"
   @type t :: %__MODULE__{
           docstring: String.t(),
           function_name: atom,
           module_name: atom,
-          request_body: term,
+          request_body: request_body,
           request_method: atom,
           request_path: String.t(),
           request_path_parameters: [Param.t()],
           request_query_parameters: [Param.t()],
-          responses: [term]
+          responses: response_body
         }
 
   defstruct [

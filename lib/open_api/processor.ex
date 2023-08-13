@@ -20,6 +20,7 @@ defmodule OpenAPI.Processor do
   alias OpenAPI.Processor.Operation
   alias OpenAPI.Processor.Operation.Param
   alias OpenAPI.Processor.State
+  alias OpenAPI.Processor.Type
   alias OpenAPI.Spec
   alias OpenAPI.Spec.Path.Operation, as: OperationSpec
   alias OpenAPI.Spec.Schema, as: SchemaSpec
@@ -36,8 +37,9 @@ defmodule OpenAPI.Processor do
     state
     |> State.new()
     |> collect_operations_and_schemas()
+    |> Map.get(:schema_registry)
+    |> IO.inspect(pretty: true, syntax_colors: IO.ANSI.syntax_colors())
 
-    # |> IO.inspect(pretty: true, syntax_colors: IO.ANSI.syntax_colors())
     state
   end
 
@@ -265,8 +267,8 @@ defmodule OpenAPI.Processor do
     request_body
     |> Enum.sort_by(fn {content_type, _schema} -> content_type end, :desc)
     |> Enum.reduce({state, []}, fn {content_type, schema_spec}, {state, request_body} ->
-      {state, schema_ref} = process_schema(state, schema_spec)
-      {state, [{content_type, schema_ref} | request_body]}
+      {state, schema_type} = Type.from_schema(state, schema_spec)
+      {state, [{content_type, schema_type} | request_body]}
     end)
   end
 
@@ -276,32 +278,15 @@ defmodule OpenAPI.Processor do
     response_body
     |> Enum.sort_by(fn {content_type, _schema} -> content_type end, :desc)
     |> Enum.reduce({state, []}, fn {status_code, schema_specs}, {state, response_body} ->
-      {state, schema_refs} =
+      {state, schema_types} =
         schema_specs
         |> Enum.reverse()
-        |> Enum.reduce({state, []}, fn schema_spec, {state, schema_refs} ->
-          {state, schema_ref} = process_schema(state, schema_spec)
-          {state, [schema_ref | schema_refs]}
+        |> Enum.reduce({state, []}, fn schema_spec, {state, schema_types} ->
+          {state, schema_type} = Type.from_schema(state, schema_spec)
+          {state, [schema_type | schema_types]}
         end)
 
-      {state, [{status_code, schema_refs} | response_body]}
+      {state, [{status_code, schema_types} | response_body]}
     end)
-  end
-
-  @spec process_schema(State.t(), SchemaSpec.t()) :: {State.t(), reference}
-  defp process_schema(state, schema_spec) do
-    %SchemaSpec{
-      "$oag_last_ref_file": last_ref_file,
-      "$oag_last_ref_path": last_ref_path
-    } = schema_spec
-
-    if Map.has_key?(state.schema_registry, {last_ref_file, last_ref_path}) do
-      {state, Map.fetch!(state.schema_registry, {last_ref_file, last_ref_path})}
-    else
-      ref = make_ref()
-      schemas = Map.put(state.schemas, ref, schema_spec)
-      schema_registry = Map.put(state.schema_registry, {last_ref_file, last_ref_path}, ref)
-      {%State{state | schemas: schemas, schema_registry: schema_registry}, ref}
-    end
   end
 end
