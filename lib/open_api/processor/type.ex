@@ -26,6 +26,7 @@ defmodule OpenAPI.Processor.Type do
           | :ipv4
           | :ipv6
           | :json_pointer
+          | :password
           | :regex
           | :relative_json_pointer
           | :time
@@ -165,6 +166,7 @@ defmodule OpenAPI.Processor.Type do
   defp string_type(%Schema{format: "iri"}), do: {:string, :iri}
   defp string_type(%Schema{format: "iri-reference"}), do: {:string, :iri_reference}
   defp string_type(%Schema{format: "json-pointer"}), do: {:string, :json_pointer}
+  defp string_type(%Schema{format: "password"}), do: {:string, :password}
   defp string_type(%Schema{format: "regex"}), do: {:string, :regex}
 
   defp string_type(%Schema{format: "relative-json-pointer"}),
