@@ -1,6 +1,7 @@
 defmodule OpenAPI.Processor.State do
   @moduledoc false
   alias OpenAPI.Processor.Operation
+  alias OpenAPI.Processor.Schema
   alias OpenAPI.Spec.Schema, as: SchemaSpec
 
   @type t :: %__MODULE__{
@@ -9,6 +10,7 @@ defmodule OpenAPI.Processor.State do
           profile: atom,
           schema_specs_by_ref: %{reference => SchemaSpec.t()},
           schema_refs_by_path: %{term => reference},
+          schemas_by_ref: %{reference => Schema.t()},
           spec: OpenAPI.Spec.t()
         }
 
@@ -18,6 +20,7 @@ defmodule OpenAPI.Processor.State do
     :profile,
     :schema_specs_by_ref,
     :schema_refs_by_path,
+    :schemas_by_ref,
     :spec
   ]
 
@@ -31,6 +34,7 @@ defmodule OpenAPI.Processor.State do
       profile: profile,
       schema_specs_by_ref: %{},
       schema_refs_by_path: %{},
+      schemas_by_ref: %{},
       spec: state.spec
     }
   end

@@ -23,10 +23,12 @@ defmodule OpenAPI.Processor.Operation do
   @type request_body :: [{content_type :: String.t(), schema :: Type.t()}]
 
   @typedoc "Response status codes and their associated schema specs"
-  @type response_body_unprocessed :: [{status :: integer | :default, schemas :: [SchemaSpec.t()]}]
+  @type response_body_unprocessed :: [
+          {status :: integer | :default, schemas :: %{String.t() => SchemaSpec.t()}}
+        ]
 
   @typedoc "Response status codes and their associated schemas"
-  @type response_body :: [{status :: integer | :default, schemas :: [Type.t()]}]
+  @type response_body :: [{status :: integer | :default, schemas :: %{String.t() => Type.t()}}]
 
   @typedoc "Processed operation data used by the renderer"
   @type t :: %__MODULE__{
@@ -163,7 +165,11 @@ defmodule OpenAPI.Processor.Operation do
   @spec response_body(State.t(), OperationSpec.t()) :: response_body_unprocessed
   def response_body(_state, %OperationSpec{responses: responses}) when is_map(responses) do
     Enum.map(responses, fn {status_or_default, %ResponseSpec{content: content}} ->
-      schemas = Enum.map(content, fn {_content_type, %MediaSpec{schema: schema}} -> schema end)
+      schemas =
+        Map.new(content, fn {content_type, %MediaSpec{schema: schema}} ->
+          {content_type, schema}
+        end)
+
       {status_or_default, schemas}
     end)
   end
