@@ -4,6 +4,7 @@ defmodule OpenAPI.Processor.Naming do
   """
   alias OpenAPI.Processor.State
   alias OpenAPI.Spec.Path.Operation, as: OperationSpec
+  alias OpenAPI.Spec.Schema, as: SchemaSpec
 
   @doc """
   Choose the name of an operation client function based on its operation ID
@@ -80,8 +81,19 @@ defmodule OpenAPI.Processor.Naming do
     end
   end
 
+  @spec schema_module_and_type(State.t(), SchemaSpec.t()) :: {module | nil, atom}
+  def schema_module_and_type(_state, schema_spec) do
+    {starting_module, starting_type} = raw_schema_module_and_type(schema_spec)
+
+    if is_nil(starting_module) do
+      {starting_module, String.to_atom(starting_type)}
+    else
+      {Module.concat([starting_module]), String.to_atom(starting_type)}
+    end
+  end
+
   #
-  # Helpers
+  # Public Helpers
   #
 
   @doc """
@@ -104,6 +116,91 @@ defmodule OpenAPI.Processor.Naming do
       |> String.downcase()
     end)
   end
+
+  @doc """
+  Choose a starting schema module and type name based on title and context
+
+  Returns a tuple containing the `{module, type}`, such as `{"MySchema", "t"}`.
+
+  This function does not consider schema renaming or merging. It uses the title, context, and
+  location of the schema within the specification to determine an initial set of names. Schemas
+  located in `components/schemas` are named based on their key in the `schemas` map, so a schema
+  located at `components/schemas/my_schema` will become `MySchema.t()`. If a schema has a
+  context attached (such as a request body or response body for an operation) then it will be
+  named based on the operation. Finally, if a schema has a defined title, this will be used as
+  the name. If none of this information is available, `{nil, "map"}` is returned.
+
+  Callers of this function will almost certainly want to perform further processing.
+  """
+  @spec raw_schema_module_and_type(SchemaSpec.t()) ::
+          {module :: String.t() | nil, type :: String.t()}
+  def raw_schema_module_and_type(%SchemaSpec{
+        "$oag_last_ref_path": ["components", "schemas", schema_name]
+      }) do
+    module =
+      schema_name
+      |> normalize_identifier()
+      |> Macro.camelize()
+
+    {module, "t"}
+  end
+
+  def raw_schema_module_and_type(%SchemaSpec{
+        "$oag_schema_context": {:request, operation_module, operation_function, content_type}
+      }) do
+    type = Enum.join([operation_function, readable_content_type(content_type), "req"], "_")
+
+    {operation_module, type}
+  end
+
+  def raw_schema_module_and_type(%SchemaSpec{
+        "$oag_schema_context":
+          {:response, operation_module, operation_function, status_code, content_type}
+      }) do
+    type =
+      Enum.join(
+        [
+          operation_function,
+          to_string(status_code),
+          readable_content_type(content_type),
+          "resp"
+        ],
+        "_"
+      )
+
+    {operation_module, type}
+  end
+
+  def raw_schema_module_and_type(%SchemaSpec{title: schema_title}) when is_binary(schema_title) do
+    module =
+      schema_title
+      |> normalize_identifier()
+      |> Macro.camelize()
+
+    {module, "t"}
+  end
+
+  def raw_schema_module_and_type(_schema_spec) do
+    {nil, "map"}
+  end
+
+  @doc """
+  Turn a content type (ex. `"application/json"`) into a readable type (ex. `"json"`)
+
+  This is used by the default implementation of the schema module/type name function while
+  constructing the type of a request or response body that is otherwise unnamed. If an unknown
+  content type is passed, this function returns an empty string to avoid including the content
+  type in the name (although this could cause collisions).
+  """
+  @spec readable_content_type(String.t()) :: String.t()
+  def readable_content_type(content_type)
+  def readable_content_type("application/json"), do: "json"
+  def readable_content_type("application/json+" <> _), do: "json"
+  def readable_content_type(""), do: ""
+
+  #
+  # Private Helpers
+  #
 
   @spec config(State.t()) :: keyword
   defp config(state) do
