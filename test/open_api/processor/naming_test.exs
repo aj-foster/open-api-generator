@@ -27,4 +27,24 @@ defmodule OpenAPI.Processor.NamingTest do
       assert Naming.group_schema({"MyTestSchema", "t"}, state) == {"My.Test.Schema", "t"}
     end
   end
+
+  describe "rename_schema/2" do
+    test "does nothing by default", %{state: state} do
+      Application.put_env(:oapi_generator, @profile, naming: [rename: []])
+      assert Naming.rename_schema({"RenamedSchema", "t"}, state) == {"RenamedSchema", "t"}
+    end
+
+    test "renames using string patterns", %{state: state} do
+      Application.put_env(:oapi_generator, @profile, naming: [rename: [{"Abc", "ABC"}]])
+      assert Naming.rename_schema({"SomethingAbC", "t"}, state) == {"SomethingAbC", "t"}
+      assert Naming.rename_schema({"SomethingAbc", "t"}, state) == {"SomethingABC", "t"}
+      assert Naming.rename_schema({"SomeAbcAbcThing", "t"}, state) == {"SomeABCABCThing", "t"}
+    end
+
+    test "renames using regex patterns", %{state: state} do
+      Application.put_env(:oapi_generator, @profile, naming: [rename: [{~r/^Def/, "DEF"}]])
+      assert Naming.rename_schema({"SomethingDef", "t"}, state) == {"SomethingDef", "t"}
+      assert Naming.rename_schema({"DefSomething", "t"}, state) == {"DEFSomething", "t"}
+    end
+  end
 end

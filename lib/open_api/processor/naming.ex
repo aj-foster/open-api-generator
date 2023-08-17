@@ -146,6 +146,50 @@ defmodule OpenAPI.Processor.Naming do
     end
   end
 
+  @doc """
+  Rename schema modules based on configured patterns
+
+  This function accepts a tuple with the module and type of a schema as strings, along with the
+  processor state, and returns a modified tuple according to the configured replacements.
+
+  ## Configuration
+
+  Module replacements can be configured as a list of tuples in the `naming.rename` key of a
+  configuration profile:
+
+      config :oapi_generator,
+        my_profile: [
+          naming: [
+            rename: [
+              {"Api", "API"},
+              {~r/^Bio/, "Author.Bio"},
+              # ...
+            ]
+          ]
+        ]
+
+  The contents of each tuple will be fed into `String.replace/3`, for example:
+
+      > String.replace("MyApiResponse", "Api", "API")
+
+  ## Examples
+
+  In the configuration above, there are two replacements configured: the string pattern `"Api"`
+  will be replaced with `"API"`, and the regular expression pattern `^Bio` will be replaced with
+  `"Author.Bio"`. These rules would create the following transformations (types omitted because
+  they do not change):
+
+      MyApiResponse => MyAPIResponse
+      Apiary        => APIary
+      BioUpdate     => Author.BioUpdate
+      EditorBio     => EditorBio
+
+  Note that replacements can have unintended side-effects. For example, while we correctly
+  capitalized `MyApiResponse` using the `"Api"` pattern, we also replaced `APIary`. Regular
+  expressions lend more powerful and precise replacement patterns. This includes the ability to
+  use capture expressions (ex. `~r/(Api)([A-Z]|$)/`) and replacements that reference those
+  captures (ex. `"API\\\\2"`). See `String.replace/3` for more information.
+  """
   @spec rename_schema(raw_module_and_type, State.t()) :: raw_module_and_type
   def rename_schema(raw_module_and_type, state)
   def rename_schema({nil, type}, _state), do: {nil, type}
