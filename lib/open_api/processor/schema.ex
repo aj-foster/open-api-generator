@@ -7,12 +7,14 @@ defmodule OpenAPI.Processor.Schema do
 
   @typedoc "Processed schema data used by the renderer"
   @type t :: %__MODULE__{
+          context: tuple | nil,
           fields: [],
           module_name: module,
           type_name: atom
         }
 
-  defstruct fields: [],
+  defstruct context: nil,
+            fields: [],
             module_name: nil,
             type_name: :t
 end

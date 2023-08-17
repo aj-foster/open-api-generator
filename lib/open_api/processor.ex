@@ -345,10 +345,11 @@ defmodule OpenAPI.Processor do
         %State{state | schemas_by_ref: schemas_by_ref}
 
       :else ->
-        {state, fields} = process_schema_fields(state, schema_spec)
+        {state, fields} = process_schema_fields(state, schema_spec, ref)
         {module_name, type_name} = implementation.schema_module_and_type(state, schema_spec)
 
         schema = %Schema{
+          context: schema_spec."$oag_schema_context",
           fields: fields,
           module_name: module_name,
           type_name: type_name
@@ -359,8 +360,10 @@ defmodule OpenAPI.Processor do
     end
   end
 
-  @spec process_schema_fields(State.t(), SchemaSpec.t()) :: {State.t(), [Field.t()]}
-  def process_schema_fields(state, %SchemaSpec{properties: properties, required: required}) do
+  @spec process_schema_fields(State.t(), SchemaSpec.t(), reference) :: {State.t(), [Field.t()]}
+  def process_schema_fields(state, schema_spec, schema_ref) do
+    %SchemaSpec{properties: properties, required: required} = schema_spec
+
     for {field_name, %SchemaSpec{nullable: nullable?} = field_spec} <- properties,
         reduce: {state, []} do
       {state, fields} ->
@@ -368,8 +371,14 @@ defmodule OpenAPI.Processor do
 
         {state, type} =
           case Type.from_schema(state, field_spec) do
-            {state, ref} when is_reference(ref) -> {process_schema(state, ref, field_spec), ref}
-            {state, type} -> {state, type}
+            {state, field_ref} when is_reference(field_ref) ->
+              context = {:field, schema_ref, field_name}
+              field_spec = %SchemaSpec{field_spec | "$oag_schema_context": context}
+
+              {process_schema(state, field_ref, field_spec), field_ref}
+
+            {state, type} ->
+              {state, type}
           end
 
         field = %Field{
