@@ -6,6 +6,9 @@ defmodule OpenAPI.Processor.Naming do
   alias OpenAPI.Spec.Path.Operation, as: OperationSpec
   alias OpenAPI.Spec.Schema, as: SchemaSpec
 
+  @type raw_module_and_type :: {module :: String.t() | nil, type :: String.t()}
+  @type module_and_type :: {module :: module, type :: atom}
+
   @doc """
   Choose the name of an operation client function based on its operation ID
 
@@ -82,19 +85,100 @@ defmodule OpenAPI.Processor.Naming do
   end
 
   @spec schema_module_and_type(State.t(), SchemaSpec.t()) :: {module | nil, atom}
-  def schema_module_and_type(_state, schema_spec) do
-    {starting_module, starting_type} = raw_schema_module_and_type(schema_spec)
+  def schema_module_and_type(state, schema_spec) do
+    {module, type} =
+      raw_schema_module_and_type(schema_spec)
+      |> merge_schema(state)
+      |> rename_schema(state)
+      |> group_schema(state)
 
-    if is_nil(starting_module) do
-      {starting_module, String.to_atom(starting_type)}
+    if is_nil(module) do
+      {module, String.to_atom(type)}
     else
-      {Module.concat([starting_module]), String.to_atom(starting_type)}
+      {Module.concat([module]), String.to_atom(type)}
     end
   end
 
   #
   # Public Helpers
   #
+
+  @spec merge_schema(raw_module_and_type, State.t()) :: raw_module_and_type
+  def merge_schema(raw_module_and_type, state)
+  def merge_schema({nil, type}, _state), do: {nil, type}
+
+  def merge_schema({module, type}, state) do
+    merges = config(state)[:merge] || []
+
+    Enum.reduce(merges, {module, type}, fn
+      {before_merge, after_merge}, {module, type} ->
+        cond do
+          is_struct(before_merge, Regex) and Regex.match?(before_merge, module) ->
+            new_module = String.replace(module, before_merge, after_merge)
+            new_type = merged_type(module, new_module)
+            {new_module, new_type}
+
+          not is_struct(before_merge) and module == to_string(before_merge) ->
+            new_type = merged_type(before_merge, after_merge)
+            {after_merge, new_type}
+
+          :else ->
+            {module, type}
+        end
+    end)
+  end
+
+  @spec merged_type(String.t(), String.t()) :: String.t()
+  defp merged_type(before_merge, after_merge) do
+    cond do
+      String.starts_with?(before_merge, after_merge) ->
+        before_merge
+        |> String.trim_leading(after_merge)
+        |> Macro.underscore()
+
+      String.ends_with?(before_merge, after_merge) ->
+        before_merge
+        |> String.trim_trailing(after_merge)
+        |> Macro.underscore()
+
+      :else ->
+        Macro.underscore(before_merge)
+    end
+  end
+
+  @spec rename_schema(raw_module_and_type, State.t()) :: raw_module_and_type
+  def rename_schema(raw_module_and_type, state)
+  def rename_schema({nil, type}, _state), do: {nil, type}
+
+  def rename_schema({module, type}, state) do
+    replacements = config(state)[:rename] || []
+
+    Enum.reduce(replacements, {module, type}, fn {pattern, replacement}, {module, type} ->
+      {String.replace(module, pattern, replacement), type}
+    end)
+  end
+
+  @spec group_schema(raw_module_and_type, State.t()) :: raw_module_and_type
+  def group_schema(raw_module_and_type, state)
+  def group_schema({nil, type}, _state), do: {nil, type}
+
+  def group_schema({module, type}, state) do
+    groups = config(state)[:group] || []
+
+    Enum.reduce(groups, {module, type}, fn group, {module, type} ->
+      group = inspect(group)
+
+      module =
+        cond do
+          module == group -> module
+          String.starts_with?(module, "#{group}.") -> module
+          String.starts_with?(module, group) -> String.replace_leading(module, group, "#{group}.")
+          :else -> module
+        end
+
+      {module, type}
+    end)
+  end
 
   @doc """
   Normalize an identifier into snake_case
@@ -150,7 +234,7 @@ defmodule OpenAPI.Processor.Naming do
       }) do
     type = Enum.join([operation_function, readable_content_type(content_type), "req"], "_")
 
-    {operation_module, type}
+    {to_string(operation_module), type}
   end
 
   def raw_schema_module_and_type(%SchemaSpec{
@@ -168,7 +252,7 @@ defmodule OpenAPI.Processor.Naming do
         "_"
       )
 
-    {operation_module, type}
+    {to_string(operation_module), type}
   end
 
   def raw_schema_module_and_type(%SchemaSpec{title: schema_title}) when is_binary(schema_title) do
