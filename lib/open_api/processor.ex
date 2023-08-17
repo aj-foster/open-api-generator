@@ -36,15 +36,13 @@ defmodule OpenAPI.Processor do
   """
   @spec run(OpenAPI.State.t()) :: OpenAPI.State.t()
   def run(state) do
-    state
-    |> State.new()
-    |> collect_operations_and_schemas()
-    |> process_schemas()
-    |> Map.get(:schemas_by_ref)
+    %State{operations: operations, schemas_by_ref: schemas_by_ref} =
+      state
+      |> State.new()
+      |> collect_operations_and_schemas()
+      |> process_schemas()
 
-    # |> IO.inspect(pretty: true, syntax_colors: IO.ANSI.syntax_colors())
-
-    state
+    %OpenAPI.State{state | operations: operations, schemas: schemas_by_ref}
   end
 
   #

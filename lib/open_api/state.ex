@@ -7,6 +7,8 @@ defmodule OpenAPI.State do
   @typedoc "OpenAPI generator state."
   @type t :: %__MODULE__{
           call: Call.t(),
+          config: OpenAPI.Config.t(),
+          files: [OpenAPI.Renderer.File.t()],
           operations: [OpenAPI.Processor.Operation.t()],
           schemas: %{reference => OpenAPI.Processor.Schema.t()},
           spec: Spec.t() | nil
@@ -29,7 +31,7 @@ defmodule OpenAPI.State do
     %__MODULE__{
       call: call,
       config: OpenAPI.Config.new(Application.get_env(:oapi_generator, call.profile)),
-      files: %{},
+      files: [],
       operations: [],
       schemas: %{},
       spec: nil

@@ -11,6 +11,7 @@ defmodule OpenAPI do
   alias OpenAPI.Call
   alias OpenAPI.Processor
   alias OpenAPI.Reader
+  alias OpenAPI.Renderer
   alias OpenAPI.State
 
   @doc """
@@ -23,5 +24,6 @@ defmodule OpenAPI do
     |> State.new()
     |> Reader.run()
     |> Processor.run()
+    |> Renderer.run()
   end
 end
