@@ -16,7 +16,7 @@ defmodule OpenAPI.Processor.OperationTest do
         summary: nil
       }
 
-      assert Operation.docstring(operation, []) ==
+      assert Operation.docstring(nil, operation, []) ==
                """
                GET `/`
                """
@@ -31,7 +31,7 @@ defmodule OpenAPI.Processor.OperationTest do
         summary: "Does stuff"
       }
 
-      assert Operation.docstring(operation, []) ==
+      assert Operation.docstring(nil, operation, []) ==
                """
                Does stuff
 
@@ -48,7 +48,7 @@ defmodule OpenAPI.Processor.OperationTest do
         summary: "Does stuff"
       }
 
-      assert Operation.docstring(operation, []) ==
+      assert Operation.docstring(nil, operation, []) ==
                """
                Does stuff
 
@@ -73,14 +73,14 @@ defmodule OpenAPI.Processor.OperationTest do
         %Param{description: "Something else", name: "two", value_type: :string}
       ]
 
-      assert Operation.docstring(operation, query_params) ==
+      assert Operation.docstring(nil, operation, query_params) ==
                """
                Does stuff
 
                ## Options
 
-                 * `one` (string): Something
-                 * `two` (string): Something else
+                 * `one`: Something
+                 * `two`: Something else
 
                """
     end
@@ -102,7 +102,7 @@ defmodule OpenAPI.Processor.OperationTest do
         %Param{description: "Something else", name: "two", value_type: :string}
       ]
 
-      assert Operation.docstring(operation, query_params) ==
+      assert Operation.docstring(nil, operation, query_params) ==
                """
                Does stuff
 
@@ -110,8 +110,8 @@ defmodule OpenAPI.Processor.OperationTest do
 
                ## Options
 
-                 * `one` (string): Something
-                 * `two` (string): Something else
+                 * `one`: Something
+                 * `two`: Something else
 
                ## Resources
 
