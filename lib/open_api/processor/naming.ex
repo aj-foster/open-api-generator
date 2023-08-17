@@ -84,6 +84,7 @@ defmodule OpenAPI.Processor.Naming do
     end
   end
 
+  # TODO: Docs and tests
   @spec schema_module_and_type(State.t(), SchemaSpec.t()) :: {module | nil, atom}
   def schema_module_and_type(state, schema_spec) do
     {module, type} =
@@ -103,6 +104,7 @@ defmodule OpenAPI.Processor.Naming do
   # Public Helpers
   #
 
+  # TODO: Docs and tests
   @spec merge_schema(raw_module_and_type, State.t()) :: raw_module_and_type
   def merge_schema(raw_module_and_type, state)
   def merge_schema({nil, type}, _state), do: {nil, type}
