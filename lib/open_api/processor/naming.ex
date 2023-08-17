@@ -158,6 +158,46 @@ defmodule OpenAPI.Processor.Naming do
     end)
   end
 
+  @doc """
+  Group schema modules into configured namespaces
+
+  This function accepts a tuple with the module and type of a schema as strings, along with the
+  processor state, and returns a modified tuple according to the configured groups.
+
+  ## Configuration
+
+  Module namespaces can be configured as a list of modules in the `naming.group` key of a
+  configuration profile:
+
+      config :oapi_generator,
+        my_profile: [
+          naming: [
+            group: [
+              Author,
+              Author.Bio
+              Comment,
+              # ...
+            ]
+          ]
+        ]
+
+  ## Examples
+
+  The configuration above includes three module namespaces for grouping: `Author`, `Author.Bio`,
+  and `Comment`. These rules would create the following transformations (types omitted because
+  they do not change):
+
+      AuthorAvatar    => Author.Avatar
+      AuthorBio       => Author.Bio
+      AuthorBioUpdate => Author.Bio.Update
+      PostComment     => PostComment
+
+  Note that the desired grouping must appear at the start of the module name: `PostComment` is
+  unaffected by the `Comment` group configuration. As a result, it is also important that `Author`
+  appear in the configuration before `Author.Bio`, otherwise `Author.Bio` would fail to match the
+  beginning of `AuthorBioUpdate` resulting in `Author.BioUpdate` (since the `Author` configuration
+  would still match afterwards).
+  """
   @spec group_schema(raw_module_and_type, State.t()) :: raw_module_and_type
   def group_schema(raw_module_and_type, state)
   def group_schema({nil, type}, _state), do: {nil, type}

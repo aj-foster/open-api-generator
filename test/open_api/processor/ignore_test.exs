@@ -1,5 +1,5 @@
 defmodule OpenAPI.Processor.IgnoreTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias OpenAPI.Processor.Ignore
 
