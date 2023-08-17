@@ -330,21 +330,32 @@ defmodule OpenAPI.Processor do
   defp process_schema(state, ref, schema_spec) do
     %State{implementation: implementation, schemas_by_ref: schemas_by_ref} = state
 
-    if Map.has_key?(schemas_by_ref, ref) do
-      state
-    else
-      {state, fields} = process_schema_fields(state, schema_spec)
-      {module_name, type_name} = implementation.schema_module_and_type(state, schema_spec)
-      IO.inspect({module_name, type_name})
+    cond do
+      Map.has_key?(schemas_by_ref, ref) ->
+        state
 
-      schema = %Schema{
-        fields: fields,
-        module_name: module_name,
-        type_name: type_name
-      }
+      implementation.ignore_schema?(state, schema_spec) ->
+        schema = %Schema{
+          fields: [],
+          module_name: nil,
+          type_name: :map
+        }
 
-      schemas_by_ref = Map.put(state.schemas_by_ref, ref, schema)
-      %State{state | schemas_by_ref: schemas_by_ref}
+        schemas_by_ref = Map.put(state.schemas_by_ref, ref, schema)
+        %State{state | schemas_by_ref: schemas_by_ref}
+
+      :else ->
+        {state, fields} = process_schema_fields(state, schema_spec)
+        {module_name, type_name} = implementation.schema_module_and_type(state, schema_spec)
+
+        schema = %Schema{
+          fields: fields,
+          module_name: module_name,
+          type_name: type_name
+        }
+
+        schemas_by_ref = Map.put(state.schemas_by_ref, ref, schema)
+        %State{state | schemas_by_ref: schemas_by_ref}
     end
   end
 
