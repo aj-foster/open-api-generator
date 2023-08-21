@@ -67,5 +67,17 @@ config :oapi_generator,
         {~r/^Ssh/, "SSH"},
         {~r/^Workflow/, "Actions.Workflow"}
       ]
+    ],
+    output: [
+      base_module: Example,
+      extra_fields: [__info__: :map],
+      location: "example/lib",
+      request_type: :inline,
+      response_type: :inline,
+      schema_subdirectory: "schemas",
+      schema_use: MyModule,
+      types: [
+        error: {GitHub.Error, :t}
+      ]
     ]
   ]
