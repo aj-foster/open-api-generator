@@ -28,12 +28,30 @@ defmodule OpenAPI.Renderer do
 
   defmacro __using__(_opts) do
     quote do
+      defdelegate format(state, file), to: OpenAPI.Renderer
       defdelegate location(state, file), to: OpenAPI.Renderer
       defdelegate render(state, file), to: OpenAPI.Renderer
+      defdelegate render_default_client(state, file), to: OpenAPI.Renderer
+      defdelegate render_moduledoc(state, file), to: OpenAPI.Renderer
+      defdelegate render_operations(state, file), to: OpenAPI.Renderer
+      defdelegate render_schema(state, file), to: OpenAPI.Renderer
+      defdelegate render_schema_field_function(state, file), to: OpenAPI.Renderer
+      defdelegate render_schema_struct(state, file), to: OpenAPI.Renderer
+      defdelegate render_schema_types(state, file), to: OpenAPI.Renderer
+      defdelegate render_using(state, file), to: OpenAPI.Renderer
       defdelegate write(state, file), to: OpenAPI.Renderer
 
-      defoverridable location: 2,
+      defoverridable format: 2,
+                     location: 2,
                      render: 2,
+                     render_default_client: 2,
+                     render_moduledoc: 2,
+                     render_operations: 2,
+                     render_schema: 2,
+                     render_schema_field_function: 2,
+                     render_schema_struct: 2,
+                     render_schema_types: 2,
+                     render_using: 2,
                      write: 2
     end
   end
@@ -42,9 +60,23 @@ defmodule OpenAPI.Renderer do
   # Callbacks
   #
 
-  @optional_callbacks location: 2,
+  @optional_callbacks format: 2,
+                      location: 2,
                       render: 2,
+                      render_default_client: 2,
+                      render_moduledoc: 2,
+                      render_operations: 2,
+                      render_schema: 2,
+                      render_schema_field_function: 2,
+                      render_schema_struct: 2,
+                      render_schema_types: 2,
+                      render_using: 2,
                       write: 2
+
+  @doc """
+  Convert the Abstract Syntax Tree (AST) form of the file into formatted code
+  """
+  @callback format(State.t(), File.t()) :: iodata
 
   @doc """
   Choose the filesystem location for a rendered file to be written
@@ -53,8 +85,58 @@ defmodule OpenAPI.Renderer do
 
   @doc """
   Create the contents of a file in quoted Abstract Syntax Tree (AST) form
+
+  This is the primary function called to render a file. The default implementation calls several
+  other callbacks (all named `render_*`) which can be overridden individually.
   """
   @callback render(State.t(), File.t()) :: Macro.t()
+
+  @doc """
+  Render the `@default_client` module attribute in an operation module
+  """
+  @callback render_default_client(State.t(), File.t()) :: Macro.t()
+
+  @doc """
+  Render the `@moduledoc` portion of the file
+  """
+  @callback render_moduledoc(State.t(), File.t()) :: Macro.t()
+
+  @doc """
+  Render the associated types, docstring, typespec, and function for all operations
+
+  This is the primary function called to render all operations in a file. The default
+  implementation calls several other callbacks (all named `render_operation*`) when can be
+  overridden individually.
+  """
+  @callback render_operations(State.t(), File.t()) :: Macro.t()
+
+  @doc """
+  Render the types, struct, and field function for schemas not related to an operation
+
+  This is the primary function called to render schemas. The default implementation calls several
+  other callbacks (all named `render_schema_*`) which can be overridden individually.
+  """
+  @callback render_schema(State.t(), File.t()) :: Macro.t()
+
+  @doc """
+  Render a function `__fields__/1` that return a keyword list of schema fields and their types
+  """
+  @callback render_schema_field_function(State.t(), [Schema.t()]) :: Macro.t()
+
+  @doc """
+  Render the `defstruct` call for the schema types contained in the file
+  """
+  @callback render_schema_struct(State.t(), [Schema.t()]) :: Macro.t()
+
+  @doc """
+  Render the typespecs for schema types contained in the file
+  """
+  @callback render_schema_types(State.t(), [Schema.t()]) :: Macro.t()
+
+  @doc """
+  Render one or more `use` statements in the file, if necessary
+  """
+  @callback render_using(State.t(), File.t()) :: Macro.t()
 
   @doc """
   Write a rendered file to the filesystem
@@ -65,17 +147,25 @@ defmodule OpenAPI.Renderer do
   # Default Implementations
   #
 
-  def location(_state, _file) do
-    ""
-  end
+  defdelegate format(state, file), to: OpenAPI.Renderer.Util
+  defdelegate location(state, file), to: OpenAPI.Renderer.Module, as: :filename
+  defdelegate render(state, file), to: OpenAPI.Renderer.Module
+  defdelegate render_default_client(state, file), to: OpenAPI.Renderer.Module
+  defdelegate render_moduledoc(state, file), to: OpenAPI.Renderer.Module
+  defdelegate render_operations(state, file), to: OpenAPI.Renderer.Operation, as: :render_all
+  defdelegate render_schema(state, file), to: OpenAPI.Renderer.Schema, as: :render
 
-  def render(_state, _file) do
-    {nil, nil, nil}
-  end
+  defdelegate render_schema_field_function(state, schemas),
+    to: OpenAPI.Renderer.Schema,
+    as: :render_field_function
 
-  def write(_state, _file) do
-    :ok
-  end
+  defdelegate render_schema_struct(state, schemas),
+    to: OpenAPI.Renderer.Schema,
+    as: :render_struct
+
+  defdelegate render_schema_types(state, schemas), to: OpenAPI.Renderer.Schema, as: :render_types
+  defdelegate render_using(state, file), to: OpenAPI.Renderer.Module
+  defdelegate write(state, file), to: OpenAPI.Renderer.Util
 
   #
   # Helpers
@@ -105,19 +195,18 @@ defmodule OpenAPI.Renderer do
   end
 
   @spec render_files(State.t()) :: State.t()
-  def render_files(state) do
+  defp render_files(state) do
     %State{files: files_by_module, implementation: implementation} = state
 
     for {module, file} <- files_by_module, reduce: state do
       %State{files: files_by_module} = state ->
-        file = %File{
+        file =
           file
-          | ast: implementation.render(state, file),
-            location: implementation.render(state, file)
-        }
+          |> then(&%File{&1 | ast: implementation.render(state, &1)})
+          |> then(&%File{&1 | contents: implementation.format(state, &1)})
+          |> then(&%File{&1 | location: implementation.location(state, &1)})
 
         implementation.write(state, file)
-
         %State{state | files: Map.put(files_by_module, module, file)}
     end
   end

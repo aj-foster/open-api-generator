@@ -53,4 +53,19 @@ defmodule OpenAPI.Renderer.State do
 
     %__MODULE__{state | files: files}
   end
+
+  defimpl Inspect do
+    import Inspect.Algebra
+
+    def inspect(renderer_state, _opts) do
+      %OpenAPI.Renderer.State{implementation: implementation} = renderer_state
+
+      concat([
+        "#OpenAPI.Renderer.State<",
+        "implementation: ",
+        inspect(implementation),
+        ">"
+      ])
+    end
+  end
 end

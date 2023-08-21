@@ -4,6 +4,7 @@ defmodule OpenAPI.Renderer.File do
 
   @type t :: %__MODULE__{
           ast: Macro.t() | nil,
+          contents: String.t() | nil,
           location: String.t() | nil,
           module: module,
           operations: [Operation.t()],
@@ -13,6 +14,7 @@ defmodule OpenAPI.Renderer.File do
 
   defstruct [
     :ast,
+    :contents,
     :location,
     :module,
     :operations,
