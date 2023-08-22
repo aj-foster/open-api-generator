@@ -88,6 +88,14 @@ defmodule OpenAPI.Renderer.Util do
   @spec to_readable_type(State.t(), Type.t()) :: term
   def to_readable_type(state, type)
 
+  def to_readable_type(state, {:array, type}) do
+    inner_type = to_readable_type(state, type)
+    [inner_type]
+  end
+
+  def to_readable_type(_state, {:union, []}), do: nil
+  def to_readable_type(state, {:union, [type]}), do: to_readable_type(state, type)
+
   def to_readable_type(state, {:union, types}) do
     types =
       unwrap_unions(types)
@@ -120,7 +128,7 @@ defmodule OpenAPI.Renderer.Util do
   @doc """
   Render an internal type as a typespec
   """
-  @spec to_type(State.t(), Type.t()) :: Macro.t()
+  @spec to_type(State.t(), Type.t() | {module, atom}) :: Macro.t()
   def to_type(state, type)
 
   # Primitives
@@ -148,6 +156,9 @@ defmodule OpenAPI.Renderer.Util do
   def to_type(state, {:enum, literals}) do
     to_type(state, {:union, Enum.map(literals, &{:const, &1})})
   end
+
+  def to_type(_state, {:union, []}), do: quote(do: nil)
+  def to_type(state, {:union, [type]}), do: to_type(state, type)
 
   def to_type(state, {:union, types}) do
     types
@@ -179,6 +190,13 @@ defmodule OpenAPI.Renderer.Util do
         quote do
           unquote(:map)
         end
+    end
+  end
+
+  # For types specified in configuration
+  def to_type(_state, {module, type}) do
+    quote do
+      unquote(module).unquote(type)()
     end
   end
 
