@@ -95,7 +95,7 @@ defmodule OpenAPI.Processor.Operation do
         "#{request_method} `#{request_path}`\n"
       end
 
-    description = if description, do: "\n#{description}\n"
+    description = if description not in [nil, ""], do: "\n#{description}\n"
 
     options =
       if length(query_params) > 0 do
