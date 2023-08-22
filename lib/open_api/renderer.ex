@@ -34,10 +34,14 @@ defmodule OpenAPI.Renderer do
       defdelegate render_default_client(state, file), to: OpenAPI.Renderer
       defdelegate render_moduledoc(state, file), to: OpenAPI.Renderer
       defdelegate render_operations(state, file), to: OpenAPI.Renderer
+      defdelegate render_operation(state, operation), to: OpenAPI.Renderer
+      defdelegate render_operation_doc(state, operation), to: OpenAPI.Renderer
+      defdelegate render_operation_function(state, operation), to: OpenAPI.Renderer
+      defdelegate render_operation_spec(state, operation), to: OpenAPI.Renderer
       defdelegate render_schema(state, file), to: OpenAPI.Renderer
-      defdelegate render_schema_field_function(state, file), to: OpenAPI.Renderer
-      defdelegate render_schema_struct(state, file), to: OpenAPI.Renderer
-      defdelegate render_schema_types(state, file), to: OpenAPI.Renderer
+      defdelegate render_schema_field_function(state, schemas), to: OpenAPI.Renderer
+      defdelegate render_schema_struct(state, schemas), to: OpenAPI.Renderer
+      defdelegate render_schema_types(state, schemas), to: OpenAPI.Renderer
       defdelegate render_using(state, file), to: OpenAPI.Renderer
       defdelegate write(state, file), to: OpenAPI.Renderer
 
@@ -47,6 +51,10 @@ defmodule OpenAPI.Renderer do
                      render_default_client: 2,
                      render_moduledoc: 2,
                      render_operations: 2,
+                     render_operation: 2,
+                     render_operation_doc: 2,
+                     render_operation_function: 2,
+                     render_operation_spec: 2,
                      render_schema: 2,
                      render_schema_field_function: 2,
                      render_schema_struct: 2,
@@ -66,6 +74,10 @@ defmodule OpenAPI.Renderer do
                       render_default_client: 2,
                       render_moduledoc: 2,
                       render_operations: 2,
+                      render_operation: 2,
+                      render_operation_doc: 2,
+                      render_operation_function: 2,
+                      render_operation_spec: 2,
                       render_schema: 2,
                       render_schema_field_function: 2,
                       render_schema_struct: 2,
@@ -105,10 +117,33 @@ defmodule OpenAPI.Renderer do
   Render the associated types, docstring, typespec, and function for all operations
 
   This is the primary function called to render all operations in a file. The default
-  implementation calls several other callbacks (all named `render_operation*`) when can be
+  implementation calls several other callbacks (all named `render_operation*`) which can be
   overridden individually.
   """
   @callback render_operations(State.t(), File.t()) :: Macro.t()
+
+  @doc """
+  Render the associated types, docstring, typespec, and function for a single operation
+
+  The default implementation of this function calls several other callbacks (all named
+  `render_operation_*`) which can be overridden individually.
+  """
+  @callback render_operation(State.t(), Operation.t()) :: Macro.t()
+
+  @doc """
+  Render the `@doc` portion of an operation function
+  """
+  @callback render_operation_doc(State.t(), Operation.t()) :: Macro.t()
+
+  @doc """
+  Render the main function portion of an operation
+  """
+  @callback render_operation_function(State.t(), Operation.t()) :: Macro.t()
+
+  @doc """
+  Render the `@spec` portion of an operation function
+  """
+  @callback render_operation_spec(State.t(), Operation.t()) :: Macro.t()
 
   @doc """
   Render the types, struct, and field function for schemas not related to an operation
@@ -153,6 +188,20 @@ defmodule OpenAPI.Renderer do
   defdelegate render_default_client(state, file), to: OpenAPI.Renderer.Module
   defdelegate render_moduledoc(state, file), to: OpenAPI.Renderer.Module
   defdelegate render_operations(state, file), to: OpenAPI.Renderer.Operation, as: :render_all
+  defdelegate render_operation(state, operation), to: OpenAPI.Renderer.Operation, as: :render
+
+  defdelegate render_operation_doc(state, operation),
+    to: OpenAPI.Renderer.Operation,
+    as: :render_doc
+
+  defdelegate render_operation_function(state, operation),
+    to: OpenAPI.Renderer.Operation,
+    as: :render_function
+
+  defdelegate render_operation_spec(state, operation),
+    to: OpenAPI.Renderer.Operation,
+    as: :render_spec
+
   defdelegate render_schema(state, file), to: OpenAPI.Renderer.Schema, as: :render
 
   defdelegate render_schema_field_function(state, schemas),

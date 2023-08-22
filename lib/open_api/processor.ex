@@ -305,12 +305,12 @@ defmodule OpenAPI.Processor do
       {state, schema_types} =
         schema_specs
         |> Enum.reverse()
-        |> Enum.reduce({state, []}, fn {content_type, schema_spec}, {state, schema_types} ->
+        |> Enum.reduce({state, %{}}, fn {content_type, schema_spec}, {state, schema_types} ->
           context = {:response, op_module_name, op_function_name, status_code, content_type}
           schema_spec = %SchemaSpec{schema_spec | "$oag_schema_context": context}
 
           {state, schema_type} = Type.from_schema(state, schema_spec)
-          {state, [{content_type, schema_type} | schema_types]}
+          {state, Map.put(schema_types, content_type, schema_type)}
         end)
 
       {state, [{status_code, schema_types} | response_body]}
