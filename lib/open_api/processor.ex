@@ -92,7 +92,7 @@ defmodule OpenAPI.Processor do
 
   If this function returns `true`, the operation will not appear in the generated code.
 
-  See `OpenAPI.Processor.ignore_operation?/2` for the default implementation.
+  See `OpenAPI.Processor.Ignore.ignore_operation?/2` for the default implementation.
   """
   @callback ignore_operation?(State.t(), OperationSpec.t()) :: boolean
 
@@ -102,7 +102,7 @@ defmodule OpenAPI.Processor do
   If this function returns `true`, the schema will not appear in the generated code (unless it
   returns `false` when presented in another context) and a plain `map` will be used as its type.
 
-  See `OpenAPI.Processor.ignore_schema?/2` for the default implementation.
+  See `OpenAPI.Processor.Ignore.ignore_schema?/2` for the default implementation.
   """
   @callback ignore_schema?(State.t(), SchemaSpec.t()) :: boolean
 
@@ -212,9 +212,7 @@ defmodule OpenAPI.Processor do
     to: OpenAPI.Processor.Operation,
     as: :response_body
 
-  defdelegate schema_module_and_type(state, schema_spec),
-    to: OpenAPI.Processor.Naming,
-    as: :schema_module_and_type
+  defdelegate schema_module_and_type(state, schema_spec), to: OpenAPI.Processor.Naming
 
   #
   # Helpers
