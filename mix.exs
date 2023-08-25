@@ -38,6 +38,8 @@ defmodule OpenAPI.MixProject do
       main: "readme",
       extras: [
         "README.md": [title: "Overview"],
+        "guides/configuration.md": [title: "Configuration"],
+        "guides/plugins.md": [title: "Plugins"],
         "guides/client-author-guide.md": [title: "Client Author Guide"],
         "CODE_OF_CONDUCT.md": [title: "Code of Conduct"],
         "CONTRIBUTING.md": [title: "Contributing"],
