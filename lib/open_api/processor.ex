@@ -185,33 +185,43 @@ defmodule OpenAPI.Processor do
   # Default Implementations
   #
 
+  @doc false
   defdelegate ignore_operation?(state, operation_spec), to: OpenAPI.Processor.Ignore
+
+  @doc false
   defdelegate ignore_schema?(state, schema_spec), to: OpenAPI.Processor.Ignore
 
+  @doc false
   defdelegate operation_docstring(state, operation_spec, params),
     to: OpenAPI.Processor.Operation,
     as: :docstring
 
+  @doc false
   defdelegate operation_function_name(state, operation_spec),
     to: OpenAPI.Processor.Naming,
     as: :operation_function
 
+  @doc false
   defdelegate operation_module_names(state, operation_spec),
     to: OpenAPI.Processor.Naming,
     as: :operation_modules
 
+  @doc false
   defdelegate operation_request_body(state, operation_spec),
     to: OpenAPI.Processor.Operation,
     as: :request_body
 
+  @doc false
   defdelegate operation_request_method(state, operation_spec),
     to: OpenAPI.Processor.Operation,
     as: :request_method
 
+  @doc false
   defdelegate operation_response_body(state, operation_spec),
     to: OpenAPI.Processor.Operation,
     as: :response_body
 
+  @doc false
   defdelegate schema_module_and_type(state, schema_spec), to: OpenAPI.Processor.Naming
 
   #
@@ -357,7 +367,7 @@ defmodule OpenAPI.Processor do
   end
 
   @spec process_schema_fields(State.t(), SchemaSpec.t(), reference) :: {State.t(), [Field.t()]}
-  def process_schema_fields(state, schema_spec, schema_ref) do
+  defp process_schema_fields(state, schema_spec, schema_ref) do
     %SchemaSpec{properties: properties, required: required} = schema_spec
 
     for {field_name, %SchemaSpec{nullable: nullable?} = field_spec} <- properties,

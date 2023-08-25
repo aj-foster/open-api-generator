@@ -2,11 +2,25 @@ defmodule OpenAPI do
   @moduledoc """
   Code generator for OpenAPI REST API descriptions
 
-  This module provides a single function, `run/2`, that accepts the name of an OpenAPI description
-  file and configuration. It does the work of reading the description, processing schemas and
-  operations, and writing out generated files.
+  > #### Note {:.info}
+  >
+  > It is not expected that clients will call functions in this module directly. Instead, consider
+  > using the `mix api.gen` task.
 
-  For a list of valid options to pass as configuration, see `OpenAPI.Config`.
+  This module provides a single function, `run/2`, that accepts the name of a configuration
+  profile and a list of files containing JSON or Yaml OpenAPI descriptions. It runs the three
+  phases of code generation:
+
+    * `OpenAPI.Reader`
+    * `OpenAPI.Processor`
+    * `OpenAPI.Renderer`
+
+  At the end, an `OpenAPI.State` struct is returned with all of the data that was used to
+  generate the client code.
+
+  For more information, see the [readme](/README.md) or the available guides on
+  [configuration](/guides/configuration.md), [plugins](/guides/plugins.md), or
+  [creating a client library](/guides/client-author-guide.md).
   """
   alias OpenAPI.Call
   alias OpenAPI.Processor

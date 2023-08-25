@@ -37,7 +37,7 @@ Client library authors may configure their own module in place of the default im
 For example, a custom renderer may start like this:
 
 ```elixir
-# config.exs
+# config/config.exs
 
 config :oapi_generator,
   my_profile: [
