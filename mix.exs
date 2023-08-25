@@ -45,6 +45,12 @@ defmodule OpenAPI.MixProject do
       ],
       groups_for_extras: [
         Guides: ~r/guides\/.*/
+      ],
+      groups_for_modules: [
+        Reader: ~r/OpenAPI.Reader/,
+        Processor: ~r/OpenAPI.Processor/,
+        Renderer: ~r/OpenAPI.Renderer/,
+        Specification: ~r/OpenAPI.Spec/
       ]
     ]
   end
@@ -56,6 +62,7 @@ defmodule OpenAPI.MixProject do
     [
       description: "Highly-configurable OpenAPI code generator",
       files: [
+        "guides",
         "lib",
         "LICENSE",
         "mix.exs",

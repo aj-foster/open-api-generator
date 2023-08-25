@@ -1,5 +1,13 @@
 defmodule OpenAPI.Spec.Schema do
-  @moduledoc false
+  @moduledoc """
+  JSON Schema specification
+
+  > #### Note {:.info}
+  >
+  > This module, like all modules in the `OpenAPI.Spec` namespace, implements an undocumented
+  > `decode` function that is used by the read phase to parse a JSON or Yaml OpenAPI
+  > specification. It is not expected that this function will be called by client libraries.
+  """
   import OpenAPI.Reader.State
 
   alias OpenAPI.Spec
@@ -12,6 +20,13 @@ defmodule OpenAPI.Spec.Schema do
   # Definition
   #
 
+  @typedoc """
+  JSON Schema specification
+
+  In addition to the data derived from the JSON or Yaml specification, this struct also contains
+  some contextual information including its absolute and referenced location in the spec. All
+  such fields are prefixed with `$oag_`.
+  """
   @type t :: %__MODULE__{
           "$oag_base_file": String.t(),
           "$oag_base_file_path": [State.path_segment()],
@@ -104,6 +119,7 @@ defmodule OpenAPI.Spec.Schema do
   # Decoder
   #
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     {state, all_of} = decode_all_of(state, yaml)
