@@ -1,6 +1,31 @@
 defmodule OpenAPI.Processor.Naming do
   @moduledoc """
-  Default plugin for naming operations and schemas
+  Default implementation for naming-related callbacks
+
+  This module contains the default implementations for:
+
+    * `c:OpenAPI.Processor.operation_function_name/2`
+    * `c:OpenAPI.Processor.operation_module_names/2`
+    * `c:OpenAPI.Processor.schema_module_and_type/2`
+
+  It also includes several helper functions that are used by the default implementations. Library
+  authors implementing their own naming-related callbacks may find these helpful.
+
+  ## Configuration
+
+  All configuration offered by the functions in this module lives under the `naming` key of the
+  active configuration profile. For example (default values shown):
+
+      # config/config.exs
+
+      config :oapi_generator, default: [
+        naming: [
+          default_operation_module: Operations,
+          group: [],
+          merge: [],
+          rename: []
+        ]
+      ]
   """
   alias OpenAPI.Processor.State
   alias OpenAPI.Spec.Path.Operation, as: OperationSpec
@@ -12,12 +37,15 @@ defmodule OpenAPI.Processor.Naming do
   @doc """
   Choose the name of an operation client function based on its operation ID
 
+  Default implementation of `c:OpenAPI.Processor.operation_function_name/2`.
+
   In this implementation, the operation ID is split up by slash characters with only the last
   portion taken (ex. "repos/get" becomes "get"), assuming that the module name will use the
   remaining portions. Then the value is normalized to be atom-friendly.
 
   Note that this function creates new atoms, and should not be run in a production environment.
   """
+  @doc default_implementation: true
   @spec operation_function(State.t(), OperationSpec.t()) :: atom
   def operation_function(_state, operation_spec) do
     %OperationSpec{operation_id: id} = operation_spec
@@ -39,15 +67,23 @@ defmodule OpenAPI.Processor.Naming do
 
   It also uses each tag as a module, similarly turning slash characters into module namespaces. If
   the operation does not have slashes in its ID and does not have any tags, then it will use the
-  configured `:default_operation_module` or `Operations` by default.
+  configured `:default_operation_module` or `[BaseModule].Operations` by default.
 
   ## Configuration
 
+  Use `naming.default_operation_module` to configure the catch-all module name. Note that the
+  configured name should not include the base module, if it is set in `naming.base_module`. The
+  following configuration would result in a module named `MyClientLibrary.Operations`:
+
       config :oapi_generator, default: [
-        naming: [default_operation_module: Operations]
+        naming: [
+          base_module: MyClientLibrary,
+          default_operation_module: Operations
+        ]
       ]
 
   """
+  @doc default_implementation: true
   @spec operation_modules(State.t(), OperationSpec.t()) :: [module]
   def operation_modules(state, operation_spec) do
     %OperationSpec{operation_id: id, tags: tags} = operation_spec
@@ -85,6 +121,7 @@ defmodule OpenAPI.Processor.Naming do
   end
 
   # TODO: Docs and tests
+  @doc default_implementation: true
   @spec schema_module_and_type(State.t(), SchemaSpec.t()) :: {module | nil, atom}
   def schema_module_and_type(state, schema_spec) do
     {module, type} =

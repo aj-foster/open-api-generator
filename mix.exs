@@ -48,6 +48,9 @@ defmodule OpenAPI.MixProject do
       groups_for_extras: [
         Guides: ~r/guides\/.*/
       ],
+      groups_for_functions: [
+        "Default Implementations": & &1[:default_implementation]
+      ],
       groups_for_modules: [
         Reader: ~r/OpenAPI.Reader/,
         Processor: ~r/OpenAPI.Processor/,
