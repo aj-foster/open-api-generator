@@ -1,8 +1,35 @@
 defmodule OpenAPI.Renderer.State do
-  alias OpenAPI.Processor.Schema
+  @moduledoc """
+  State of the render phase of code generation
+
+  This struct is created at the beginning of the render phase using data from the overall
+  generator `OpenAPI.State`. It has the following fields:
+
+    * `files`: Map of module names and their associated `t:OpenAPI.Renderer.File.t/0` structs.
+      This map is built using the `operations` and `schemas` data.
+    * `implementation`: Module configured as the implementation of the renderer (defaults to
+      `OpenAPI.Renderer`). Callbacks must use this field when calling other render callbacks.
+    * `operations`: List of `t:OpenAPI.Processor.Operation.t/0` structs processed in the previous
+      phase. These operations may appear in any order due to map key ordering.
+    * `profile`: Name of the active configuration profile. Callbacks must use this field when
+      looking up configuration from the application environment.
+    * `schemas`: Map of schema references to their `t:OpenAPI.Processor.Schema.t/0` structs
+      processed in the previous phase. The reference-keyed map is included to make it easier for
+      callbacks to look up a schema by its reference, as this is often how operations will refer
+      to them.
+
+  All of this state is managed by the code generator, and it is unlikely that a callback would
+  need to transform this struct directly.
+  """
   alias OpenAPI.Processor.Operation
+  alias OpenAPI.Processor.Schema
   alias OpenAPI.Renderer.File
 
+  @typedoc """
+  Render phase state
+
+  See module documentation for additional information.
+  """
   @type t :: %__MODULE__{
           files: %{module => File.t()},
           implementation: module,
@@ -19,6 +46,7 @@ defmodule OpenAPI.Renderer.State do
     :schemas
   ]
 
+  @doc false
   @spec new(OpenAPI.State.t()) :: t
   def new(state) do
     %OpenAPI.State{
@@ -42,6 +70,9 @@ defmodule OpenAPI.Renderer.State do
     |> Keyword.get(:renderer, OpenAPI.Renderer)
   end
 
+  @doc false
+  @spec update_files(t, module, Operation.t()) :: t
+  @spec update_files(t, module, Schema.t()) :: t
   def update_files(%__MODULE__{files: files} = state, module, operation_or_schema) do
     files =
       Map.update(
