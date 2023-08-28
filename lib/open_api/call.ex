@@ -1,10 +1,16 @@
 defmodule OpenAPI.Call do
-  # Represents the original invocation of the code generator
-  @moduledoc false
+  @moduledoc """
+  Information about the original invocation of the code generator
+
+  > #### Note {:.info}
+  >
+  > It is not expected that clients will interact with this module directly.
+  """
 
   @type t :: %__MODULE__{files: [String.t()], profile: atom}
   defstruct [:files, :profile]
 
+  @doc false
   @spec new(String.t(), [String.t()]) :: t
   def new(profile, files) do
     config = Application.get_all_env(:oapi_generator)

@@ -38,7 +38,7 @@ defmodule OpenAPI.Renderer.Module do
   @doc """
   Choose the filesystem location for the given file based on its module name and contents
 
-  Default implementation of `c:OpenAPI.Renderer.render_location/2`.
+  Default implementation of `c:OpenAPI.Renderer.location/2`.
 
   If the file does not contain any operations, the file name is chosen as the concatenation of:
 

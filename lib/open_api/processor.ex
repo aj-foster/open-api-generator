@@ -112,7 +112,7 @@ defmodule OpenAPI.Processor do
   This function accepts the operation spec as well as a list of the **processed** query params
   associated with the operation.
 
-  See `OpenAPI.Processor.Operation.docstring/2` for the default implementation.
+  See `OpenAPI.Processor.Operation.docstring/3` for the default implementation.
   """
   @callback operation_docstring(State.t(), OperationSpec.t(), [Param.t()]) :: String.t()
 
@@ -120,7 +120,7 @@ defmodule OpenAPI.Processor do
   Choose the name of the client function for the given operation
 
   This function accepts the operation spec and chooses a name for the client function that will
-  be generated. The name must be unique within its module (see `c:operation_module_name/1`).
+  be generated. The name must be unique within its module (see `c:operation_module_names/2`).
 
   See `OpenAPI.Processor.Naming.operation_function/2` for the default implementation.
   """
@@ -142,7 +142,7 @@ defmodule OpenAPI.Processor do
   This function accepts the operation spec and returns a list of tuples containing the content
   type (ex. "application/json") and the schema associated with that type.
 
-  See `OpenAPI.Processor.Operation.request_body/1` for the default implementation.
+  See `OpenAPI.Processor.Operation.request_body/2` for the default implementation.
   """
   @callback operation_request_body(State.t(), OperationSpec.t()) ::
               Operation.request_body_unprocessed()
@@ -153,7 +153,7 @@ defmodule OpenAPI.Processor do
   This function accepts the operation spec and must return the (lowercase) atom representing the
   HTTP method.
 
-  See `OpenAPI.Processor.Operation.request_method/1` for the default implementation.
+  See `OpenAPI.Processor.Operation.request_method/2` for the default implementation.
   """
   @callback operation_request_method(State.t(), OperationSpec.t()) :: Operation.method()
 
@@ -164,7 +164,7 @@ defmodule OpenAPI.Processor do
   codes (ex. `200` or `:default`) and a list of tuples with the possible content types and the
   schema associated with that code and type.
 
-  See `OpenAPI.Processor.Operation.response_body/1` for the default implementation.
+  See `OpenAPI.Processor.Operation.response_body/2` for the default implementation.
   """
   @callback operation_response_body(State.t(), OperationSpec.t()) ::
               Operation.response_body_unprocessed()

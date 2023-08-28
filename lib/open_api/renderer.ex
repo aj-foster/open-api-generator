@@ -88,12 +88,12 @@ defmodule OpenAPI.Renderer do
   @doc """
   Convert the Abstract Syntax Tree (AST) form of the file into formatted code
 
-  This callback can expect a `t:File.t/0` struct with the completed contents of the file included
-  in the `ast` field. Nodes of the AST may include optional formatting metadata (ex. `delimiter`,
-  `indentation`, or `end_of_expression`). It is recommended that the formatter adhere to the
-  standard configuration of the default Mix formatter (for example, formatting to a line width
-  of 98) in order to avoid a large amount of changes should someone run `mix format` on the
-  generated code.
+  This callback can expect a `t:OpenAPI.Renderer.File.t/0` struct with the completed contents of
+  the file included in the `ast` field. Nodes of the AST may include optional formatting metadata
+  (ex. `delimiter`, `indentation`, or `end_of_expression`). It is recommended that the formatter
+  adhere to the standard configuration of the default Mix formatter (for example, formatting to a
+  line width of 98) in order to avoid a large amount of changes should someone run `mix format` on
+  the generated code.
 
   The return value of the callback can be `iodata` (strings do not need to be concatenated), and
   it will be stored in the `contents` field of the file.
@@ -239,10 +239,10 @@ defmodule OpenAPI.Renderer do
   @doc """
   Write a rendered file to the filesystem
 
-  This callback can expect to receive a `t:File.t/0` struct with formatted file contents expressed
-  as `iodata` in the `contents` field. It should write the file to the filesystem at the
-  appropriate location included in the `location` field. While the return value is irrelevant,
-  a simple `:ok` will suffice.
+  This callback can expect to receive a `t:OpenAPI.Renderer.File.t/0` struct with formatted file
+  contents expressed as `iodata` in the `contents` field. It should write the file to the
+  filesystem at the appropriate location included in the `location` field. While the return value
+  is irrelevant, a simple `:ok` will suffice.
 
   See `OpenAPI.Renderer.Util.write/2` for the default implementation.
   """
