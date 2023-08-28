@@ -49,7 +49,7 @@ defmodule OpenAPI.Renderer.Operation do
         {String.to_atom(name), [], nil}
       end
 
-    body_argument = if request_body, do: quote(do: body)
+    body_argument = unless length(request_body) == 0, do: quote(do: body)
     opts_argument = quote do: opts \\ []
 
     arguments = Util.clean_list([path_parameter_arguments, body_argument, opts_argument])
