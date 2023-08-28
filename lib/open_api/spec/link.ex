@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.Link do
-  @moduledoc false
+  @moduledoc "Raw link from the OpenAPI spec"
   import OpenAPI.Reader.State
 
   alias OpenAPI.Spec.Server
@@ -22,6 +22,7 @@ defmodule OpenAPI.Spec.Link do
     :server
   ]
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     {state, server} = decode_server(state, yaml)
@@ -39,9 +40,9 @@ defmodule OpenAPI.Spec.Link do
   end
 
   @spec decode_server(map, map) :: {map, Server.t() | nil}
-  def decode_server(state, %{"server" => server}) do
+  defp decode_server(state, %{"server" => server}) do
     with_path(state, server, "server", &Server.decode/2)
   end
 
-  def decode_server(state, _yaml), do: {state, nil}
+  defp decode_server(state, _yaml), do: {state, nil}
 end

@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.Components do
-  @moduledoc false
+  @moduledoc "Raw components map from the OpenAPI spec"
   import OpenAPI.Reader.State
 
   alias OpenAPI.Spec
@@ -30,6 +30,7 @@ defmodule OpenAPI.Spec.Components do
     :callbacks
   ]
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     {state, examples} = decode_examples(state, yaml)
@@ -116,6 +117,7 @@ defmodule OpenAPI.Spec.Components do
 
   defp decode_schemas(state, _yaml), do: {state, %{}}
 
+  @doc false
   @spec merge(t, t) :: t
   def merge(components_one, components_two) do
     %__MODULE__{

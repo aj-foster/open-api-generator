@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.Schema.Discriminator do
-  @moduledoc false
+  @moduledoc "Raw schema discriminator from the OpenAPI spec"
 
   #
   # Definition
@@ -19,6 +19,7 @@ defmodule OpenAPI.Spec.Schema.Discriminator do
   # Decoder
   #
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     discriminator = %__MODULE__{

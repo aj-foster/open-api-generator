@@ -1,13 +1,5 @@
 defmodule OpenAPI.Spec.Schema do
-  @moduledoc """
-  JSON Schema specification
-
-  > #### Note {:.info}
-  >
-  > This module, like all modules in the `OpenAPI.Spec` namespace, implements an undocumented
-  > `decode` function that is used by the read phase to parse a JSON or Yaml OpenAPI
-  > specification. It is not expected that this function will be called by client libraries.
-  """
+  @moduledoc "Raw JSON schema specification from the OpenAPI spec"
   import OpenAPI.Reader.State
 
   alias OpenAPI.Spec

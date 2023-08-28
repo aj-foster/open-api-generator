@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.Path.Header do
-  @moduledoc false
+  @moduledoc "Raw path header from the OpenAPI spec"
   import OpenAPI.Reader.State
 
   alias OpenAPI.Spec.Schema
@@ -34,6 +34,7 @@ defmodule OpenAPI.Spec.Path.Header do
     :content
   ]
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     {state, schema} = decode_schema(state, yaml)
@@ -58,16 +59,16 @@ defmodule OpenAPI.Spec.Path.Header do
   end
 
   @spec decode_schema(map, map) :: {map, Schema.t() | nil}
-  def decode_schema(state, %{"schema" => schema}) do
+  defp decode_schema(state, %{"schema" => schema}) do
     with_path(state, schema, "schema", fn state, schema ->
       with_ref(state, schema, &Schema.decode/2)
     end)
   end
 
-  def decode_schema(state, _yaml), do: {state, nil}
+  defp decode_schema(state, _yaml), do: {state, nil}
 
   @spec decode_examples(map, map) :: {map, %{optional(String.t()) => Example.t()}}
-  def decode_examples(state, %{"examples" => examples}) do
+  defp decode_examples(state, %{"examples" => examples}) do
     with_path(state, examples, "examples", fn state, examples ->
       Enum.reduce(examples, {state, %{}}, fn {key, example}, {state, examples} ->
         {state, example} =
@@ -80,10 +81,10 @@ defmodule OpenAPI.Spec.Path.Header do
     end)
   end
 
-  def decode_examples(state, _yaml), do: {state, %{}}
+  defp decode_examples(state, _yaml), do: {state, %{}}
 
   @spec decode_content(map, map) :: {map, %{optional(String.t()) => Media.t()}}
-  def decode_content(state, %{"content" => content}) do
+  defp decode_content(state, %{"content" => content}) do
     with_path(state, content, "content", fn state, content ->
       Enum.reduce(content, {state, %{}}, fn {key, content_item}, {state, content} ->
         {state, content_item} =
@@ -96,5 +97,5 @@ defmodule OpenAPI.Spec.Path.Header do
     end)
   end
 
-  def decode_content(state, _yaml), do: {state, %{}}
+  defp decode_content(state, _yaml), do: {state, %{}}
 end

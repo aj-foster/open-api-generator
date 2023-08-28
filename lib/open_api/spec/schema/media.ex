@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.Schema.Media do
-  @moduledoc false
+  @moduledoc "Raw media schema from the OpenAPI spec"
   import OpenAPI.Reader.State
 
   alias OpenAPI.Spec.Schema
@@ -20,6 +20,7 @@ defmodule OpenAPI.Spec.Schema.Media do
     :encoding
   ]
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     {state, encoding} = decode_encoding(state, yaml)
@@ -37,7 +38,7 @@ defmodule OpenAPI.Spec.Schema.Media do
   end
 
   @spec decode_encoding(map, map) :: {map, %{optional(String.t()) => Example.t()}}
-  def decode_encoding(state, %{"encoding" => encoding}) do
+  defp decode_encoding(state, %{"encoding" => encoding}) do
     with_path(state, encoding, "encoding", fn state, encoding ->
       Enum.reduce(encoding, {state, %{}}, fn {key, encoding_item}, {state, encoding} ->
         {state, encoding_item} =
@@ -50,10 +51,10 @@ defmodule OpenAPI.Spec.Schema.Media do
     end)
   end
 
-  def decode_encoding(state, _yaml), do: {state, %{}}
+  defp decode_encoding(state, _yaml), do: {state, %{}}
 
   @spec decode_examples(map, map) :: {map, %{optional(String.t()) => Example.t()}}
-  def decode_examples(state, %{"examples" => examples}) do
+  defp decode_examples(state, %{"examples" => examples}) do
     with_path(state, examples, "examples", fn state, examples ->
       Enum.reduce(examples, {state, %{}}, fn {key, example}, {state, examples} ->
         {state, example} =
@@ -66,14 +67,14 @@ defmodule OpenAPI.Spec.Schema.Media do
     end)
   end
 
-  def decode_examples(state, _yaml), do: {state, %{}}
+  defp decode_examples(state, _yaml), do: {state, %{}}
 
   @spec decode_schema(map, map) :: {map, Schema.t() | nil}
-  def decode_schema(state, %{"schema" => schema}) do
+  defp decode_schema(state, %{"schema" => schema}) do
     with_path(state, schema, "schema", fn state, schema ->
       with_ref(state, schema, &Schema.decode/2)
     end)
   end
 
-  def decode_schema(state, _yaml), do: {state, nil}
+  defp decode_schema(state, _yaml), do: {state, nil}
 end

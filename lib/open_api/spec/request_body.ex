@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.RequestBody do
-  @moduledoc false
+  @moduledoc "Raw request body from the OpenAPI spec"
   import OpenAPI.Reader.State
 
   alias OpenAPI.Spec.Schema.Media
@@ -16,6 +16,7 @@ defmodule OpenAPI.Spec.RequestBody do
     :required
   ]
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     {state, content} = decode_content(state, yaml)
@@ -30,7 +31,7 @@ defmodule OpenAPI.Spec.RequestBody do
   end
 
   @spec decode_content(map, map) :: {map, %{optional(String.t()) => Media.t()}}
-  def decode_content(state, %{"content" => content}) do
+  defp decode_content(state, %{"content" => content}) do
     with_path(state, content, "content", fn state, content ->
       Enum.reduce(content, {state, %{}}, fn {key, content_item}, {state, content} ->
         {state, content_item} =
@@ -43,5 +44,5 @@ defmodule OpenAPI.Spec.RequestBody do
     end)
   end
 
-  def decode_content(state, _yaml), do: {state, %{}}
+  defp decode_content(state, _yaml), do: {state, %{}}
 end

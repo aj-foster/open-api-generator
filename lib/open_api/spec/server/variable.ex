@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.Server.Variable do
-  @moduledoc false
+  @moduledoc "Raw server variable from the OpenAPI spec"
 
   #
   # Definition
@@ -21,6 +21,7 @@ defmodule OpenAPI.Spec.Server.Variable do
   # Decoder
   #
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     variable = %__MODULE__{

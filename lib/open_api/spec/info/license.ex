@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.Info.License do
-  @moduledoc false
+  @moduledoc "Raw license information from the OpenAPI spec"
 
   #
   # Definition
@@ -19,6 +19,7 @@ defmodule OpenAPI.Spec.Info.License do
   # Decoder
   #
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     license = %__MODULE__{

@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.Info.Contact do
-  @moduledoc false
+  @moduledoc "Raw contact information from the OpenAPI spec"
 
   #
   # Definition
@@ -21,6 +21,7 @@ defmodule OpenAPI.Spec.Info.Contact do
   # Decoder
   #
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     contact = %__MODULE__{

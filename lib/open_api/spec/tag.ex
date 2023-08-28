@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.Tag do
-  @moduledoc false
+  @moduledoc "Raw tag from the OpenAPI spec"
   alias OpenAPI.Spec
   alias OpenAPI.Spec.ExternalDocumentation
 
@@ -7,7 +7,6 @@ defmodule OpenAPI.Spec.Tag do
   # Definition
   #
 
-  @typedoc "Open API specification"
   @type t :: %__MODULE__{
           name: String.t(),
           description: String.t() | nil,
@@ -24,6 +23,7 @@ defmodule OpenAPI.Spec.Tag do
   # Decoder
   #
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     {state, docs} = decode_external_docs(state, yaml)

@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.Info do
-  @moduledoc false
+  @moduledoc "Raw information map from the OpenAPI spec"
   alias OpenAPI.Spec.Info
   alias OpenAPI.Spec.Info.Contact
   alias OpenAPI.Spec.Info.License
@@ -31,6 +31,7 @@ defmodule OpenAPI.Spec.Info do
   # Decoder
   #
 
+  @doc false
   @spec decode(State.t(), State.yaml()) :: {State.t(), t}
   def decode(state, yaml) do
     {state, contact} = decode_contact(state, yaml)

@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.ExternalDocumentation do
-  @moduledoc false
+  @moduledoc "Raw external documentation definition from the OpenAPI spec"
 
   #
   # Definition
@@ -19,6 +19,7 @@ defmodule OpenAPI.Spec.ExternalDocumentation do
   # Decoder
   #
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     external_doc = %__MODULE__{

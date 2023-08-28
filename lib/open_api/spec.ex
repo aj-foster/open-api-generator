@@ -1,5 +1,15 @@
 defmodule OpenAPI.Spec do
-  @moduledoc false
+  @moduledoc """
+  OpenAPI description as read by the read phase
+
+  Modules contained in this namespace represent portions of the OpenAPI spec. While there is some
+  occasional processing done by the reader (for example, to add additional context to a schema
+  while it is read), most of this data is an exact replica of what is contained in the API
+  description.
+
+  All spec modules have a function `decode/2` which is not intended to be called by client
+  library authors, but does the work of parsing the JSON or Yaml contents.
+  """
   require Logger
   import OpenAPI.Reader.State
 
@@ -43,6 +53,7 @@ defmodule OpenAPI.Spec do
   # Decoder
   #
 
+  @doc false
   @spec decode(State.t(), String.t()) :: State.t()
   def decode(state, filename) do
     yaml = state.files[filename]
