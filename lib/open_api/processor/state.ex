@@ -1,5 +1,27 @@
 defmodule OpenAPI.Processor.State do
-  @moduledoc false
+  @moduledoc """
+  State of the process phase of code generation
+
+  This struct is created at the beginning of the process phase using data from the overall
+  generator `OpenAPI.State`. It has the following fields:
+
+    * `implementation`: Module configured as the implementation of the processor (defaults to
+      `OpenAPI.Processor`). Callbacks must use this field when calling other process callbacks.
+    * `operations`: Cumulative list of `t:OpenAPI.Processor.Operation.t/0` structs identified
+      and processed so far.
+    * `profile`: Name of the active configuration profile. Callbacks must use this field when
+      looking up configuration from the application environment.
+    * `schema_specs_by_ref`: Cumulative map of raw schema specifications keyed by the internal
+      `ref`s used to refer to them in types.
+    * `schema_refs_by_path`: Cumulative map of internal `ref`s used to refer to schemas keyed by
+      the original paths where they could be found in the spec files.
+    * `schemas_by_ref`: Cumulative map of processed `t:OpenAPI.Processor.Schema.t/0` structs
+      keyed by the internal `ref`s used to refer to them in types, as they are processed.
+    * `spec`: The original parsed OpenAPI description.
+
+  All of this data is managed by the code generator, and it is unlikely that a callback would
+  need to transform this struct directly.
+  """
   alias OpenAPI.Processor.Operation
   alias OpenAPI.Processor.Schema
   alias OpenAPI.Spec.Schema, as: SchemaSpec
@@ -24,6 +46,7 @@ defmodule OpenAPI.Processor.State do
     :spec
   ]
 
+  @doc false
   @spec new(OpenAPI.State.t()) :: t
   def new(state) do
     profile = profile(state)

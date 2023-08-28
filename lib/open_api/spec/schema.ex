@@ -2,11 +2,11 @@ defmodule OpenAPI.Spec.Schema do
   @moduledoc "Raw JSON schema specification from the OpenAPI spec"
   import OpenAPI.Reader.State
 
+  alias OpenAPI.Reader.State
   alias OpenAPI.Spec
   alias OpenAPI.Spec.ExternalDocumentation
   alias OpenAPI.Spec.Schema.Discriminator
   alias OpenAPI.Spec.Schema.XML
-  alias OpenAPI.State
 
   #
   # Definition

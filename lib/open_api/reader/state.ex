@@ -1,5 +1,11 @@
 defmodule OpenAPI.Reader.State do
-  @moduledoc false
+  @moduledoc """
+  State of the reader phase of code generation
+
+  This struct is created at the beginning of the read phase using data from the overall
+  `OpenAPI.State`. It is fully managed by the read phase, and it is unlikely that client libraries
+  would read or write to this struct.
+  """
   require Logger
 
   alias OpenAPI.Reader.Config
@@ -50,6 +56,7 @@ defmodule OpenAPI.Reader.State do
   # Creation
   #
 
+  @doc false
   @spec new(Config.t()) :: t
   def new(config) do
     %__MODULE__{
@@ -82,7 +89,7 @@ defmodule OpenAPI.Reader.State do
   # Manipulation
   #
 
-  @doc "Run the given `decoder` while managing the state's paths"
+  @doc false
   @spec with_path(t, yaml, path_segment, decoder) ::
           {t, term}
   def with_path(state, yaml, path_segment, decoder) do
@@ -111,7 +118,7 @@ defmodule OpenAPI.Reader.State do
     {state, result}
   end
 
-  @doc "Run the given `decoder` after resolving a ref, if present"
+  @doc false
   @spec with_ref(t, yaml, decoder) :: {t, term}
   def with_ref(state, %{"$ref" => ref}, decoder) do
     [new_file, new_ref_path] = String.split(ref, "#")

@@ -1,5 +1,10 @@
 defmodule OpenAPI.Reader.Config do
-  @moduledoc false
+  @moduledoc """
+  Configuration for the read phase
+
+  For more information, see the **Configuration** section of the documentation for
+  `OpenAPI.Reader`.
+  """
 
   @type t :: %__MODULE__{
           additional_files: [String.t()],
@@ -13,6 +18,7 @@ defmodule OpenAPI.Reader.Config do
     :passed_files
   ]
 
+  @doc false
   @spec new(OpenAPI.State.t()) :: t
   def new(state) do
     %OpenAPI.State{call: %OpenAPI.Call{files: files, profile: profile}} = state

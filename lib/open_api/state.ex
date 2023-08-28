@@ -24,7 +24,7 @@ defmodule OpenAPI.State do
   alias OpenAPI.Call
   alias OpenAPI.Spec
 
-  @typedoc "OpenAPI generator state."
+  @typedoc "OpenAPI generator state"
   @type t :: %__MODULE__{
           call: Call.t(),
           files: [OpenAPI.Renderer.File.t()],
