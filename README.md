@@ -23,7 +23,7 @@ Think: the friendliness of your favorite hand-crafted client library applied to 
 
 > _See an example client library [here](https://github.com/aj-foster/open-api-github)._
 
-For more on how this is accomplished, see **Configuration** below.
+For more on how this is accomplished, see **Configuration** below and the [configuration guide](guides/configuration.md).
 
 
 ## Installation
@@ -51,49 +51,45 @@ This project uses configuration profiles to allow multiple configurations with t
 To get started, create a profile called `default` in your configuration:
 
 ```elixir
-config :oapi_generator,
-  default: [
+config :oapi_generator, default: [
+  output: [
     base_location: "lib/example",
     base_module: Example
   ]
+]
 ```
 
-This is the minimum viable configuration for the generator.
+This is the minimum viable configuration for most client libraries.
 It will create modules namespaced with `Example.` and save files in `lib/example`.
-For a full list of configuration options, see the documentation for `OpenAPI.Config`.
 
-### Output Module Naming
+Some the options supported by the generator out-of-the-box include:
 
-When the generator encounters a schema in the OpenAPI description, it performs a number of steps to determine the final name (module and type) of the schema that will be output to a file:
+* Ignoring schemas and operations
+* Renaming schemas
+* Grouping schemas into module namespaces
+* Merging schemas to create a struct with multiple typespecs
+* Writing schemas and operation modules to different locations
+* Introducing additional schema fields
+* Adding custom `use` statements to generated modules
+* Overriding function return types
 
-1. Based on the schema's location in the document, a provisional name is assigned.
-  For example, `#/components/schemas/full-repository` becomes `FullRepository.t()`.
+For more information, see the [configuration guide](guides/configuration.md).
 
-2. Schemas are **merged** based on the `merge` configuration key.
-  For example, you may choose to merge `FullRepository.t()` into the `Repository.t()` schema to create `Repository.full()`.
-  If two merged schemas have identical fields, then they will get the same name.
 
-3. Schemas can be **ignored** using the `ignore` configuration key.
-  Ignored schemas will be typed as simple `map()` types elsewhere in the generated code.
+## Plugins
 
-4. Schemas can be **renamed** using the `rename` configuration key.
-  For example, you may wish to add or remove a word, change plurality, etc.
-
-5. Finally, schemas can be **grouped** using the `group` configuration key.
-  For example, a group of `Repository` would change `RepositoryInvitation` to `Repository.Invitation`.
-
-The final module and type will be consistent in the output schema files and other files that reference them.
-
-The `config/config.exs` file for this repository contains an example configuration related to the GitHub API description.
-It includes a large number of groups for easily readable module names, merges for repeated or highly related schemas, and some module renaming for ease-of-use.
+If the available configuration isn't enough, client library authors can also reimplement portions of the code generator using _plugins_.
+Most of the crucial parts of the processing and rendering of code are implemented as default callbacks for a behaviour.
+These can be overridden for additional flexibility.
+See the [plugins guide](guides/plugins.md) for additional information.
 
 
 ## Usage
 
-Once the library is installed and configured, use `mix api.gen` with the name of the configuration profile and the OpenAPI description file:
+Once the library is installed and configured, use `mix api.gen` with the name of the configuration profile and the OpenAPI description file(s):
 
 ```shell
-mix api.gen default ../rest-api-description/spec.yaml
+mix api.gen default path/to/rest-api-description/spec.yaml
 ```
 
 ## Further Reading
@@ -101,7 +97,7 @@ mix api.gen default ../rest-api-description/spec.yaml
 * [Code of Conduct](CODE_OF_CONDUCT.md)
 * [Contribution Guidelines](CONTRIBUTING.md)
 * [License](LICENSE)
-* [OpenAPI Specification](https://swagger.io/specification/)
+* [OpenAPI Specification](https://spec.openapis.org/oas/latest.html)
 
 
 ## Sponsorship
