@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.Path.Parameter do
-  @moduledoc false
+  @moduledoc "Raw path parameter from the OpenAPI spec"
   import OpenAPI.Reader.State
 
   alias OpenAPI.Spec.Schema
@@ -38,6 +38,7 @@ defmodule OpenAPI.Spec.Path.Parameter do
     :content
   ]
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     {state, content} = decode_content(state, yaml)

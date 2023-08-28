@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.Response do
-  @moduledoc false
+  @moduledoc "Raw response from the OpenAPI spec"
   import OpenAPI.Reader.State
 
   alias OpenAPI.Spec.Link
@@ -20,6 +20,7 @@ defmodule OpenAPI.Spec.Response do
     :links
   ]
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     {state, content} = decode_content(state, yaml)
@@ -37,7 +38,7 @@ defmodule OpenAPI.Spec.Response do
   end
 
   @spec decode_content(map, map) :: {map, %{optional(String.t()) => Media.t()}}
-  def decode_content(state, %{"content" => content}) do
+  defp decode_content(state, %{"content" => content}) do
     with_path(state, content, "content", fn state, content ->
       Enum.reduce(content, {state, %{}}, fn {key, content_item}, {state, content} ->
         {state, content_item} =
@@ -50,10 +51,10 @@ defmodule OpenAPI.Spec.Response do
     end)
   end
 
-  def decode_content(state, _yaml), do: {state, %{}}
+  defp decode_content(state, _yaml), do: {state, %{}}
 
   @spec decode_headers(map, map) :: {map, %{optional(String.t()) => Header.t()} | nil}
-  def decode_headers(state, %{"headers" => headers}) do
+  defp decode_headers(state, %{"headers" => headers}) do
     with_path(state, headers, "headers", fn state, headers ->
       Enum.reduce(headers, {state, %{}}, fn {key, header}, {state, headers} ->
         {state, header} = with_path(state, header, key, &Header.decode/2)
@@ -62,10 +63,10 @@ defmodule OpenAPI.Spec.Response do
     end)
   end
 
-  def decode_headers(state, _yaml), do: {state, nil}
+  defp decode_headers(state, _yaml), do: {state, nil}
 
   @spec decode_links(map, map) :: {map, %{optional(String.t()) => Header.t()} | nil}
-  def decode_links(state, %{"links" => links}) do
+  defp decode_links(state, %{"links" => links}) do
     with_path(state, links, "links", fn state, links ->
       Enum.reduce(links, {state, %{}}, fn {key, link}, {state, links} ->
         {state, link} = with_path(state, link, key, &Link.decode/2)
@@ -74,5 +75,5 @@ defmodule OpenAPI.Spec.Response do
     end)
   end
 
-  def decode_links(state, _yaml), do: {state, nil}
+  defp decode_links(state, _yaml), do: {state, nil}
 end

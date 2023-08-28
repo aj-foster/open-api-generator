@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.Schema.Encoding do
-  @moduledoc false
+  @moduledoc "Raw schema encoding from the OpenAPI spec"
   import OpenAPI.Reader.State
 
   alias OpenAPI.Spec.Path.Header
@@ -20,6 +20,7 @@ defmodule OpenAPI.Spec.Schema.Encoding do
     :allow_reserved
   ]
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     {state, headers} = decode_headers(state, yaml)
@@ -36,7 +37,7 @@ defmodule OpenAPI.Spec.Schema.Encoding do
   end
 
   @spec decode_headers(map, map) :: {map, %{optional(String.t()) => Header.t()} | nil}
-  def decode_headers(state, %{"headers" => headers}) do
+  defp decode_headers(state, %{"headers" => headers}) do
     with_path(state, headers, "headers", fn state, headers ->
       Enum.reduce(headers, {state, %{}}, fn {key, header}, {state, headers} ->
         {state, header} = with_path(state, header, key, &Header.decode/2)
@@ -45,5 +46,5 @@ defmodule OpenAPI.Spec.Schema.Encoding do
     end)
   end
 
-  def decode_headers(state, _yaml), do: {state, nil}
+  defp decode_headers(state, _yaml), do: {state, nil}
 end

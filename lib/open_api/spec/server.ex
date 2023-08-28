@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.Server do
-  @moduledoc false
+  @moduledoc "Raw server from the OpenAPI spec"
   import OpenAPI.Reader.State
 
   alias OpenAPI.Spec.Server.Variable
@@ -24,6 +24,7 @@ defmodule OpenAPI.Spec.Server do
   # Decoder
   #
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     {state, variables} = decode_variables(state, yaml)

@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.Schema.XML do
-  @moduledoc false
+  @moduledoc "Raw XML definition from the OpenAPI spec"
 
   #
   # Definition
@@ -25,6 +25,7 @@ defmodule OpenAPI.Spec.Schema.XML do
   # Decoder
   #
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     xml = %__MODULE__{

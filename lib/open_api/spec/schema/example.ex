@@ -1,5 +1,5 @@
 defmodule OpenAPI.Spec.Schema.Example do
-  @moduledoc false
+  @moduledoc "Raw schema example from the OpenAPI spec"
 
   @type t :: %__MODULE__{
           summary: String.t() | nil,
@@ -15,6 +15,7 @@ defmodule OpenAPI.Spec.Schema.Example do
     :external_value
   ]
 
+  @doc false
   @spec decode(map, map) :: {map, t}
   def decode(state, yaml) do
     example = %__MODULE__{
