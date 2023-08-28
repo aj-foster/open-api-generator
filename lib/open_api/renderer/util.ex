@@ -1,6 +1,14 @@
 defmodule OpenAPI.Renderer.Util do
   @moduledoc """
-  Provides several helpful utilities for rendering and formatting files
+  Default implementation and helpers related to formatting and writing files
+
+  This module contains the default implementations for:
+
+    * `c:OpenAPI.Renderer.format/2`
+    * `c:OpenAPI.Renderer.write/2`
+
+  It also contains several helpers for working with ASTs, including the addition of formatting
+  metadata necessary to create consistent code.
   """
   alias OpenAPI.Processor.Schema
   alias OpenAPI.Processor.Type
@@ -9,6 +17,18 @@ defmodule OpenAPI.Renderer.Util do
 
   @doc """
   Flatten and remove `nil` elements from a list of AST nodes
+
+  This helper deals with cases in which certain sections of code are rendered conditionally, or
+  with variable lengths of statements. `nil` values will be removed, and nested lists of nodes
+  will be flattened.
+
+  ## Example
+
+      header = if condition, do: quote(do: IO.puts("List"))
+      statements = for item <- items, do: quote(do: IO.puts(" * \#{item}"))
+
+      clean_list([header, statements])
+
   """
   @spec clean_list(Macro.t()) :: Macro.t()
   def clean_list(nodes) do
@@ -20,9 +40,12 @@ defmodule OpenAPI.Renderer.Util do
   @doc """
   Convert an AST into formatted code as a string
 
+  Default implementation of `c:OpenAPI.Renderer.format/2`.
+
   The AST may include optional formatting metadata (ex. `delimiter`, `indentation`, or
   `end_of_expression`). It will be formatted to a line width of 98 to match the default Mix
-  formatter.
+  formatter. In addition, any `@moduledoc` or `@doc` statements that contain a newline character
+  will be modified to use `\"\"\"` as the delimiter.
   """
   @spec format(State.t(), File.t()) :: iodata
   def format(_state, file) do
@@ -32,7 +55,6 @@ defmodule OpenAPI.Renderer.Util do
     |> format_multiline_docs()
     |> Code.quoted_to_algebra(escape: false)
     |> Inspect.Algebra.format(98)
-    |> IO.iodata_to_binary()
   end
 
   @doc """
@@ -69,6 +91,24 @@ defmodule OpenAPI.Renderer.Util do
 
   @doc """
   Enforce the existence of whitespace after an expression
+
+  This helper is useful for cases in which single-line expressions should be separated from the
+  following line by whitespace, but the formatter would not naturally insert that whitespace.
+  For example:
+
+      @my_attribute "Hello"
+      @spec my_function :: String.t()
+      def my_function, do: @my_attribute
+
+  It may be desirable to insert whitespace following the module attribute `@my_attribute`. By
+  calling this function on that node, the following will be output:
+
+      @my_attribute "Hello"
+
+      @spec my_function :: String.t()
+      def my_function, do: @my_attribute
+
+  If a list of nodes is given, the last node will receive the additional whitespace metadata.
   """
   @spec put_newlines(Macro.t()) :: Macro.t()
   def put_newlines({term, metadata, arguments}) do
@@ -84,6 +124,10 @@ defmodule OpenAPI.Renderer.Util do
 
   @doc """
   Collapse nested unions and replace references with {module, type} identifiers
+
+  This function renders most types exactly as they are expressed internally
+  (ex. `{:string, :generic}`), however it transforms certain union types to be more human-readable
+  and it replaces schema references with the equivalent `{Module, :type}`.
   """
   @spec to_readable_type(State.t(), Type.t()) :: term
   def to_readable_type(state, type)
@@ -127,6 +171,10 @@ defmodule OpenAPI.Renderer.Util do
 
   @doc """
   Render an internal type as a typespec
+
+  To the best of its ability, this function constructs an accurate typespec for the internal
+  type given. Note that this is somewhat lossy; for example, many distinct types of strings will
+  map to the `String.t()` type.
   """
   @spec to_type(State.t(), Type.t() | {module, atom}) :: Macro.t()
   def to_type(state, type)
@@ -200,6 +248,11 @@ defmodule OpenAPI.Renderer.Util do
     end
   end
 
+  @doc """
+  Replace `enum` types with the equivalent list of `const` types
+
+  This low-level helper is used by `to_type/2` when simplifying union types.
+  """
   @spec unwrap_enums([Type.t()]) :: [Type.t()]
   def unwrap_enums(types) do
     types
@@ -210,6 +263,12 @@ defmodule OpenAPI.Renderer.Util do
     |> List.flatten()
   end
 
+  @doc """
+  Flatten nested union types
+
+  This low-level helper is used by `to_readable_type/2` and `to_type/2` when simplifying union
+  types.
+  """
   @spec unwrap_unions([Type.t()]) :: [Type.t()]
   def unwrap_unions(types) do
     types
@@ -227,6 +286,12 @@ defmodule OpenAPI.Renderer.Util do
 
   @doc """
   Write a rendered file to the filesystem
+
+  Default implementation of `c:OpenAPI.Renderer.write/2`.
+
+  This implementation writes the file `contents` to the `location` and ensures an additional
+  newline is included at the end of the file. It also ensures that any subdirectories are created
+  prior to writing. Any failure will result in a raised error.
   """
   @spec write(State.t(), File.t()) :: :ok
   def write(_state, file) do

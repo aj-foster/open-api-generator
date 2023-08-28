@@ -36,9 +36,9 @@ Operations are the actions you can take in an API: the actual HTTP requests that
 This code generator takes an operation-first mindset when generating code.
 For example, schemas that are defined in a description but not referenced in any API operation will not be output.
 
-Following are some of the available configuration options targeted at making the generated functions more flexible for library authors:
+Following is an overview of the available configuration options targeted at making the generated functions more flexible for library authors:
 
-### Naming
+### Processor: Naming
 
 At the moment, configuration related to the naming and placement of operation functions is limited.
 If you have ideas related to this, please share them in GitHub Discussions.
@@ -55,9 +55,9 @@ config :oapi_generator, default: [
 ]
 ```
 
-Learn more in the documentation for `OpenAPI.Processor.Naming`.
+Learn more in the documentation for `OpenAPI.Processor.Naming.operation_modules/2`.
 
-### Default Client
+### Renderer: Default Client
 
 `default_client` defines the module that will be called in each operation function.
 By allowing the client module to be defined at the time of code generation (with this option) and at runtime (with the `client` option passed to any operation call), this code generator maximizes flexibility.
