@@ -60,25 +60,39 @@ defmodule OpenAPI.Processor.Naming do
   @doc """
   Choose the names of modules containing the given operation
 
-  Each operation may exist in multiple modules depending on the quantity of tags and the format
-  of the operation ID. This implementation looks for slash characters in the operation ID and
-  uses the initial segments (everything except the last segment) as segments of a module. It is
-  assumed that the last segment will form the function name.
+  Default implementation of `c:OpenAPI.Processor.operation_module_names/2`.
 
-  It also uses each tag as a module, similarly turning slash characters into module namespaces. If
-  the operation does not have slashes in its ID and does not have any tags, then it will use the
-  configured `:default_operation_module` or `[BaseModule].Operations` by default.
+  This generator generates a set of modules with functions in them according to some
+  normalization rules:
+
+  * Operation tags and IDs are normalized for spaces, slashes, etc.
+  * Operation tags are used to generate modules that group operation functions
+  * Operation IDs with slashes will be split, with the initial segments (everything except the
+    last segment) used as segments of a module
+
+  Examples:
+
+    * Operation `foo` with tag `bar` => `Bar.foo`
+    * Operation `foo/bar` with tag `baz` => `Baz.foo_bar`
+    * Operation `foo/bar` without tags => `Foo.bar`
+
+  Each operation may exist in multiple modules depending on the quantity of tags and the format
+  of the operation ID. If the operation does not have slashes in its ID and does not have any
+  tags, then the configured `:default_operation_module` or `[output.base_module].Operations`
+  becomes the module by default.
 
   ## Configuration
 
   Use `naming.default_operation_module` to configure the catch-all module name. Note that the
-  configured name should not include the base module, if it is set in `naming.base_module`. The
+  configured name should not include the base module, if it is set in `output.base_module`. The
   following configuration would result in a module named `MyClientLibrary.Operations`:
 
       config :oapi_generator, default: [
         naming: [
-          base_module: MyClientLibrary,
           default_operation_module: Operations
+        ],
+        output: [
+          base_module: MyClientLibrary
         ]
       ]
 
@@ -120,7 +134,75 @@ defmodule OpenAPI.Processor.Naming do
     end
   end
 
-  # TODO: Docs and tests
+  @doc """
+  Choose the name of the schema's module and type
+
+  Default implementation of `c:OpenAPI.Processor.schema_module_and_type/2`.
+
+  Most of the configuration of this project relates to the manipulation of schema names. It is
+  important to understand the order of operations. As an example, imagine an OpenAPI description
+  has the following schemas:
+
+    * `#/components/schemas/simple-user`
+    * `#/components/schemas/user`
+    * `#/components/schemas/user-preferences`
+
+  And the following configuration:
+
+      config :oapi_generator, default: [
+        naming: [
+          group: [User],
+          merge: [{"SimpleUser", "User"}]
+          rename: [{~r/Preferences/, "Settings"}]
+        ],
+        output: [
+          base_module: Example
+        ]
+      ]
+
+  In this case, naming would proceed as follows:
+
+  1. Schemas in the OpenAPI descriptions are turned into Elixir modules based on their location,
+    context, or title by `raw_schema_module_and_type/1`:
+    ```
+  #/components/schemas/simple-user       =>  SimpleUser.t()
+  #/components/schemas/user              =>  User.t()
+  #/components/schemas/user-preferences  =>  UserPreferences.t()
+    ```
+
+  2. Merge settings are applied based on the original names of the schemas by `merge_schema/2`:
+    ```
+  SimpleUser.t()  =>  User.simple()
+    ```
+
+  3. Rename settings are applied based on the merged module names by `rename_schema/2`:
+    ```
+  UserPreferences.t()  =>  UserSettings.t()
+    ```
+
+  4. Group settings are applied based on the renamed module names by `group_schema/2`:
+    ```
+  UserSettings.t()  =>  User.Settings.t()
+    ```
+
+  5. The base module is applied to get the final names:
+    ```
+  User.simple()      =>  Example.User.simple()
+  User.t()           =>  Example.User.t()
+  User.Settings.t()  =>  Example.User.Settings.t()
+    ```
+
+  ### Collapsing
+
+  Note that `User.simple()` and `User.t()` will end up in the same file as a result of the merge,
+  sharing the same struct for their responses (with distinct typespecs).
+
+  In the second line of the configuration above, we merge two nearly-identical schemas
+  `NullableRepository` and `Repository`. Because these schemas have the same fields, there will
+  not be a `Repository.nullable()` type generated; instead, references will use `Repository.t()`.
+  Despite this deduplication, other parts of the code will continue to know that the original
+  schema had `nullable: true` and respond accordingly.
+  """
   @doc default_implementation: true
   @spec schema_module_and_type(State.t(), SchemaSpec.t()) :: {module | nil, atom}
   def schema_module_and_type(state, schema_spec) do
@@ -141,7 +223,78 @@ defmodule OpenAPI.Processor.Naming do
   # Public Helpers
   #
 
-  # TODO: Docs and tests
+  @doc """
+  Merge schemas based on configured pairs of patterns and replacements
+
+  This function accepts a tuple with the module and type of a schema as strings, along with the
+  processor state, and returns a modified tuple according to the configured merges.
+
+  ## Discussion
+
+  OpenAPI descriptions may have multiple schemas that are closely related or even duplicated.
+  Merging gives the power to consolidate these schemas into a single struct that is easy to use.
+
+  For example, the GitHub API description used to have schemas `repository`, `full-repository`,
+  and `nullable-repository`. While the "full" repository added additional properties, the
+  "nullable" variant was just that: all of the same properties, but the schema was nullable. This
+  kind of oddity in the OpenAPI specification is exactly what makes most generated code difficult
+  to use.
+
+  The following merge settings would help clean this up:
+
+      merge: [
+        {"FullRepository", "Repository"},
+        {~r/^Nullable/, ""}
+      ]
+
+  In the first line, we tell the generator to merge `FullRepository` into `Repository` (the
+  original module names based on the names of the schemas). Because the destination module appears
+  at the end of the original module, the word "Repository" will be dropped from the type:
+
+  ```
+  FullRepository => Repository :: Repository.full()
+  ```
+
+  This renaming of the type is automatic for prefixes and suffixes. If no overlap is found, then
+  the full (underscored) schema name will be used for the type:
+
+  ```
+  SimpleUser        => User        :: User.simple()
+  PullRequestSimple => PullRequest :: PullRequest.simple()
+  MySchema          => Unrelated   :: Unrelated.my_schema()
+  ```
+
+  If the destination module is later renamed or grouped, the merged schemas will processed in the
+  same way.
+
+  ## Configuration
+
+  Merges are configured as a list of tuples in the `naming.merge` key of a configuration profile:
+
+      config :oapi_generator, default: [
+        naming: [
+          merge: [
+            {"PrivateUser", "User"},
+            {~r/Simple$/, ""}
+          ]
+        ]
+      ]
+
+  If the first element of the tuple is a string, it will be compared for an exact match to the
+  schema's module name. If the first element of the tuple is a regular express, it will be
+  compared to the schema's module name using `Regex.match?/2`. If it matches, the module name will
+  be replaced with the second element of the tuple.
+
+  After the module name replacement, the type name may be modified. If new the module name is the
+  first or last part of the original module name, the leftover portion will be used as the type.
+  For example, with the configuration above, the following transformations take place:
+
+      PrivateUser.t() => User.private()
+      UserSimple.t()  => User.simple()
+
+  In the case that the new module name is not a prefix or suffix of the original, the entire
+  underscored original module name is used as the new type.
+  """
   @spec merge_schema(raw_module_and_type, State.t()) :: raw_module_and_type
   def merge_schema(raw_module_and_type, state)
   def merge_schema({nil, type}, _state), do: {nil, type}
@@ -196,16 +349,15 @@ defmodule OpenAPI.Processor.Naming do
   Module replacements can be configured as a list of tuples in the `naming.rename` key of a
   configuration profile:
 
-      config :oapi_generator,
-        my_profile: [
-          naming: [
-            rename: [
-              {"Api", "API"},
-              {~r/^Bio/, "Author.Bio"},
-              # ...
-            ]
+      config :oapi_generator, default: [
+        naming: [
+          rename: [
+            {"Api", "API"},
+            {~r/^Bio/, "Author.Bio"},
+            # ...
           ]
         ]
+      ]
 
   The contents of each tuple will be fed into `String.replace/3`, for example:
 
@@ -247,22 +399,35 @@ defmodule OpenAPI.Processor.Naming do
   This function accepts a tuple with the module and type of a schema as strings, along with the
   processor state, and returns a modified tuple according to the configured groups.
 
+  ## Discussion
+
+  Schemas in an OpenAPI description can have extensively long names. For example, GitHub has a
+  schema called `actions-cache-usage-by-repository`. Along with all other actions-related schemas,
+  we can cut down the top-level module namespace by grouping on `Actions` or even further:
+
+      group: [
+        Actions,
+        Actions.CacheUsage
+      ]
+
+  Even simple renaming and groups can take a raw OpenAPI description and turn it into a library
+  that feels friendly to users.
+
   ## Configuration
 
   Module namespaces can be configured as a list of modules in the `naming.group` key of a
   configuration profile:
 
-      config :oapi_generator,
-        my_profile: [
-          naming: [
-            group: [
-              Author,
-              Author.Bio
-              Comment,
-              # ...
-            ]
+      config :oapi_generator, default: [
+        naming: [
+          group: [
+            Author,
+            Author.Bio
+            Comment,
+            # ...
           ]
         ]
+      ]
 
   ## Examples
 

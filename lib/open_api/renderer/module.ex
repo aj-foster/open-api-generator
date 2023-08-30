@@ -62,7 +62,7 @@ defmodule OpenAPI.Renderer.Module do
       ]
 
   With this configuration, an schema module named `My.ExampleSchema` would be output to
-  `lib/operations/my/example_schema.ex`.
+  `lib/schemas/my/example_schema.ex`.
   """
   @spec filename(State.t(), File.t()) :: String.t()
   def filename(state, file)

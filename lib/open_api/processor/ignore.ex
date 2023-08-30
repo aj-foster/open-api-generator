@@ -1,6 +1,31 @@
 defmodule OpenAPI.Processor.Ignore do
   @moduledoc """
-  Default plugin for ignoring schemas and operations
+  Ignore operations and schemas from the description
+
+  This module contains the default implementations for:
+
+    * `c:OpenAPI.Processor.ignore_operation?/2`
+    * `c:OpenAPI.Processor.ignore_schema?/2`
+
+  ## Configuration
+
+  All configuration for the functions in this module is contained in a key `ignore` of the active
+  configuration profile. For example:
+
+      # config/config.exs
+
+      config :oapi_generator, default: [
+        ignore: [
+          "IgnoredOperation",
+          ~r"/components/schemas/ignored-"
+        ]
+      ]
+
+  Each element of the `ignored` list is a pattern. Patterns are compared against the operation IDs
+  and paths of an operation, and the paths and titles of a schema. If a string is given, it is
+  compared for equality. Regular expressions are tested using `Regex.match?/2`.
+
+  If any pattern matches the tested operation or schema, it will be excluded.
   """
   alias OpenAPI.Spec.Path.Operation, as: OperationSpec
   alias OpenAPI.Spec.Schema, as: SchemaSpec
@@ -10,7 +35,14 @@ defmodule OpenAPI.Processor.Ignore do
 
   @doc """
   Ignore operations based on configured patterns of IDs and paths
+
+  Default implementation of `c:OpenAPI.Processor.ignore_operation?/2`.
+
+  In this implementation, patterns from the `ignore` configuration key are compared against each
+  operation ID and path. If a string pattern matches exactly, or regular expression pattern
+  matches according to `Regex.match?/2`, the operation will be ignored.
   """
+  @doc default_implementation: true
   @spec ignore_operation?(OpenAPI.Processor.State.t(), OperationSpec.t()) :: boolean
   def ignore_operation?(state, %OperationSpec{} = operation) do
     %OperationSpec{"$oag_path": operation_path, operation_id: operation_id} = operation
@@ -32,7 +64,15 @@ defmodule OpenAPI.Processor.Ignore do
 
   @doc """
   Ignore schemas based on configured patterns of paths and titles
+
+  Default implementation of `c:OpenAPI.Processor.ignore_schema?/2`.
+
+  In this implementation, patterns from the `ignore` configuration key are compared against each
+  schema title and path. If a string pattern matches exactly, or regular expression pattern
+  matches according to `Regex.match?/2`, the schema will be ignored. This often means the type
+  will be replaced by a plain `map`.
   """
+  @doc default_implementation: true
   @spec ignore_schema?(OpenAPI.Processor.State.t(), SchemaSpec.t()) :: boolean
   def ignore_schema?(state, %SchemaSpec{} = schema) do
     %SchemaSpec{"$oag_base_file_path": base_path, "$oag_last_ref_path": ref_path, title: title} =
@@ -55,6 +95,10 @@ defmodule OpenAPI.Processor.Ignore do
       {_value, _string_pattern} -> false
     end)
   end
+
+  #
+  # Private Helpers
+  #
 
   @spec config(OpenAPI.Processor.State.t()) :: [definition]
   defp config(state) do
