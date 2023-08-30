@@ -21,13 +21,13 @@ defmodule OpenAPI.Renderer.Module do
 
       config :oapi_generator, default: [
         output: [
-          base_module: "",
+          base_module: nil,
           default_client: Client,
           location: "",
           operation_subdirectory: "",
-          operation_use: "",
+          operation_use: nil,
           schema_subdirectory: "",
-          schema_use: "",
+          schema_use: nil
         ]
       ]
   """

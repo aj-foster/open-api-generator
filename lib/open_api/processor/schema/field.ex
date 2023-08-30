@@ -1,8 +1,6 @@
 defmodule OpenAPI.Processor.Schema.Field do
   @moduledoc """
-  Default plugin for formatting schema fields
-
-  This module also provides the Field struct that is used by the renderer.
+  Provides the Field struct that is used by the renderer
   """
   alias OpenAPI.Processor.Type
 

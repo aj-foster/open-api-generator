@@ -1,8 +1,6 @@
 defmodule OpenAPI.Processor.Schema do
   @moduledoc """
-  Default plugin for formatting schemas
-
-  This module also provides the Schema struct that is used by the renderer.
+  Provides the Schema struct that is used by the renderer
   """
 
   @typedoc "Processed schema data used by the renderer"

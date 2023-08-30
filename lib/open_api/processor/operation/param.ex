@@ -1,11 +1,15 @@
 defmodule OpenAPI.Processor.Operation.Param do
-  @doc false
+  @moduledoc """
+  Provides the Param struct that is used by the renderer
+  """
   alias OpenAPI.Processor.Type
   alias OpenAPI.Spec.Path.Parameter
   alias OpenAPI.Spec.Schema
 
+  @typedoc "Location of the param"
   @type location :: :cookie | :header | :path | :query
 
+  @typedoc "Processed param data used by the renderer"
   @type t :: %__MODULE__{
           description: String.t() | nil,
           location: location,
@@ -20,6 +24,7 @@ defmodule OpenAPI.Processor.Operation.Param do
     :value_type
   ]
 
+  @doc false
   @spec from_spec(Parameter.t()) :: t
   def from_spec(%Parameter{} = param) do
     %Parameter{description: description, name: name} = param
