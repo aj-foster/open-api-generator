@@ -50,6 +50,13 @@ defmodule OpenAPI.Processor.Type do
           | :null
 
   @typedoc """
+  Unnatural types introduced by the generator
+
+  These types may be introduced in extra fields or when referenced schemas are ignored.
+  """
+  @type unnatural :: :any | :map
+
+  @typedoc """
   Internal representation of types
 
   In addition to the `t:primitive/0` types, values can be constants or enums defined by
@@ -60,6 +67,7 @@ defmodule OpenAPI.Processor.Type do
   """
   @type t ::
           primitive
+          | unnatural
           | {:array, t}
           | {:const, literal}
           | {:enum, [literal]}

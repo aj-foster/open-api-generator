@@ -183,6 +183,7 @@ defmodule OpenAPI.Renderer.Util do
   # Primitives
   def to_type(_state, :boolean), do: quote(do: boolean)
   def to_type(_state, :integer), do: quote(do: integer)
+  def to_type(_state, :map), do: quote(do: map)
   def to_type(_state, :number), do: quote(do: number)
   def to_type(_state, :null), do: quote(do: nil)
 

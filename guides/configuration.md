@@ -264,6 +264,11 @@ Remember that all configuration values must be contained within a profile.
   Defaults to `[output.base_module].Client`.
   See `OpenAPI.Renderer.Module.render_default_client/2` for more information.
 
+* `output.extra_fields`: Additional fields to add to all schema struct definitions and their typespecs, expressed as a keyword list of types.
+  This can be useful for private data the library wishes to add to all outputted data.
+  Defaults to an empty list of fields.
+  See `OpenAPI.Renderer.Schema` for more information.
+
 * `output.location`: Base filesystem location for all rendered files.
   This is often a directory like `lib` to follow Elixir conventions.
   Defaults to the current working directory.

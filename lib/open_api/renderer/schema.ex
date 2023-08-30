@@ -9,6 +9,38 @@ defmodule OpenAPI.Renderer.Schema do
     * `c:OpenAPI.Renderer.render_schema_struct/2`
     * `c:OpenAPI.Renderer.render_schema_types/2`
 
+  ## Extra Fields
+
+  It is sometimes useful for client libraries to store additional information on the structs
+  defined by the API description. This kind of private information is supported using the
+  `output.extra_fields` configuration. Each entry in the keyword list must use the name of the
+  field as the atom key and the type as the value. Types can be any valid
+  `t:OpenAPI.Processor.Type.t/0`.
+
+  Example:
+
+      config :oapi_generator, default: [
+        output: [
+          __info__: :map
+        ]
+      ]
+
+  This will result in a field `info: map` added to every schema typespec and `:info` added to
+  every struct definition.
+
+  ## Configuration
+
+  All configuration offered by the functions in this module lives under the `output` key of the
+  active configuration profile. For example (default values shown):
+
+      # config/config.exs
+
+      config :oapi_generator, default: [
+        output: [
+          extra_fields: []
+        ]
+      ]
+
   """
   alias OpenAPI.Processor.Schema
   alias OpenAPI.Processor.Schema.Field
@@ -60,6 +92,10 @@ defmodule OpenAPI.Renderer.Schema do
   Render the typespec(s) for all of the given schemas
 
   Default implementation of `c:OpenAPI.Renderer.render_schema_types/2`.
+
+  This implementation uses the `output.extra_fields` configuration to add additional fields to
+  the struct for private use by the client library. See **Extra Fields** in this module's
+  documentation.
   """
   @spec render_types(State.t(), [Schema.t()]) :: Macro.t()
   def render_types(state, schemas) do
@@ -77,7 +113,7 @@ defmodule OpenAPI.Renderer.Schema do
 
   @spec render_type_fields(State.t(), [Field.t()]) :: Macro.t()
   defp render_type_fields(state, fields) do
-    for field <- Enum.sort_by(fields, & &1.name) do
+    for field <- Enum.sort_by(fields ++ extra_fields(state), & &1.name) do
       %Field{name: name, nullable: nullable?, required: required?, type: type} = field
 
       rendered_type =
@@ -98,15 +134,15 @@ defmodule OpenAPI.Renderer.Schema do
 
   Default implementation of `c:OpenAPI.Renderer.render_schema_struct/2`.
 
-  This implementation combines the fields of all schemas to create one struct.
+  This implementation combines the fields of all schemas to create one struct. It also uses the
+  `output.extra_fields` configuration to add additional fields to the struct for private use by
+  the client library. See **Extra Fields** in this module's documentation.
   """
   @spec render_struct(State.t(), [Schema.t()]) :: Macro.t()
-  def render_struct(state, schemas)
-  def render_struct(_state, []), do: []
-
-  def render_struct(_state, schemas) do
+  def render_struct(state, schemas) do
     fields =
       Enum.map(schemas, & &1.fields)
+      |> List.insert_at(0, extra_fields(state))
       |> List.flatten()
       |> Enum.map(&String.to_atom(&1.name))
       |> Enum.sort()
@@ -116,6 +152,15 @@ defmodule OpenAPI.Renderer.Schema do
       defstruct unquote(fields)
     end
     |> Util.put_newlines()
+  end
+
+  @spec extra_fields(State.t()) :: [Field.t()]
+  defp extra_fields(state) do
+    extra_fields = config(state)[:extra_fields] || []
+
+    Enum.map(extra_fields, fn {name, type} ->
+      %Field{name: to_string(name), nullable: false, private: true, required: true, type: type}
+    end)
   end
 
   @doc """
@@ -175,5 +220,17 @@ defmodule OpenAPI.Renderer.Schema do
         {unquote(String.to_atom(name)), unquote(Util.to_readable_type(state, type))}
       end
     end)
+  end
+
+  #
+  # Helpers
+  #
+
+  @spec config(OpenAPI.Renderer.State.t()) :: Keyword.t()
+  defp config(state) do
+    %OpenAPI.Renderer.State{profile: profile} = state
+
+    Application.get_env(:oapi_generator, profile, [])
+    |> Keyword.get(:output, [])
   end
 end
