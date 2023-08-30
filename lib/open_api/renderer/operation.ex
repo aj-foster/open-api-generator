@@ -1,10 +1,49 @@
 defmodule OpenAPI.Renderer.Operation do
+  @moduledoc """
+  Default implementation for callbacks related to rendering operations
+
+  This module contains the default implementations for:
+
+    * `c:OpenAPI.Renderer.render_operations/2`
+    * `c:OpenAPI.Renderer.render_operation/2`
+    * `c:OpenAPI.Renderer.render_operation_doc/2`
+    * `c:OpenAPI.Renderer.render_operation_function/2`
+    * `c:OpenAPI.Renderer.render_operation_spec/2`
+
+  These focus on the operation functions and surrounding code.
+
+  ## Configuration
+
+  All configuration offered by the functions in this module lives under the `output` key of the
+  active configuration profile. For example (default values shown):
+
+      # config/config.exs
+
+      config :oapi_generator, default: [
+        output: [
+          base_module: nil,
+          types: [
+            error: nil
+          ]
+        ]
+      ]
+
+  """
   alias OpenAPI.Processor.Operation
   alias OpenAPI.Processor.Operation.Param
   alias OpenAPI.Renderer.File
   alias OpenAPI.Renderer.State
   alias OpenAPI.Renderer.Util
 
+  @doc """
+  Render all of the operations contained in a single module
+
+  Default implementation of `c:OpenAPI.Renderer.render_operations/2`.
+
+  This implementation simply iterates through the operations contained in a file, sorted by their
+  function name, and calls the `c:OpenAPI.Renderer.render_operation/2` callback for each. The
+  results are returned as a list of nodes.
+  """
   @spec render_all(State.t(), File.t()) :: Macro.t()
   def render_all(state, file) do
     %State{implementation: implementation} = state
@@ -15,6 +54,18 @@ defmodule OpenAPI.Renderer.Operation do
     end
   end
 
+  @doc """
+  Render a single operation
+
+  Default implementation of `c:OpenAPI.Renderer.render_operation/2`.
+
+  This implementation calls the following callbacks and concatenates their results:
+
+    * `c:OpenAPI.Renderer.render_operation_doc/2`
+    * `c:OpenAPI.Renderer.render_operation_spec/2`
+    * `c:OpenAPI.Renderer.render_operation_function/2`
+
+  """
   @spec render(State.t(), Operation.t()) :: Macro.t()
   def render(state, operation) do
     %State{implementation: implementation} = state
@@ -27,6 +78,13 @@ defmodule OpenAPI.Renderer.Operation do
     Util.clean_list([docstring, typespec, function])
   end
 
+  @doc """
+  Render the docstring for an operation function
+
+  Default implementation of `c:OpenAPI.Renderer.render_operation_doc/2`.
+
+  This implementation uses the docstring created by the processor without modification.
+  """
   @spec render_doc(State.t(), Operation.t()) :: Macro.t()
   def render_doc(_state, operation) do
     %Operation{docstring: docstring} = operation
@@ -36,6 +94,34 @@ defmodule OpenAPI.Renderer.Operation do
     end
   end
 
+  @doc """
+  Render the function definition for an operation function
+
+  Default implementation of `c:OpenAPI.Renderer.render_operation_function/2`.
+
+  This implementation constructs a function that calls a dynamically chosen client module's
+  `request` function with details about the operation.
+
+  ## Example
+
+        def my_operation(path_param, body, opts \\ []) do
+          client = opts[:client] || @default_client
+          query = Keyword.take(opts, [:query_param])
+
+          client.request(%{
+            args: [path_param: path_param, body: body],
+            call: {Example.Operations, :my_operation},
+            url: "/path/to/\#{path_param}",
+            body: body,
+            method: :post,
+            query: query,
+            request: [{"application/json", :map}],
+            response: [{200, :map}, {404, {Example.NotFoundError, :t}}],
+            opts: opts
+          })
+        end
+
+  """
   @spec render_function(State.t(), Operation.t()) :: Macro.t()
   def render_function(state, operation) do
     %Operation{
@@ -202,6 +288,11 @@ defmodule OpenAPI.Renderer.Operation do
     end
   end
 
+  @doc """
+  Render the spec of an operation function
+
+  Default implementation of `c:OpenAPI.Renderer.render_operation_spec/2`.
+  """
   @spec render_spec(State.t(), Operation.t()) :: Macro.t()
   def render_spec(state, operation) do
     %Operation{

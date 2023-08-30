@@ -94,7 +94,7 @@ defmodule OpenAPI.Processor do
 
   See `OpenAPI.Processor.Ignore.ignore_operation?/2` for the default implementation.
   """
-  @callback ignore_operation?(State.t(), OperationSpec.t()) :: boolean
+  @callback ignore_operation?(state :: State.t(), operation_spec :: OperationSpec.t()) :: boolean
 
   @doc """
   Whether to render the given schema in the generated code
@@ -104,7 +104,7 @@ defmodule OpenAPI.Processor do
 
   See `OpenAPI.Processor.Ignore.ignore_schema?/2` for the default implementation.
   """
-  @callback ignore_schema?(State.t(), SchemaSpec.t()) :: boolean
+  @callback ignore_schema?(state :: State.t(), schema_spec :: SchemaSpec.t()) :: boolean
 
   @doc """
   Construct a docstring for the given operation
@@ -114,7 +114,11 @@ defmodule OpenAPI.Processor do
 
   See `OpenAPI.Processor.Operation.docstring/3` for the default implementation.
   """
-  @callback operation_docstring(State.t(), OperationSpec.t(), [Param.t()]) :: String.t()
+  @callback operation_docstring(
+              state :: State.t(),
+              operation_spec :: OperationSpec.t(),
+              query_params :: [Param.t()]
+            ) :: String.t()
 
   @doc """
   Choose the name of the client function for the given operation
@@ -124,7 +128,8 @@ defmodule OpenAPI.Processor do
 
   See `OpenAPI.Processor.Naming.operation_function/2` for the default implementation.
   """
-  @callback operation_function_name(State.t(), OperationSpec.t()) :: atom
+  @callback operation_function_name(state :: State.t(), operation_spec :: OperationSpec.t()) ::
+              atom
 
   @doc """
   Choose the names of the client function modules for the given operation
@@ -134,7 +139,9 @@ defmodule OpenAPI.Processor do
 
   See `OpenAPI.Processor.Naming.operation_modules/2` for the default implementation.
   """
-  @callback operation_module_names(State.t(), OperationSpec.t()) :: [module]
+  @callback operation_module_names(state :: State.t(), operation_spec :: OperationSpec.t()) :: [
+              module
+            ]
 
   @doc """
   Collect a list of request content types and their associated schemas
@@ -144,7 +151,7 @@ defmodule OpenAPI.Processor do
 
   See `OpenAPI.Processor.Operation.request_body/2` for the default implementation.
   """
-  @callback operation_request_body(State.t(), OperationSpec.t()) ::
+  @callback operation_request_body(state :: State.t(), operation_spec :: OperationSpec.t()) ::
               Operation.request_body_unprocessed()
 
   @doc """
@@ -155,7 +162,8 @@ defmodule OpenAPI.Processor do
 
   See `OpenAPI.Processor.Operation.request_method/2` for the default implementation.
   """
-  @callback operation_request_method(State.t(), OperationSpec.t()) :: Operation.method()
+  @callback operation_request_method(state :: State.t(), operation_spec :: OperationSpec.t()) ::
+              Operation.method()
 
   @doc """
   Collect a list of response status codes and their associated schemas
@@ -166,7 +174,7 @@ defmodule OpenAPI.Processor do
 
   See `OpenAPI.Processor.Operation.response_body/2` for the default implementation.
   """
-  @callback operation_response_body(State.t(), OperationSpec.t()) ::
+  @callback operation_response_body(state :: State.t(), operation_spec :: OperationSpec.t()) ::
               Operation.response_body_unprocessed()
 
   @doc """
@@ -179,7 +187,8 @@ defmodule OpenAPI.Processor do
 
   See `OpenAPI.Processor.Naming.schema_module_and_type/2` for the default implementation.
   """
-  @callback schema_module_and_type(State.t(), SchemaSpec.t()) :: {module, atom}
+  @callback schema_module_and_type(state :: State.t(), schema_spec :: SchemaSpec.t()) ::
+              {module, atom}
 
   #
   # Default Implementations

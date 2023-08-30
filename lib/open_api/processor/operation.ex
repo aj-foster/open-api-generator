@@ -58,6 +58,8 @@ defmodule OpenAPI.Processor.Operation do
   @doc """
   Create the contents of an `@doc` string for the given operation
 
+  Default implementation of `c:OpenAPI.Processor.operation_docstring/3`.
+
   The docstring constructed by this function will contain a summary line provided by the operation
   summary (if available) or the request method and path otherwise. It will incorporate the
   operation description (if available) and link to any included external documentation. Finally,
@@ -78,6 +80,7 @@ defmodule OpenAPI.Processor.Operation do
 
       \"\"\"
   """
+  @doc default_implementation: true
   @spec docstring(State.t(), OperationSpec.t(), [Param.t()]) :: String.t()
   def docstring(_state, operation, query_params) do
     %OperationSpec{
@@ -133,7 +136,10 @@ defmodule OpenAPI.Processor.Operation do
 
   @doc """
   Collect request content types and their associated schemas
+
+  Default implementation of `c:OpenAPI.Processor.operation_request_body/2`.
   """
+  @doc default_implementation: true
   @spec request_body(State.t(), OperationSpec.t()) :: request_body_unprocessed
   def request_body(_state, %OperationSpec{request_body: %RequestBodySpec{content: content}})
       when is_map(content) do
@@ -144,7 +150,10 @@ defmodule OpenAPI.Processor.Operation do
 
   @doc """
   Cast the HTTP method to an atom
+
+  Default implementation of `c:OpenAPI.Processor.operation_request_method/2`.
   """
+  @doc default_implementation: true
   @spec request_method(State.t(), OperationSpec.t()) :: method
   def request_method(_state, %OperationSpec{"$oag_path_method": "get"}), do: :get
   def request_method(_state, %OperationSpec{"$oag_path_method": "put"}), do: :put
@@ -158,10 +167,13 @@ defmodule OpenAPI.Processor.Operation do
   @doc """
   Collect response status codes and their associated schemas
 
+  Default implementation of `c:OpenAPI.Processor.operation_response_body/2`.
+
   In this implementation, all schemas are returned regardless of content type. It is possible for
   the same status code to have multiple schemas, in which case the renderer should compose a
   union type for the response.
   """
+  @doc default_implementation: true
   @spec response_body(State.t(), OperationSpec.t()) :: response_body_unprocessed
   def response_body(_state, %OperationSpec{responses: responses}) when is_map(responses) do
     Enum.map(responses, fn {status_or_default, %ResponseSpec{content: content}} ->

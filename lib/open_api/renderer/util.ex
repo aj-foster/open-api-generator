@@ -47,6 +47,7 @@ defmodule OpenAPI.Renderer.Util do
   formatter. In addition, any `@moduledoc` or `@doc` statements that contain a newline character
   will be modified to use `\"\"\"` as the delimiter.
   """
+  @doc default_implementation: true
   @spec format(State.t(), File.t()) :: iodata
   def format(_state, file) do
     %File{ast: ast} = file
@@ -293,6 +294,7 @@ defmodule OpenAPI.Renderer.Util do
   newline is included at the end of the file. It also ensures that any subdirectories are created
   prior to writing. Any failure will result in a raised error.
   """
+  @doc default_implementation: true
   @spec write(State.t(), File.t()) :: :ok
   def write(_state, file) do
     %File{contents: contents, location: location} = file

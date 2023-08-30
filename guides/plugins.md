@@ -70,7 +70,7 @@ defmodule MyLibrary.Renderer do
 end
 ```
 
-The full list of callbacks can be found below and in the documentation for `OpenAPI.Processor` and `OpenAPI.Renderer`.
+The full list of callbacks can be found in the [**Callbacks**](#callbacks) section below and in the documentation for `OpenAPI.Processor` and `OpenAPI.Renderer`.
 
 ## Configuration
 

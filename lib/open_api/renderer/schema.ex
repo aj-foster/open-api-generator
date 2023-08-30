@@ -1,10 +1,37 @@
 defmodule OpenAPI.Renderer.Schema do
+  @moduledoc """
+  Default implementation for callbacks related to rendering schemas
+
+  This module contains the default implementations for:
+
+    * `c:OpenAPI.Renderer.render_schema/2`
+    * `c:OpenAPI.Renderer.render_schema_field_function/2`
+    * `c:OpenAPI.Renderer.render_schema_struct/2`
+    * `c:OpenAPI.Renderer.render_schema_types/2`
+
+  """
   alias OpenAPI.Processor.Schema
   alias OpenAPI.Processor.Schema.Field
   alias OpenAPI.Renderer.File
   alias OpenAPI.Renderer.State
   alias OpenAPI.Renderer.Util
 
+  @doc """
+  Render a schema, including typespecs, struct definition, and field function
+
+  Default implementation of `c:OpenAPI.Renderer.render_schema/2`.
+
+  This implementation operates on schemas that appear in multiple contexts. If a schema appears
+  in exactly one context as the request or response body of a function, it will instead be
+  rendered by an operation callback.
+
+  This function calls the following other callbacks and concatenates their results:
+
+    * `c:OpenAPI.Renderer.render_schema_types/2`
+    * `c:OpenAPI.Renderer.render_schema_struct/2`
+    * `c:OpenAPI.Renderer.render_schema_field_function/2`
+
+  """
   @spec render(State.t(), File.t()) :: Macro.t()
   def render(state, file) do
     %State{implementation: implementation} = state
@@ -29,6 +56,11 @@ defmodule OpenAPI.Renderer.Schema do
     Util.clean_list([types, struct, field_function])
   end
 
+  @doc """
+  Render the typespec(s) for all of the given schemas
+
+  Default implementation of `c:OpenAPI.Renderer.render_schema_types/2`.
+  """
   @spec render_types(State.t(), [Schema.t()]) :: Macro.t()
   def render_types(state, schemas) do
     for %Schema{fields: fields, type_name: type} <- schemas do
@@ -61,6 +93,13 @@ defmodule OpenAPI.Renderer.Schema do
     end
   end
 
+  @doc """
+  Render a single struct definition for all of the given schemas
+
+  Default implementation of `c:OpenAPI.Renderer.render_schema_struct/2`.
+
+  This implementation combines the fields of all schemas to create one struct.
+  """
   @spec render_struct(State.t(), [Schema.t()]) :: Macro.t()
   def render_struct(state, schemas)
   def render_struct(_state, []), do: []
@@ -79,6 +118,13 @@ defmodule OpenAPI.Renderer.Schema do
     |> Util.put_newlines()
   end
 
+  @doc """
+  Render a function `__fields__/1` that returns information about schema field types
+
+  Default implementation of `c:OpenAPI.Renderer.render_schema_field_function/2`.
+
+  This implementation renders a function spec and header with one clause for each schema type.
+  """
   @spec render_field_function(State.t(), [Schema.t()]) :: Macro.t()
   def render_field_function(state, schemas)
   def render_field_function(_state, []), do: []
