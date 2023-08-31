@@ -204,12 +204,6 @@ defmodule OpenAPI.Processor.Naming do
 
   Note that `User.simple()` and `User.t()` will end up in the same file as a result of the merge,
   sharing the same struct for their responses (with distinct typespecs).
-
-  In the second line of the configuration above, we merge two nearly-identical schemas
-  `NullableRepository` and `Repository`. Because these schemas have the same fields, there will
-  not be a `Repository.nullable()` type generated; instead, references will use `Repository.t()`.
-  Despite this deduplication, other parts of the code will continue to know that the original
-  schema had `nullable: true` and respond accordingly.
   """
   @doc default_implementation: true
   @spec schema_module_and_type(State.t(), SchemaSpec.t()) :: {module | nil, atom}
