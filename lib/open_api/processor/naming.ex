@@ -66,7 +66,8 @@ defmodule OpenAPI.Processor.Naming do
   normalization rules:
 
   * Operation tags and IDs are normalized for spaces, slashes, etc.
-  * Operation tags are used to generate modules that group operation functions
+  * Operation tags are used to generate modules that group operation functions (unless
+    `naming.operation_use_tags` is `false`)
   * Operation IDs with slashes will be split, with the initial segments (everything except the
     last segment) used as segments of a module
 
@@ -89,17 +90,20 @@ defmodule OpenAPI.Processor.Naming do
 
       config :oapi_generator, default: [
         naming: [
-          default_operation_module: Operations
+          default_operation_module: Operations,
+          operation_use_tags: true
         ],
         output: [
           base_module: MyClientLibrary
         ]
       ]
 
+  Set `naming.operation_use_tags` to `false` to disable the use of tags when creating modules.
   """
   @doc default_implementation: true
   @spec operation_modules(State.t(), OperationSpec.t()) :: [module]
   def operation_modules(state, operation_spec) do
+    config = config(state)
     %OperationSpec{operation_id: id, tags: tags} = operation_spec
     [_function | modules] = String.split(id, "/", trim: true) |> Enum.reverse()
 
@@ -113,13 +117,17 @@ defmodule OpenAPI.Processor.Naming do
       end
 
     tag_names =
-      Enum.map(tags, fn tag ->
-        tag
-        |> String.split("/", trim: true)
-        |> Enum.map(&normalize_identifier/1)
-        |> Enum.map(&Macro.camelize/1)
-        |> Module.concat()
-      end)
+      if config[:operation_use_tags] != false do
+        Enum.map(tags, fn tag ->
+          tag
+          |> String.split("/", trim: true)
+          |> Enum.map(&normalize_identifier/1)
+          |> Enum.map(&Macro.camelize/1)
+          |> Module.concat()
+        end)
+      else
+        []
+      end
 
     all_names =
       [id_name | tag_names]
@@ -129,7 +137,7 @@ defmodule OpenAPI.Processor.Naming do
     if length(all_names) > 0 do
       all_names
     else
-      default = config(state)[:default_operation_module] || Operations
+      default = config[:default_operation_module] || Operations
       [default]
     end
   end
