@@ -185,7 +185,10 @@ defmodule OpenAPI.Processor.Type do
   #
   def from_schema(state, %Schema{properties: properties} = schema_spec) when is_map(properties) do
     if ref = State.get_schema_ref_by_path(state, schema_spec) do
-      {state, ref}
+      schema_spec = Schema.merge_contexts(state.schema_specs_by_ref[ref], schema_spec)
+      schema_specs_by_ref = Map.put(state.schema_specs_by_ref, ref, schema_spec)
+
+      {%State{state | schema_specs_by_ref: schema_specs_by_ref}, ref}
     else
       State.put_schema_spec(state, schema_spec)
     end

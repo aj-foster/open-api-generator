@@ -306,7 +306,7 @@ defmodule OpenAPI.Processor do
     |> Enum.sort_by(fn {content_type, _schema} -> content_type end, :desc)
     |> Enum.reduce({state, []}, fn {content_type, schema_spec}, {state, request_body} ->
       context = {:request, op_module_name, op_function_name, content_type}
-      schema_spec = %SchemaSpec{schema_spec | "$oag_schema_context": context}
+      schema_spec = SchemaSpec.add_context(schema_spec, context)
 
       {state, schema_type} = Type.from_schema(state, schema_spec)
       {state, [{content_type, schema_type} | request_body]}
@@ -324,7 +324,7 @@ defmodule OpenAPI.Processor do
         |> Enum.reverse()
         |> Enum.reduce({state, %{}}, fn {content_type, schema_spec}, {state, schema_types} ->
           context = {:response, op_module_name, op_function_name, status_code, content_type}
-          schema_spec = %SchemaSpec{schema_spec | "$oag_schema_context": context}
+          schema_spec = SchemaSpec.add_context(schema_spec, context)
 
           {state, schema_type} = Type.from_schema(state, schema_spec)
           {state, Map.put(schema_types, content_type, schema_type)}
@@ -388,7 +388,7 @@ defmodule OpenAPI.Processor do
           case Type.from_schema(state, field_spec) do
             {state, field_ref} when is_reference(field_ref) ->
               context = {:field, schema_ref, field_name}
-              field_spec = %SchemaSpec{field_spec | "$oag_schema_context": context}
+              field_spec = SchemaSpec.add_context(field_spec, context)
 
               {process_schema(state, field_ref, field_spec), field_ref}
 

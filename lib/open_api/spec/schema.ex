@@ -24,7 +24,7 @@ defmodule OpenAPI.Spec.Schema do
           "$oag_base_file_path": [State.path_segment()],
           "$oag_last_ref_file": String.t() | nil,
           "$oag_last_ref_path": [State.path_segment()],
-          "$oag_schema_context": term,
+          "$oag_schema_context": [tuple],
           title: String.t() | nil,
           multiple_of: pos_integer | nil,
           maximum: integer | nil,
@@ -108,6 +108,25 @@ defmodule OpenAPI.Spec.Schema do
   ]
 
   #
+  # Helpers
+  #
+
+  @doc false
+  @spec add_context(t, term) :: t
+  def add_context(%__MODULE__{"$oag_schema_context": contexts} = schema, new_context) do
+    %__MODULE__{schema | "$oag_schema_context": [new_context | contexts]}
+  end
+
+  @doc false
+  @spec merge_contexts(t, t) :: t
+  def merge_contexts(
+        %__MODULE__{"$oag_schema_context": contexts} = schema,
+        %__MODULE__{"$oag_schema_context": new_contexts}
+      ) do
+    %__MODULE__{schema | "$oag_schema_context": new_contexts ++ contexts}
+  end
+
+  #
   # Decoder
   #
 
@@ -130,7 +149,7 @@ defmodule OpenAPI.Spec.Schema do
       "$oag_base_file_path": Map.fetch!(state, :base_file_path) |> Enum.reverse(),
       "$oag_last_ref_file": Map.fetch!(state, :last_ref_file),
       "$oag_last_ref_path": Map.fetch!(state, :last_ref_path) |> Enum.reverse(),
-      "$oag_schema_context": nil,
+      "$oag_schema_context": [],
       title: Map.get(yaml, "title"),
       multiple_of: Map.get(yaml, "multipleOf"),
       maximum: Map.get(yaml, "maximum"),
