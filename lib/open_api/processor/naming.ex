@@ -526,21 +526,20 @@ defmodule OpenAPI.Processor.Naming do
   end
 
   def raw_schema_module_and_type(%SchemaSpec{
-        "$oag_schema_context": {:request, operation_module, operation_function, content_type}
+        "$oag_schema_context": [{:request, op_module, op_function, content_type}]
       }) do
-    type = Enum.join([operation_function, readable_content_type(content_type), "req"], "_")
+    type = Enum.join([op_function, readable_content_type(content_type), "req"], "_")
 
-    {to_string(operation_module), type}
+    {to_string(op_module), type}
   end
 
   def raw_schema_module_and_type(%SchemaSpec{
-        "$oag_schema_context":
-          {:response, operation_module, operation_function, status_code, content_type}
+        "$oag_schema_context": [{:response, op_module, op_function, status_code, content_type}]
       }) do
     type =
       Enum.join(
         [
-          operation_function,
+          op_function,
           to_string(status_code),
           readable_content_type(content_type),
           "resp"
@@ -548,7 +547,7 @@ defmodule OpenAPI.Processor.Naming do
         "_"
       )
 
-    {to_string(operation_module), type}
+    {to_string(op_module), type}
   end
 
   def raw_schema_module_and_type(%SchemaSpec{title: schema_title}) when is_binary(schema_title) do

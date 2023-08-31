@@ -69,23 +69,31 @@ defmodule OpenAPI.Renderer.Schema do
     %State{implementation: implementation} = state
     %File{module: module, schemas: schemas} = file
 
-    # TODO: This filter is non-deterministic. It is necessary to store and evaluate all contexts
-    # from all instances of the schema.
+    # Reject schemas that only appear in a single request or response body.
     non_operation_schemas =
       schemas
       |> Enum.reject(fn
-        %Schema{context: {:request, ^module, _op_function_name, _content_type}} -> true
-        %Schema{context: {:response, ^module, _op_function_name, _status, _content_type}} -> true
-        _else -> false
+        %Schema{context: [{:request, ^module, _op_function_name, _content_type}]} ->
+          true
+
+        %Schema{context: [{:response, ^module, _op_function_name, _status, _content_type}]} ->
+          true
+
+        _else ->
+          false
       end)
       |> Enum.sort_by(& &1.type_name)
       |> Enum.dedup_by(&{&1.module_name, &1.type_name, &1.fields})
 
-    types = implementation.render_schema_types(state, non_operation_schemas)
-    struct = implementation.render_schema_struct(state, non_operation_schemas)
-    field_function = implementation.render_schema_field_function(state, non_operation_schemas)
+    if length(non_operation_schemas) > 0 do
+      types = implementation.render_schema_types(state, non_operation_schemas)
+      struct = implementation.render_schema_struct(state, non_operation_schemas)
+      field_function = implementation.render_schema_field_function(state, non_operation_schemas)
 
-    Util.clean_list([types, struct, field_function])
+      Util.clean_list([types, struct, field_function])
+    else
+      []
+    end
   end
 
   @doc """
