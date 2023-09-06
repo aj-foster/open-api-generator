@@ -392,6 +392,42 @@ defmodule OpenAPI.Processor do
 
               {process_schema(state, field_ref, field_spec), field_ref}
 
+            {state, {:union, field_types}} ->
+              state =
+                for field_ref <- field_types, is_reference(field_ref), reduce: state do
+                  state ->
+                    context = {:field, schema_ref, field_name}
+
+                    field_spec =
+                      state.schema_specs_by_ref[field_ref]
+                      |> SchemaSpec.add_context(context)
+
+                    process_schema(state, field_ref, field_spec)
+                end
+
+              {state, {:union, field_types}}
+
+            {state, {:array, field_ref}} when is_reference(field_ref) ->
+              context = {:field, schema_ref, field_name}
+              field_spec = SchemaSpec.add_context(field_spec, context)
+
+              {process_schema(state, field_ref, field_spec), {:array, field_ref}}
+
+            {state, {:array, {:union, field_types}}} ->
+              state =
+                for field_ref <- field_types, is_reference(field_ref), reduce: state do
+                  state ->
+                    context = {:field, schema_ref, field_name}
+
+                    field_spec =
+                      state.schema_specs_by_ref[field_ref]
+                      |> SchemaSpec.add_context(context)
+
+                    process_schema(state, field_ref, field_spec)
+                end
+
+              {state, {:array, {:union, field_types}}}
+
             {state, type} ->
               {state, type}
           end

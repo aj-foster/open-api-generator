@@ -144,8 +144,8 @@ defmodule OpenAPI.Renderer.Util do
   def to_readable_type(state, {:union, types}) do
     types =
       unwrap_unions(types)
-      |> Enum.map(&to_readable_type(state, &1))
       |> List.flatten()
+      |> Enum.map(&to_readable_type(state, &1))
       |> Enum.sort(&should_appear_in_this_order?/2)
       |> Enum.dedup()
       |> Enum.reverse()
@@ -234,11 +234,10 @@ defmodule OpenAPI.Renderer.Util do
     types
     |> unwrap_unions()
     |> unwrap_enums()
-    |> Enum.map(&to_type(state, &1))
     |> List.flatten()
+    |> Enum.map(&to_type(state, &1))
     |> Enum.sort(&should_appear_in_this_order?/2)
     |> Enum.dedup()
-    |> Enum.reverse()
     |> Enum.reduce(fn type, expression ->
       {:|, [], [type, expression]}
     end)
@@ -324,8 +323,10 @@ defmodule OpenAPI.Renderer.Util do
   end
 
   @spec should_appear_in_this_order?(Type.t(), Type.t()) :: boolean
-  defp should_appear_in_this_order?(_, nil), do: true
-  defp should_appear_in_this_order?(nil, _), do: false
+  defp should_appear_in_this_order?(_, nil), do: false
+  defp should_appear_in_this_order?(_, :null), do: false
+  defp should_appear_in_this_order?(nil, _), do: true
+  defp should_appear_in_this_order?(:null, _), do: true
   defp should_appear_in_this_order?(a, b), do: a >= b
 
   @doc """
