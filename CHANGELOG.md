@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 0.0.8 (2023-09-06)
+
+**Fix**: Path parameters are now collected from more locations in the spec.
+  Previously, the generator only noticed path parameters declared in the individual path _items_.
+  This may cause breaking changes in some operation functions, however they were likely unusable before.
+**Fix**: Ensure all path parameter keys are properly underscored (thanks [wingyplus](https://github.com/wingyplus)!).
+
 ### 0.0.7 (2023-06-07)
 
 **Add**: `schema_use` option to add optional `use [Module]` statements within schemas.
