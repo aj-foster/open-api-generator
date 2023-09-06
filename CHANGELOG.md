@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 0.1.0-rc.0
+
+**Breaking**: This is a major release.
+  See the [migration guide](guides/migration.md) for more information.
+**Add**: Plugin system for overriding the behavior of this library.
+  See the [plugins guide](guides/plugins.md) for more information.
+**Add**: Additional internal types to represent string variations, enums, etc.
+**Fix**: Uniformly normalize names of operations and schemas.
+
 ### 0.0.7 (2023-06-07)
 
 **Add**: `schema_use` option to add optional `use [Module]` statements within schemas.
