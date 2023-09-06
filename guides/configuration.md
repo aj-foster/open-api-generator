@@ -250,6 +250,10 @@ Remember that all configuration values must be contained within a profile.
   Defaults to an empty list of merges.
   See `OpenAPI.Processor.Naming.merge_schema/2` for more information.
 
+* `naming.operation_use_tags`: Whether to use tags when determining module names for operations.
+  Defaults to `true`.
+  See `OpenAPI.Processor.Naming.operation_modules/2` for more information.
+
 * `naming.rename`: List of tuples containing patterns and replacements to use when renaming modules.
   Defaults to an empty list of replacements.
   See `OpenAPI.Processor.Naming.rename_schema/2` for more information.
@@ -283,12 +287,12 @@ Remember that all configuration values must be contained within a profile.
   Defaults to no used module.
   See `OpenAPI.Renderer.Module.render_using/2` for more information.
 
-* `output_schema_subdirectory`: Subdirectory to use for all rendered files containing only schemas.
+* `output.schema_subdirectory`: Subdirectory to use for all rendered files containing only schemas.
   This is an optional way to colocate generated schema modules in a single directory away from other parts of the client library.
   Defaults to the same location as `output.location`.
   See `OpenAPI.Renderer.Module.filename/2` for more information.
 
-* `output_schema_use`: Module to include as a `use` statement at the top of every module containing only schemas.
+* `output.schema_use`: Module to include as a `use` statement at the top of every module containing only schemas.
   Defaults to no used module.
   See `OpenAPI.Renderer.Module.render_using/2` for more information.
 

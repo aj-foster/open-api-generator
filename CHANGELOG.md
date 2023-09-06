@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 0.1.0-rc.0 (2023-09-06)
+
+**Breaking**: This is a major release.
+  See the [migration guide](guides/migration.md) for more information.
+**Add**: Plugin system for overriding the behavior of this library.
+  See the [plugins guide](guides/plugins.md) for more information.
+**Add**: Additional internal types to represent string variations, enums, etc.
+**Fix**: Uniformly normalize names of operations and schemas.
+
 ### 0.0.8 (2023-09-06)
 
 **Fix**: Path parameters are now collected from more locations in the spec.

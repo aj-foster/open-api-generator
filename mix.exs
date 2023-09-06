@@ -1,7 +1,7 @@
 defmodule OpenAPI.MixProject do
   use Mix.Project
 
-  @version "0.0.8"
+  @version "0.1.0-rc.0"
   @source_url "https://github.com/aj-foster/open-api-generator"
 
   def project do
