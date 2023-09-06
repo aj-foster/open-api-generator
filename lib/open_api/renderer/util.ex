@@ -138,21 +138,41 @@ defmodule OpenAPI.Renderer.Util do
     [inner_type]
   end
 
-  def to_readable_type(_state, {:union, []}), do: nil
+  def to_readable_type(_state, {:union, []}), do: :null
   def to_readable_type(state, {:union, [type]}), do: to_readable_type(state, type)
 
   def to_readable_type(state, {:union, types}) do
     types =
       unwrap_unions(types)
       |> Enum.map(&to_readable_type(state, &1))
+      |> List.flatten()
+      |> Enum.sort(&should_appear_in_this_order?/2)
+      |> Enum.dedup()
+      |> Enum.reverse()
 
-    {:union, types}
+    case types do
+      [] -> :null
+      [type] -> type
+      types -> {:union, types}
+    end
   end
 
   def to_readable_type(state, ref) when is_reference(ref) do
     case Map.get(state.schemas, ref) do
       %Schema{module_name: nil, type_name: type} ->
         type
+
+      %Schema{
+        context: [{:request, module, _op_function_name, _content_type}],
+        module_name: module
+      } ->
+        :map
+
+      %Schema{
+        context: [{:response, module, _op_function_name, _status, _content_type}],
+        module_name: module
+      } ->
+        :map
 
       %Schema{module_name: schema_module, type_name: type} ->
         module_name =
@@ -231,9 +251,31 @@ defmodule OpenAPI.Renderer.Util do
           map
         end
 
-      %Schema{module_name: module, type_name: type} ->
+      %Schema{
+        context: [{:request, module, _op_function_name, _content_type}],
+        module_name: module
+      } ->
         quote do
-          unquote(module).unquote(type)()
+          map
+        end
+
+      %Schema{
+        context: [{:response, module, _op_function_name, _status, _content_type}],
+        module_name: module
+      } ->
+        quote do
+          map
+        end
+
+      %Schema{module_name: module, type_name: type} ->
+        module_name =
+          Module.concat([
+            config(state)[:base_module],
+            module
+          ])
+
+        quote do
+          unquote(module_name).unquote(type)()
         end
 
       nil ->
