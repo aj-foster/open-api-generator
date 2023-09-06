@@ -34,12 +34,14 @@ Add the dependency in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:oapi_generator, "0.1.0-rc.0"}
+    {:oapi_generator, "0.1.0-rc.0", only: :dev, runtime: false}
   ]
 end
 ```
 
 Then install the dependency using `mix deps.get`.
+Most libraries only need access to the `mix api.gen` task in a development environment.
+If your use case requires calling the generator in production or testing, be sure to modify or remove `only: :dev` and `runtime: false` as appropriate.
 
 
 ## Configuration
@@ -53,8 +55,8 @@ To get started, create a profile called `default` in your configuration:
 ```elixir
 config :oapi_generator, default: [
   output: [
-    base_location: "lib/example",
-    base_module: Example
+    base_module: Example,
+    location: "lib/example"
   ]
 ]
 ```
