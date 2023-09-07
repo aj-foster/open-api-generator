@@ -135,16 +135,40 @@ defmodule OpenAPI.Generator.Render do
 
   defp render_struct(schemas) do
     fields = render_struct_fields(schemas)
+    required_fields = render_required_struct_fields(schemas)
 
-    quote do
-      defstruct unquote(fields)
-    end
+    enforce_keys =
+      quote do
+        @enforce_keys unquote(required_fields)
+      end
+
+    struct_def =
+      quote do
+        defstruct unquote(fields)
+      end
+
+    [enforce_keys, struct_def]
     |> put_newlines()
   end
 
   defp render_struct_fields(schemas) do
     Enum.reduce(schemas, MapSet.new(), fn schema, fields ->
       new_field_names = Enum.map(schema.fields, fn {name, _field} -> String.to_atom(name) end)
+      new_fields = MapSet.new(new_field_names)
+      MapSet.union(fields, new_fields)
+    end)
+    |> MapSet.to_list()
+    |> Enum.sort()
+  end
+
+  defp render_required_struct_fields(schemas) do
+    Enum.reduce(schemas, MapSet.new(), fn schema, fields ->
+      new_field_names =
+        Enum.reduce(schema.fields, [], fn
+          {name, %{required: true}}, acc -> [String.to_atom(name) | acc]
+          _, acc -> acc
+        end)
+
       new_fields = MapSet.new(new_field_names)
       MapSet.union(fields, new_fields)
     end)
