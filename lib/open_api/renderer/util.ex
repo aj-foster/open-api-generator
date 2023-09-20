@@ -282,7 +282,7 @@ defmodule OpenAPI.Renderer.Util do
 
       nil ->
         quote do
-          unquote(:map)
+          map
         end
     end
   end
