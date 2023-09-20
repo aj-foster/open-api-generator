@@ -40,7 +40,6 @@ defmodule OpenAPI.Processor do
       state
       |> State.new()
       |> collect_operations_and_schemas()
-      |> process_schemas()
 
     %OpenAPI.State{state | operations: operations, schemas: schemas_by_ref}
   end
@@ -306,10 +305,19 @@ defmodule OpenAPI.Processor do
     |> Enum.sort_by(fn {content_type, _schema} -> content_type end, :desc)
     |> Enum.reduce({state, []}, fn {content_type, schema_spec}, {state, request_body} ->
       context = {:request, op_module_name, op_function_name, content_type}
-      schema_spec = SchemaSpec.add_context(schema_spec, context)
+      {state, type} = Type.from_schema(state, schema_spec)
 
-      {state, schema_type} = Type.from_schema(state, schema_spec)
-      {state, [{content_type, schema_type} | request_body]}
+      state =
+        Type.reduce(type, state, fn t, state ->
+          if is_reference(t) do
+            schema = Map.fetch!(state.schema_specs_by_ref, t)
+            process_schema(state, t, schema, context)
+          else
+            state
+          end
+        end)
+
+      {state, [{content_type, type} | request_body]}
     end)
   end
 
@@ -324,30 +332,37 @@ defmodule OpenAPI.Processor do
         |> Enum.reverse()
         |> Enum.reduce({state, %{}}, fn {content_type, schema_spec}, {state, schema_types} ->
           context = {:response, op_module_name, op_function_name, status_code, content_type}
-          schema_spec = SchemaSpec.add_context(schema_spec, context)
+          {state, type} = Type.from_schema(state, schema_spec)
 
-          {state, schema_type} = Type.from_schema(state, schema_spec)
-          {state, Map.put(schema_types, content_type, schema_type)}
+          state =
+            Type.reduce(type, state, fn t, state ->
+              if is_reference(t) do
+                schema = Map.fetch!(state.schema_specs_by_ref, t)
+                process_schema(state, t, schema, context)
+              else
+                state
+              end
+            end)
+
+          {state, Map.put(schema_types, content_type, type)}
         end)
 
       {state, [{status_code, schema_types} | response_body]}
     end)
   end
 
-  @spec process_schemas(State.t()) :: State.t()
-  defp process_schemas(state) do
-    for {ref, schema_spec} <- state.schema_specs_by_ref, reduce: state do
-      state -> process_schema(state, ref, schema_spec)
-    end
-  end
-
-  @spec process_schema(State.t(), reference, SchemaSpec.t()) :: State.t()
-  defp process_schema(state, ref, schema_spec) do
+  @spec process_schema(State.t(), reference, SchemaSpec.t(), tuple) :: State.t()
+  defp process_schema(state, ref, schema_spec, context) do
     %State{implementation: implementation, schemas_by_ref: schemas_by_ref} = state
 
     cond do
-      Map.has_key?(schemas_by_ref, ref) ->
-        state
+      schema = Map.get(schemas_by_ref, ref) ->
+        if implementation.ignore_schema?(state, schema_spec) do
+          state
+        else
+          schema = Schema.merge_contexts(schema, schema_spec)
+          State.put_schema(state, ref, schema)
+        end
 
       implementation.ignore_schema?(state, schema_spec) ->
         schema = %Schema{
@@ -356,22 +371,20 @@ defmodule OpenAPI.Processor do
           type_name: :map
         }
 
-        schemas_by_ref = Map.put(state.schemas_by_ref, ref, schema)
-        %State{state | schemas_by_ref: schemas_by_ref}
+        State.put_schema(state, ref, schema)
 
       :else ->
         {state, fields} = process_schema_fields(state, schema_spec, ref)
         {module_name, type_name} = implementation.schema_module_and_type(state, schema_spec)
 
         schema = %Schema{
-          context: schema_spec."$oag_schema_context",
+          context: [context],
           fields: fields,
           module_name: module_name,
           type_name: type_name
         }
 
-        schemas_by_ref = Map.put(state.schemas_by_ref, ref, schema)
-        %State{state | schemas_by_ref: schemas_by_ref}
+        State.put_schema(state, ref, schema)
     end
   end
 
@@ -383,54 +396,18 @@ defmodule OpenAPI.Processor do
         reduce: {state, []} do
       {state, fields} ->
         required? = is_list(required) and field_name in required
+        context = {:field, schema_ref, field_name}
+        {state, type} = Type.from_schema(state, field_spec)
 
-        {state, type} =
-          case Type.from_schema(state, field_spec) do
-            {state, field_ref} when is_reference(field_ref) ->
-              context = {:field, schema_ref, field_name}
-              field_spec = SchemaSpec.add_context(field_spec, context)
-
-              {process_schema(state, field_ref, field_spec), field_ref}
-
-            {state, {:union, field_types}} ->
-              state =
-                for field_ref <- field_types, is_reference(field_ref), reduce: state do
-                  state ->
-                    context = {:field, schema_ref, field_name}
-
-                    field_spec =
-                      state.schema_specs_by_ref[field_ref]
-                      |> SchemaSpec.add_context(context)
-
-                    process_schema(state, field_ref, field_spec)
-                end
-
-              {state, {:union, field_types}}
-
-            {state, {:array, field_ref}} when is_reference(field_ref) ->
-              context = {:field, schema_ref, field_name}
-              field_spec = SchemaSpec.add_context(field_spec, context)
-
-              {process_schema(state, field_ref, field_spec), {:array, field_ref}}
-
-            {state, {:array, {:union, field_types}}} ->
-              state =
-                for field_ref <- field_types, is_reference(field_ref), reduce: state do
-                  state ->
-                    context = {:field, schema_ref, field_name}
-
-                    field_spec =
-                      state.schema_specs_by_ref[field_ref]
-                      |> SchemaSpec.add_context(context)
-
-                    process_schema(state, field_ref, field_spec)
-                end
-
-              {state, {:array, {:union, field_types}}}
-
-            {state, type} ->
-              {state, type}
-          end
+        state =
+          Type.reduce(type, state, fn t, state ->
+            if is_reference(t) do
+              schema = Map.fetch!(state.schema_specs_by_ref, t)
+              process_schema(state, t, schema, context)
+            else
+              state
+            end
+          end)
 
         field = %Field{
           name: field_name,

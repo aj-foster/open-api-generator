@@ -184,14 +184,7 @@ defmodule OpenAPI.Processor.Type do
   # Objects
   #
   def from_schema(state, %Schema{properties: properties} = schema_spec) when is_map(properties) do
-    if ref = State.get_schema_ref_by_path(state, schema_spec) do
-      schema_spec = Schema.merge_contexts(state.schema_specs_by_ref[ref], schema_spec)
-      schema_specs_by_ref = Map.put(state.schema_specs_by_ref, ref, schema_spec)
-
-      {%State{state | schema_specs_by_ref: schema_specs_by_ref}, ref}
-    else
-      State.put_schema_spec(state, schema_spec)
-    end
+    State.put_schema_spec(state, schema_spec)
   end
 
   # Fallback
@@ -246,4 +239,10 @@ defmodule OpenAPI.Processor.Type do
 
     {state, types}
   end
+
+  @spec reduce(t, acc, (t, acc -> acc)) :: acc when acc: any
+  def reduce(type, accumulator, callback)
+  def reduce({:array, type}, acc, cb), do: reduce(type, acc, cb)
+  def reduce({:union, [types]}, acc, cb), do: Enum.reduce(types, acc, cb)
+  def reduce(type, acc, cb), do: cb.(type, acc)
 end

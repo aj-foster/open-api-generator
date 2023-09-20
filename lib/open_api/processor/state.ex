@@ -115,4 +115,12 @@ defmodule OpenAPI.Processor.State do
 
     {state, ref}
   end
+
+  @doc """
+  Add a processed schema to the processor state by its reference
+  """
+  @spec put_schema(t, reference, Schema.t()) :: t
+  def put_schema(state, ref, schema) do
+    %__MODULE__{state | schemas_by_ref: Map.put(state.schemas_by_ref, ref, schema)}
+  end
 end

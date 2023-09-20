@@ -13,6 +13,7 @@ defmodule OpenAPI.Processor.Schema do
   All of this data is managed by the code generator, and it is unlikely that a callback would
   need to modify this struct directly.
   """
+  alias OpenAPI.Spec.Schema, as: SchemaSpec
 
   @typedoc "Processed schema used by the renderer"
   @type t :: %__MODULE__{
@@ -26,4 +27,21 @@ defmodule OpenAPI.Processor.Schema do
             fields: [],
             module_name: nil,
             type_name: :t
+
+  @doc false
+  @spec add_context(t, tuple) :: t
+  def add_context(%__MODULE__{context: contexts} = schema, new_context) do
+    contexts = Enum.uniq([new_context | contexts])
+    %__MODULE__{schema | context: contexts}
+  end
+
+  @doc false
+  @spec merge_contexts(t, SchemaSpec.t()) :: t
+  def merge_contexts(
+        %__MODULE__{context: contexts} = schema,
+        %SchemaSpec{"$oag_schema_context": new_contexts}
+      ) do
+    contexts = Enum.uniq(new_contexts ++ contexts)
+    %__MODULE__{schema | context: contexts}
+  end
 end
