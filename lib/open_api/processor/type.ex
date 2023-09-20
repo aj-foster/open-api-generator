@@ -95,7 +95,16 @@ defmodule OpenAPI.Processor.Type do
 
   def primitive_from_schema(%Schema{const: value}) when not is_nil(value), do: {:const, value}
   def primitive_from_schema(%Schema{enum: [value]}), do: {:const, value}
-  def primitive_from_schema(%Schema{enum: values}) when is_list(values), do: {:enum, values}
+
+  def primitive_from_schema(%Schema{enum: values}) when is_list(values) do
+    if Enum.any?(values, &is_map/1) do
+      IO.warn("Invalid enum; expanding type to any: #{inspect(values)}")
+
+      :any
+    else
+      {:enum, values}
+    end
+  end
 
   # Primitives
   #
