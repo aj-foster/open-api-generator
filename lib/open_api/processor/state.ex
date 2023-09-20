@@ -105,15 +105,28 @@ defmodule OpenAPI.Processor.State do
     } = schema_spec
 
     path = {last_ref_file, last_ref_path}
-    ref = make_ref()
 
-    state = %__MODULE__{
-      state
-      | schema_refs_by_path: Map.put(state.schema_refs_by_path, path, ref),
-        schema_specs_by_ref: Map.put(state.schema_specs_by_ref, ref, schema_spec)
-    }
+    if ref = Map.get(state.schema_refs_by_path, path) do
+      existing_schema_spec = Map.fetch!(state.schema_specs_by_ref, ref)
+      schema_spec = SchemaSpec.merge_contexts(existing_schema_spec, schema_spec)
 
-    {state, ref}
+      state = %__MODULE__{
+        state
+        | schema_specs_by_ref: Map.put(state.schema_specs_by_ref, ref, schema_spec)
+      }
+
+      {state, ref}
+    else
+      ref = make_ref()
+
+      state = %__MODULE__{
+        state
+        | schema_refs_by_path: Map.put(state.schema_refs_by_path, path, ref),
+          schema_specs_by_ref: Map.put(state.schema_specs_by_ref, ref, schema_spec)
+      }
+
+      {state, ref}
+    end
   end
 
   @doc """
