@@ -28,6 +28,8 @@ defmodule OpenAPI.Renderer do
 
   defmacro __using__(_opts) do
     quote do
+      @behaviour OpenAPI.Renderer
+
       defdelegate format(state, file), to: OpenAPI.Renderer
       defdelegate location(state, file), to: OpenAPI.Renderer
       defdelegate render(state, file), to: OpenAPI.Renderer

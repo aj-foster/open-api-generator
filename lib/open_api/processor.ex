@@ -50,6 +50,8 @@ defmodule OpenAPI.Processor do
 
   defmacro __using__(_opts) do
     quote do
+      @behaviour OpenAPI.Processor
+
       defdelegate ignore_operation?(state, operation), to: OpenAPI.Processor
       defdelegate ignore_schema?(state, schema), to: OpenAPI.Processor
       defdelegate operation_docstring(state, operation_spec, params), to: OpenAPI.Processor

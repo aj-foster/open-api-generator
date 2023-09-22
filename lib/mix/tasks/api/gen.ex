@@ -17,6 +17,7 @@ defmodule Mix.Tasks.Api.Gen do
   ```
   """
   @shortdoc "Generate code from an Open API description"
+  @requirements ["app.start"]
 
   use Mix.Task
 
