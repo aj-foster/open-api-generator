@@ -186,20 +186,18 @@ defmodule OpenAPI.Renderer.Operation do
       responses: responses
     } = operation
 
+    path_param_args =
+      for %Param{name: name} <- path_params do
+        arg_as_atom = String.to_atom(name)
+        {arg_as_atom, {arg_as_atom, [], nil}}
+      end
+
+    body_arg = unless length(request_body) == 0, do: {:body, {:body, [], nil}}
+    args = Util.clean_list([path_param_args, body_arg])
+
     args =
-      if length(path_params) > 0 or not (length(request_body) > 0) do
-        args =
-          for %Param{name: name} <- path_params do
-            arg_as_atom = String.to_atom(name)
-            {arg_as_atom, {arg_as_atom, [], nil}}
-          end
-
-        body_arg = unless length(request_body) == 0, do: {:body, {:body, [], nil}}
-        args = Util.clean_list([args, body_arg])
-
-        quote do
-          {:args, unquote(args)}
-        end
+      quote do
+        {:args, unquote(args)}
       end
 
     module_name =
