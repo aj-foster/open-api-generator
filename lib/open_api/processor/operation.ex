@@ -104,7 +104,12 @@ defmodule OpenAPI.Processor.Operation do
       if length(query_params) > 0 do
         for %Param{description: description, name: name} <- query_params,
             into: "\n## Options\n\n" do
-          "  * `#{name}`: #{description}\n"
+          if description do
+            description = String.replace(description, "\n", "\n    ")
+            "  * `#{name}`: #{description}\n"
+          else
+            "  * `#{name}`\n"
+          end
         end
       end
 
