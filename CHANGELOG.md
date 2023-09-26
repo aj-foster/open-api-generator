@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 0.1.0-rc.1 (2023-09-26)
+
+**Fix**: Schema output was non-deterministic due to map ordering and an issue tracking contexts.
+**Fix**: Warn when an enum type is invalid (ex. contains schemas).
+  In this case, the type will be expanded to `:any` but otherwise continue processing.
+**Fix**: Map types were output as the literal atom `:map` instead of `map` in typespecs.
+**Fix**: Preserve indentation of operation docstrings.
+**Fix**: Always include `args` in client calls, even if the list is empty.
+**Fix**: Ensure the app is started in `mix api.gen`.
+  This resolves an issue in which configured processor or renderer modules may not be available.
+
 ## 0.1.0-rc.0 (2023-09-06)
 
 **Breaking**: This is a major release.
