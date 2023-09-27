@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 0.1.0-rc.2 (2023-09-27)
+
+**Fix**: Schemas that only appeared in union types were not properly processed, resulting in more plain `map` types than intended.
+
 ### 0.1.0-rc.1 (2023-09-26)
 
 **Fix**: Schema output was non-deterministic due to map ordering and an issue tracking contexts.

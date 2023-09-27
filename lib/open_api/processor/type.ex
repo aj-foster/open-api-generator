@@ -252,6 +252,6 @@ defmodule OpenAPI.Processor.Type do
   @spec reduce(t, acc, (t, acc -> acc)) :: acc when acc: any
   def reduce(type, accumulator, callback)
   def reduce({:array, type}, acc, cb), do: reduce(type, acc, cb)
-  def reduce({:union, [types]}, acc, cb), do: Enum.reduce(types, acc, cb)
+  def reduce({:union, types}, acc, cb), do: Enum.reduce(types, acc, cb)
   def reduce(type, acc, cb), do: cb.(type, acc)
 end
