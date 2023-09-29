@@ -132,7 +132,13 @@ defmodule OpenAPI.Spec.Path.Operation do
             with_ref(state, response, &Response.decode/2)
           end)
 
-        key = if key == "default", do: :default, else: String.to_integer(key)
+        key =
+          cond do
+            key == "default" -> :default
+            String.match?(key, ~r/^[1-5]XX$/) -> key
+            :else -> String.to_integer(key)
+          end
+
         {state, Map.put(responses, key, property)}
       end)
     end)
