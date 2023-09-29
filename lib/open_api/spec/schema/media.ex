@@ -2,12 +2,13 @@ defmodule OpenAPI.Spec.Schema.Media do
   @moduledoc "Raw media schema from the OpenAPI spec"
   import OpenAPI.Reader.State
 
+  alias OpenAPI.Spec
   alias OpenAPI.Spec.Schema
   alias OpenAPI.Spec.Schema.Encoding
   alias OpenAPI.Spec.Schema.Example
 
   @type t :: %__MODULE__{
-          schema: Schema.t(),
+          schema: Schema.t() | Spec.ref(),
           example: any,
           examples: %{optional(String.t()) => Example.t()},
           encoding: %{optional(String.t()) => Encoding.t()}
@@ -72,7 +73,7 @@ defmodule OpenAPI.Spec.Schema.Media do
   @spec decode_schema(map, map) :: {map, Schema.t() | nil}
   defp decode_schema(state, %{"schema" => schema}) do
     with_path(state, schema, "schema", fn state, schema ->
-      with_ref(state, schema, &Schema.decode/2)
+      with_schema_ref(state, schema, &Schema.decode/2)
     end)
   end
 

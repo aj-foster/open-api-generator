@@ -3,15 +3,18 @@ defmodule OpenAPI.Spec.Components do
   import OpenAPI.Reader.State
 
   alias OpenAPI.Spec
+  alias OpenAPI.Spec.Path.Parameter
+  alias OpenAPI.Spec.RequestBody
+  alias OpenAPI.Spec.Response
   alias OpenAPI.Spec.Schema
   alias OpenAPI.Spec.Schema.Example
 
   @type t :: %__MODULE__{
-          schemas: %{optional(String.t()) => [Spec.Schema.t()]},
-          responses: %{optional(String.t()) => [Spec.Response.t()]},
-          parameters: %{optional(String.t()) => [Spec.Path.Parameter.t()]},
-          examples: %{optional(String.t()) => [Spec.Schema.Example.t()]},
-          request_bodies: %{optional(String.t()) => [Spec.RequestBody.t()]},
+          schemas: %{optional(String.t()) => [Schema.t()]},
+          responses: %{optional(String.t()) => [Response.t()]},
+          parameters: %{optional(String.t()) => [Parameter.t() | Spec.ref()]},
+          examples: %{optional(String.t()) => [Example.t()]},
+          request_bodies: %{optional(String.t()) => [RequestBody.t()]},
           headers: %{optional(String.t()) => [Spec.Path.Header.t()]},
           security_schemes: %{optional(String.t()) => [nil]},
           links: %{optional(String.t()) => [Spec.Link.t()]},
@@ -35,6 +38,7 @@ defmodule OpenAPI.Spec.Components do
   def decode(state, yaml) do
     {state, examples} = decode_examples(state, yaml)
     {state, parameters} = decode_parameters(state, yaml)
+    {state, request_bodies} = decode_request_bodies(state, yaml)
     {state, responses} = decode_responses(state, yaml)
     {state, schemas} = decode_schemas(state, yaml)
 
@@ -43,7 +47,7 @@ defmodule OpenAPI.Spec.Components do
       responses: responses,
       parameters: parameters,
       examples: examples,
-      request_bodies: %{},
+      request_bodies: request_bodies,
       headers: %{},
       security_schemes: %{},
       links: %{},
@@ -69,13 +73,13 @@ defmodule OpenAPI.Spec.Components do
 
   defp decode_examples(state, _yaml), do: {state, %{}}
 
-  @spec decode_parameters(map, map) :: {map, %{optional(String.t()) => Schema.t()}}
+  @spec decode_parameters(map, map) :: {map, %{optional(String.t()) => Parameter.t()}}
   defp decode_parameters(state, %{"parameters" => yaml}) do
     with_path(state, yaml, "parameters", fn state, yaml ->
       Enum.reduce(yaml, {state, %{}}, fn {name, parameter_or_ref}, {state, parameters} ->
         {state, schema} =
           with_path(state, parameter_or_ref, name, fn state, parameter_or_ref ->
-            with_ref(state, parameter_or_ref, &Schema.decode/2)
+            with_ref(state, parameter_or_ref, &Parameter.decode/2)
           end)
 
         {state, Map.put(parameters, name, schema)}
@@ -85,13 +89,29 @@ defmodule OpenAPI.Spec.Components do
 
   defp decode_parameters(state, _yaml), do: {state, %{}}
 
-  @spec decode_responses(map, map) :: {map, %{optional(String.t()) => Schema.t()}}
+  @spec decode_request_bodies(map, map) :: {map, %{optional(String.t()) => RequestBody.t()}}
+  defp decode_request_bodies(state, %{"requestBodies" => yaml}) do
+    with_path(state, yaml, "requestBodies", fn state, yaml ->
+      Enum.reduce(yaml, {state, %{}}, fn {name, request_body_or_ref}, {state, request_bodies} ->
+        {state, schema} =
+          with_path(state, request_body_or_ref, name, fn state, request_body_or_ref ->
+            with_ref(state, request_body_or_ref, &RequestBody.decode/2)
+          end)
+
+        {state, Map.put(request_bodies, name, schema)}
+      end)
+    end)
+  end
+
+  defp decode_request_bodies(state, _yaml), do: {state, %{}}
+
+  @spec decode_responses(map, map) :: {map, %{optional(String.t()) => RequestBody.t()}}
   defp decode_responses(state, %{"responses" => yaml}) do
     with_path(state, yaml, "responses", fn state, yaml ->
       Enum.reduce(yaml, {state, %{}}, fn {name, response_or_ref}, {state, responses} ->
         {state, schema} =
           with_path(state, response_or_ref, name, fn state, response_or_ref ->
-            with_ref(state, response_or_ref, &Schema.decode/2)
+            with_ref(state, response_or_ref, &Response.decode/2)
           end)
 
         {state, Map.put(responses, name, schema)}
@@ -107,7 +127,7 @@ defmodule OpenAPI.Spec.Components do
       Enum.reduce(yaml, {state, %{}}, fn {name, schema_or_ref}, {state, schemas} ->
         {state, schema} =
           with_path(state, schema_or_ref, name, fn state, schema_or_ref ->
-            with_ref(state, schema_or_ref, &Schema.decode/2)
+            with_schema_ref(state, schema_or_ref, &Schema.decode/2)
           end)
 
         {state, Map.put(schemas, name, schema)}

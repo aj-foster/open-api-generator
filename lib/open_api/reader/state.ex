@@ -9,6 +9,7 @@ defmodule OpenAPI.Reader.State do
   require Logger
 
   alias OpenAPI.Reader.Config
+  alias OpenAPI.Spec
   alias OpenAPI.Spec.Path.Parameter
 
   @typedoc "Decode function for raw Yaml"
@@ -17,19 +18,16 @@ defmodule OpenAPI.Reader.State do
   @typedoc "Decode function for raw Yaml"
   @type decoder(t) :: (t, yaml -> {map, t})
 
-  @typedoc "Key or index of a Yaml document."
-  @type path_segment :: String.t() | integer
-
   @typedoc "OpenAPI reader state"
   @type t :: %__MODULE__{
           base_file: String.t() | nil,
-          base_file_path: [path_segment],
+          base_file_path: [Spec.path_segment()],
           config: Config.t(),
           current_file: String.t() | nil,
-          current_file_path: [path_segment],
+          current_file_path: [Spec.path_segment()],
           files: %{optional(String.t()) => yaml | nil},
           last_ref_file: String.t() | nil,
-          last_ref_path: [path_segment],
+          last_ref_path: [Spec.path_segment()],
           path_parameters: [Parameter.t()],
           refs: %{optional(String.t()) => map},
           spec: Spec.t() | nil
@@ -90,7 +88,7 @@ defmodule OpenAPI.Reader.State do
   #
 
   @doc false
-  @spec with_path(t, yaml, path_segment, decoder) ::
+  @spec with_path(t, yaml, Spec.path_segment(), decoder) ::
           {t, term}
   def with_path(state, yaml, path_segment, decoder) do
     %__MODULE__{
@@ -163,4 +161,16 @@ defmodule OpenAPI.Reader.State do
   end
 
   def with_ref(state, yaml, decoder), do: decoder.(state, yaml)
+
+  @doc false
+  @spec with_schema_ref(t, yaml, decoder) :: {t, term}
+  def with_schema_ref(state, %{"$ref" => ref}, _decoder) do
+    [relative_file, path_string] = String.split(ref, "#")
+    absolute_file = Path.join(state.current_file, relative_file)
+    path_segments = String.split(path_string, "/", trim: true)
+
+    {state, {:ref, {absolute_file, path_segments}}}
+  end
+
+  def with_schema_ref(state, yaml, decoder), do: decoder.(state, yaml)
 end

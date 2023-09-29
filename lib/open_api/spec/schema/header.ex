@@ -2,6 +2,7 @@ defmodule OpenAPI.Spec.Path.Header do
   @moduledoc "Raw path header from the OpenAPI spec"
   import OpenAPI.Reader.State
 
+  alias OpenAPI.Spec
   alias OpenAPI.Spec.Schema
   alias OpenAPI.Spec.Schema.Example
   alias OpenAPI.Spec.Schema.Media
@@ -14,7 +15,7 @@ defmodule OpenAPI.Spec.Path.Header do
           style: String.t(),
           explode: boolean,
           allow_reserved: boolean,
-          schema: Schema.t() | nil,
+          schema: Schema.t() | Spec.ref() | nil,
           example: any,
           examples: %{optional(String.t()) => Example.t()},
           content: %{optional(String.t()) => Media.t()}
@@ -61,7 +62,7 @@ defmodule OpenAPI.Spec.Path.Header do
   @spec decode_schema(map, map) :: {map, Schema.t() | nil}
   defp decode_schema(state, %{"schema" => schema}) do
     with_path(state, schema, "schema", fn state, schema ->
-      with_ref(state, schema, &Schema.decode/2)
+      with_schema_ref(state, schema, &Schema.decode/2)
     end)
   end
 

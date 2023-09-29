@@ -22,6 +22,15 @@ defmodule OpenAPI.Spec do
   alias OpenAPI.Spec.Server
   alias OpenAPI.Spec.Tag
 
+  @typedoc "Key or index of a Yaml document"
+  @type path_segment :: String.t() | integer
+
+  @typedoc "Fully-qualified absolute file and set of path segments"
+  @type full_path :: {String.t(), [path_segment]}
+
+  @typedoc "Reference to another part of the spec. Reserved for schemas in this library."
+  @type ref :: {:ref, full_path}
+
   #
   # Definition
   #

@@ -2,7 +2,6 @@ defmodule OpenAPI.Spec.Schema do
   @moduledoc "Raw JSON schema specification from the OpenAPI spec"
   import OpenAPI.Reader.State
 
-  alias OpenAPI.Reader.State
   alias OpenAPI.Spec
   alias OpenAPI.Spec.ExternalDocumentation
   alias OpenAPI.Spec.Schema.Discriminator
@@ -21,9 +20,9 @@ defmodule OpenAPI.Spec.Schema do
   """
   @type t :: %__MODULE__{
           "$oag_base_file": String.t(),
-          "$oag_base_file_path": [State.path_segment()],
+          "$oag_base_file_path": [Spec.path_segment()],
           "$oag_last_ref_file": String.t() | nil,
-          "$oag_last_ref_path": [State.path_segment()],
+          "$oag_last_ref_path": [Spec.path_segment()],
           "$oag_schema_context": [tuple],
           title: String.t() | nil,
           multiple_of: pos_integer | nil,
@@ -43,13 +42,13 @@ defmodule OpenAPI.Spec.Schema do
           const: any,
           enum: [any] | nil,
           type: String.t() | nil,
-          all_of: [t] | nil,
-          one_of: [t] | nil,
-          any_of: [t] | nil,
-          not: t | nil,
-          items: t | nil,
-          properties: %{optional(String.t()) => t},
-          additional_properties: boolean | t,
+          all_of: [t | Spec.ref()] | nil,
+          one_of: [t | Spec.ref()] | nil,
+          any_of: [t | Spec.ref()] | nil,
+          not: t | Spec.ref() | nil,
+          items: t | Spec.ref() | nil,
+          properties: %{optional(String.t()) => t | Spec.ref()},
+          additional_properties: boolean | t | Spec.ref(),
           description: String.t() | nil,
           format: String.t() | nil,
           default: any,
@@ -218,7 +217,7 @@ defmodule OpenAPI.Spec.Schema do
       |> Enum.reduce({state, []}, fn {schema_or_ref, index}, {state, list} ->
         {state, element} =
           with_path(state, schema_or_ref, index, fn state, schema_or_ref ->
-            with_ref(state, schema_or_ref, &decode/2)
+            with_schema_ref(state, schema_or_ref, &decode/2)
           end)
 
         {state, [element | list]}
@@ -237,7 +236,7 @@ defmodule OpenAPI.Spec.Schema do
       |> Enum.reduce({state, []}, fn {schema_or_ref, index}, {state, list} ->
         {state, element} =
           with_path(state, schema_or_ref, index, fn state, schema_or_ref ->
-            with_ref(state, schema_or_ref, &decode/2)
+            with_schema_ref(state, schema_or_ref, &decode/2)
           end)
 
         {state, [element | list]}
@@ -256,7 +255,7 @@ defmodule OpenAPI.Spec.Schema do
       |> Enum.reduce({state, []}, fn {schema_or_ref, index}, {state, list} ->
         {state, element} =
           with_path(state, schema_or_ref, index, fn state, schema_or_ref ->
-            with_ref(state, schema_or_ref, &decode/2)
+            with_schema_ref(state, schema_or_ref, &decode/2)
           end)
 
         {state, [element | list]}
@@ -269,7 +268,7 @@ defmodule OpenAPI.Spec.Schema do
   @spec decode_not(map, map) :: {map, t | nil}
   defp decode_not(state, %{"not" => schema}) do
     with_path(state, schema, "not", fn state, schema ->
-      with_ref(state, schema, &decode/2)
+      with_schema_ref(state, schema, &decode/2)
     end)
   end
 
@@ -278,7 +277,7 @@ defmodule OpenAPI.Spec.Schema do
   @spec decode_items(map, map) :: {map, t | nil}
   defp decode_items(state, %{"items" => schema}) do
     with_path(state, schema, "items", fn state, schema ->
-      with_ref(state, schema, &decode/2)
+      with_schema_ref(state, schema, &decode/2)
     end)
   end
 
@@ -291,7 +290,7 @@ defmodule OpenAPI.Spec.Schema do
         {key, schema}, {state, properties} ->
           {state, property} =
             with_path(state, schema, key, fn state, schema ->
-              with_ref(state, schema, &decode/2)
+              with_schema_ref(state, schema, &decode/2)
             end)
 
           {state, Map.put(properties, key, property)}
@@ -308,7 +307,7 @@ defmodule OpenAPI.Spec.Schema do
 
   defp decode_additional_properties(state, %{"additionalProperties" => schema}) do
     with_path(state, schema, "additionalProperties", fn state, schema ->
-      with_ref(state, schema, &decode/2)
+      with_schema_ref(state, schema, &decode/2)
     end)
   end
 
