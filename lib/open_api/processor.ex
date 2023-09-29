@@ -264,7 +264,14 @@ defmodule OpenAPI.Processor do
       parameters: params_from_operation
     } = operation_spec
 
-    all_params = Enum.map(params_from_path ++ params_from_operation, &Param.from_spec/1)
+    {state, all_params} =
+      (params_from_path ++ params_from_operation)
+      |> Enum.reverse()
+      |> Enum.reduce({state, []}, fn param, {state, params} ->
+        {state, param} = Param.from_spec(state, param)
+        {state, [param | params]}
+      end)
+
     path_params = Enum.filter(all_params, &(&1.location == :path))
     query_params = Enum.filter(all_params, &(&1.location == :query))
 

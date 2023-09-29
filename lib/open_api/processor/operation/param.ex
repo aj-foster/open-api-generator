@@ -2,9 +2,9 @@ defmodule OpenAPI.Processor.Operation.Param do
   @moduledoc """
   Provides the Param struct that is used by the renderer
   """
+  alias OpenAPI.Processor.State
   alias OpenAPI.Processor.Type
   alias OpenAPI.Spec.Path.Parameter
-  alias OpenAPI.Spec.Schema
 
   @typedoc "Location of the param"
   @type location :: :cookie | :header | :path | :query
@@ -25,16 +25,20 @@ defmodule OpenAPI.Processor.Operation.Param do
   ]
 
   @doc false
-  @spec from_spec(Parameter.t()) :: t
-  def from_spec(%Parameter{} = param) do
+  @spec from_spec(State.t(), Parameter.t()) :: {State.t(), t}
+  def from_spec(state, %Parameter{} = param) do
     %Parameter{description: description, name: name} = param
+    {state, value_type} = value_type(state, param)
 
-    %__MODULE__{
-      description: description,
-      name: name,
-      location: location(param),
-      value_type: value_type(param)
-    }
+    param =
+      %__MODULE__{
+        description: description,
+        name: name,
+        location: location(param),
+        value_type: value_type
+      }
+
+    {state, param}
   end
 
   @spec location(Parameter.t()) :: location
@@ -43,7 +47,10 @@ defmodule OpenAPI.Processor.Operation.Param do
   defp location(%Parameter{in: "path"}), do: :path
   defp location(%Parameter{in: "query"}), do: :query
 
-  @spec value_type(Parameter.t()) :: Type.t()
-  defp value_type(%Parameter{schema: %Schema{} = schema}), do: Type.primitive_from_schema(schema)
-  defp value_type(_param), do: {:string, :generic}
+  @spec value_type(State.t(), Parameter.t()) :: {State.t(), Type.t()}
+  defp value_type(_state, %Parameter{schema: nil}), do: {:string, :generic}
+
+  defp value_type(state, %Parameter{schema: schema_or_ref}) do
+    Type.from_schema(state, schema_or_ref)
+  end
 end

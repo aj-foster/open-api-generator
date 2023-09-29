@@ -75,85 +75,6 @@ defmodule OpenAPI.Processor.Type do
           | {:union, [t]}
           | reference
 
-  defguard is_primitive(schema)
-           when not is_nil(schema.const) or is_list(schema.enum) or
-                  schema.type in ["boolean", "integer", "number", "null", "string"]
-
-  @doc """
-  Create an internal type representation of the given schema
-
-  This function does not support objects or other schemas that would be stored in the processor
-  state. If a schema may contain such a reference, use `from_schema/2` instead.
-
-  It is expected that this function is called in cases when the range of possible types are known
-  to be limited, such as query or path parameters.
-  """
-  @spec primitive_from_schema(Schema.t()) :: t
-  def primitive_from_schema(schema)
-
-  # Literals
-  #
-
-  def primitive_from_schema(%Schema{const: value}) when not is_nil(value), do: {:const, value}
-  def primitive_from_schema(%Schema{enum: [value]}), do: {:const, value}
-
-  def primitive_from_schema(%Schema{enum: values}) when is_list(values) do
-    if Enum.any?(values, &is_map/1) do
-      IO.warn("Invalid enum; expanding type to any: #{inspect(values)}")
-
-      :any
-    else
-      {:enum, values}
-    end
-  end
-
-  # Primitives
-  #
-  def primitive_from_schema(%Schema{type: "boolean"}), do: :boolean
-  def primitive_from_schema(%Schema{type: "integer"}), do: :integer
-  def primitive_from_schema(%Schema{type: "number"}), do: :number
-  def primitive_from_schema(%Schema{type: "null"}), do: :null
-  def primitive_from_schema(%Schema{type: "string"} = schema), do: string_type(schema)
-
-  # Arrays
-  #
-  def primitive_from_schema(%Schema{type: "array", items: items}) do
-    {:array, primitive_from_schema(items)}
-  end
-
-  # Unions
-  #
-  def primitive_from_schema(%Schema{type: types} = schema) when is_list(types) do
-    types
-    |> Enum.map(&%Schema{schema | type: &1})
-    |> then(&create_primitive_union/1)
-  end
-
-  def primitive_from_schema(%Schema{any_of: types}) when is_list(types),
-    do: create_primitive_union(types)
-
-  def primitive_from_schema(%Schema{one_of: types}) when is_list(types),
-    do: create_primitive_union(types)
-
-  # Fallback
-  #
-  def primitive_from_schema(schema) do
-    raise "Invalid primitive type: #{inspect(schema)}"
-  end
-
-  @spec create_primitive_union([Schema.t()]) :: t
-  defp create_primitive_union(types) do
-    types
-    |> Enum.map(&primitive_from_schema/1)
-    |> Enum.uniq()
-    |> Enum.sort()
-    |> case do
-      [] -> :null
-      [:null] -> :null
-      types -> {:union, types}
-    end
-  end
-
   @doc """
   Create an internal type representation of the given schema
 
@@ -172,9 +93,26 @@ defmodule OpenAPI.Processor.Type do
 
   # Primitives
   #
-  def from_schema(state, schema) when is_primitive(schema) do
-    {state, primitive_from_schema(schema)}
+  def from_schema(state, %Schema{const: value}) when not is_nil(value),
+    do: {state, {:const, value}}
+
+  def from_schema(state, %Schema{enum: [value]}), do: {state, {:const, value}}
+
+  def from_schema(state, %Schema{enum: values}) when is_list(values) do
+    if Enum.any?(values, &is_map/1) do
+      IO.warn("Invalid enum; expanding type to any: #{inspect(values)}")
+
+      {state, :any}
+    else
+      {state, {:enum, values}}
+    end
   end
+
+  def from_schema(state, %Schema{type: "boolean"}), do: {state, :boolean}
+  def from_schema(state, %Schema{type: "integer"}), do: {state, :integer}
+  def from_schema(state, %Schema{type: "number"}), do: {state, :number}
+  def from_schema(state, %Schema{type: "null"}), do: {state, :null}
+  def from_schema(state, %Schema{type: "string"} = schema), do: {state, string_type(schema)}
 
   # Arrays
   #
