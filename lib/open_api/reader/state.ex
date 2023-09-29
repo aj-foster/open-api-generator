@@ -31,7 +31,6 @@ defmodule OpenAPI.Reader.State do
           last_ref_file: String.t() | nil,
           last_ref_path: [path_segment],
           path_parameters: [Parameter.t()],
-          previous_refs: MapSet.t(),
           refs: %{optional(String.t()) => map},
           spec: Spec.t() | nil
         }
@@ -49,7 +48,6 @@ defmodule OpenAPI.Reader.State do
     :last_ref_file,
     :last_ref_path,
     :path_parameters,
-    :previous_refs,
     :refs,
     :spec
   ]
@@ -71,7 +69,6 @@ defmodule OpenAPI.Reader.State do
       last_ref_file: nil,
       last_ref_path: [],
       path_parameters: [],
-      previous_refs: MapSet.new(),
       refs: %{},
       spec: nil
     }
@@ -128,48 +125,41 @@ defmodule OpenAPI.Reader.State do
     new_file = Path.join(state.current_file, new_file)
     new_ref_path_segments = String.split(new_ref_path, "/", trim: true)
 
-    if MapSet.member?(state.previous_refs, {new_file, new_ref_path_segments}) do
-      {state, {:cycle, {new_file, new_ref_path_segments}}}
-    else
-      %__MODULE__{
-        last_ref_file: original_last_ref_file,
-        last_ref_path: original_last_ref_path,
-        previous_refs: original_previous_refs
-      } = state
+    %__MODULE__{
+      last_ref_file: original_last_ref_file,
+      last_ref_path: original_last_ref_path
+    } = state
 
-      new_ref = "#{new_file}##{new_ref_path}"
+    new_ref = "#{new_file}##{new_ref_path}"
 
-      state = %__MODULE__{
-        state
-        | last_ref_file: new_file,
-          last_ref_path: Enum.reverse(new_ref_path_segments),
-          previous_refs: MapSet.put(state.previous_refs, {new_file, new_ref_path_segments})
-      }
+    state = %__MODULE__{
+      state
+      | last_ref_file: new_file,
+        last_ref_path: Enum.reverse(new_ref_path_segments)
+    }
 
-      stored_yaml = state.refs[new_ref]
+    stored_yaml = state.refs[new_ref]
 
-      {state, yaml} =
-        if stored_yaml do
-          {state, stored_yaml}
-        else
-          state = OpenAPI.Reader.ensure_file(state, new_file)
-          yaml = get_in(state.files[new_file], new_ref_path_segments)
-          state = %__MODULE__{state | refs: Map.put(state.refs, new_ref, yaml)}
+    {state, yaml} =
+      if stored_yaml do
+        {state, stored_yaml}
+      else
+        state = OpenAPI.Reader.ensure_file(state, new_file)
+        yaml = get_in(state.files[new_file], new_ref_path_segments)
+        state = %__MODULE__{state | refs: Map.put(state.refs, new_ref, yaml)}
 
-          {state, yaml}
-        end
+        {state, yaml}
+      end
 
-      {state, result} = decoder.(state, yaml)
+    {state, result} = decoder.(state, yaml)
 
-      state = %__MODULE__{
-        state
-        | last_ref_file: original_last_ref_file,
-          last_ref_path: original_last_ref_path,
-          previous_refs: original_previous_refs
-      }
+    state = %__MODULE__{
+      state
+      | last_ref_file: original_last_ref_file,
+        last_ref_path: original_last_ref_path
+    }
 
-      {state, result}
-    end
+    {state, result}
   end
 
   def with_ref(state, yaml, decoder), do: decoder.(state, yaml)

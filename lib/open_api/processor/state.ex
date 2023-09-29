@@ -95,25 +95,6 @@ defmodule OpenAPI.Processor.State do
   end
 
   @doc """
-  For cyclical references, put a placeholder ref in the state without a schema
-  """
-  @spec put_placeholder_ref(t, {String.t(), [State.path_segment()]}) :: {t, reference}
-  def put_placeholder_ref(state, path) do
-    if ref = Map.get(state.schema_refs_by_path, path) do
-      {state, ref}
-    else
-      ref = make_ref()
-
-      state = %__MODULE__{
-        state
-        | schema_refs_by_path: Map.put(state.schema_refs_by_path, path, ref)
-      }
-
-      {state, ref}
-    end
-  end
-
-  @doc """
   Add a schema spec to the processor state and generate a reference for it
   """
   @spec put_schema_spec(t, SchemaSpec.t()) :: {t, reference}
@@ -126,12 +107,8 @@ defmodule OpenAPI.Processor.State do
     path = {last_ref_file, last_ref_path}
 
     if ref = Map.get(state.schema_refs_by_path, path) do
-      schema_spec =
-        if existing_schema_spec = Map.get(state.schema_specs_by_ref, ref) do
-          SchemaSpec.merge_contexts(existing_schema_spec, schema_spec)
-        else
-          schema_spec
-        end
+      existing_schema_spec = Map.fetch!(state.schema_specs_by_ref, ref)
+      schema_spec = SchemaSpec.merge_contexts(existing_schema_spec, schema_spec)
 
       state = %__MODULE__{
         state
