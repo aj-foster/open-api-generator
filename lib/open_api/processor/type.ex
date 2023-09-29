@@ -196,6 +196,12 @@ defmodule OpenAPI.Processor.Type do
     State.put_schema_spec(state, schema_spec)
   end
 
+  # Cycles
+  #
+  def from_schema(state, {:cycle, ref_path}) do
+    State.put_placeholder_ref(state, ref_path)
+  end
+
   # Fallback
   #
   def from_schema(_state, schema) do

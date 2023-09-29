@@ -404,8 +404,11 @@ defmodule OpenAPI.Processor do
         state =
           Type.reduce(type, state, fn t, state ->
             if is_reference(t) do
-              schema = Map.fetch!(state.schema_specs_by_ref, t)
-              process_schema(state, t, schema, context)
+              if schema = Map.get(state.schema_specs_by_ref, t) do
+                process_schema(state, t, schema, context)
+              else
+                state
+              end
             else
               state
             end
