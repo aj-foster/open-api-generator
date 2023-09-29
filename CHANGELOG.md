@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 0.1.0-rc.3 (2023-09-29)
+
+**Fix**: Cyclical schema references would result in an infinite loop during the read phase.
+  This has been fixed specifically for schema references; if references that don't point to schemas create a cycle, generation will still fail.
+
 ### 0.1.0-rc.2 (2023-09-27)
 
 **Fix**: Schemas that only appeared in union types were not properly processed, resulting in more plain `map` types than intended.
