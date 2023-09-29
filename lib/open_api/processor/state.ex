@@ -27,7 +27,6 @@ defmodule OpenAPI.Processor.State do
   """
   alias OpenAPI.Processor.Operation
   alias OpenAPI.Processor.Schema
-  alias OpenAPI.Spec
   alias OpenAPI.Spec.Schema, as: SchemaSpec
 
   @type t :: %__MODULE__{
@@ -84,30 +83,6 @@ defmodule OpenAPI.Processor.State do
   #
   # Manipulation
   #
-
-  @doc """
-  Get a schema reference by the last ref file/path
-  """
-  @spec get_schema_ref_by_path(t, SchemaSpec.t()) :: reference | nil
-  def get_schema_ref_by_path(state, schema_spec) do
-    %__MODULE__{schema_refs_by_path: registry} = state
-
-    %SchemaSpec{
-      "$oag_last_ref_file": last_ref_file,
-      "$oag_last_ref_path": last_ref_path
-    } = schema_spec
-
-    Map.get(registry, {last_ref_file, last_ref_path})
-  end
-
-  @doc """
-  For schema references, put a placeholder ref in the state without a schema spec
-  """
-  @spec put_schema_ref(t, Spec.full_path()) :: {t, reference}
-  def put_schema_ref(state, path) do
-    schema_spec = Map.fetch!(state.schema_specs_by_path, path)
-    put_schema_spec(state, schema_spec)
-  end
 
   @doc """
   Add a schema spec to the processor state and generate a reference for it

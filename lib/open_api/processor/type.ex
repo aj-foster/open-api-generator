@@ -88,7 +88,8 @@ defmodule OpenAPI.Processor.Type do
   # Schema references
   #
   def from_schema(state, {:ref, full_path}) do
-    State.put_schema_ref(state, full_path)
+    schema_spec = Map.fetch!(state.schema_specs_by_path, full_path)
+    from_schema(state, schema_spec)
   end
 
   # Primitives
