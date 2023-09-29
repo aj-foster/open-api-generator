@@ -23,9 +23,9 @@ components:
         id:
           type: integer
         team:
-          type:
+          anyOf:
+            - type: "null"
             - "$ref": "#/components/schemas/team"
-            - "null"
       required:
         - id
         - team
