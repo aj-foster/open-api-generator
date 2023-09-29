@@ -353,50 +353,61 @@ defmodule OpenAPI.Processor do
     end)
   end
 
-  @spec process_schema(State.t(), reference, SchemaSpec.t(), tuple) :: State.t()
-  defp process_schema(state, ref, schema_spec, context) do
-    %State{implementation: implementation, schemas_by_ref: schemas_by_ref} = state
+  @spec process_schema(State.t(), reference, SchemaSpec.t(), tuple, MapSet.t()) :: State.t()
+  defp process_schema(state, ref, schema_spec, context, seen_refs \\ MapSet.new()) do
+    if MapSet.member?(seen_refs, ref) do
+      state
+    else
+      %State{implementation: implementation, schemas_by_ref: schemas_by_ref} = state
+      seen_refs = MapSet.put(seen_refs, ref)
 
-    cond do
-      schema = Map.get(schemas_by_ref, ref) ->
-        if implementation.ignore_schema?(state, schema_spec) do
-          state
-        else
-          schema = Schema.merge_contexts(schema, schema_spec)
+      cond do
+        schema = Map.get(schemas_by_ref, ref) ->
+          if implementation.ignore_schema?(state, schema_spec) do
+            state
+          else
+            schema = Schema.merge_contexts(schema, schema_spec)
+            State.put_schema(state, ref, schema)
+          end
+
+        implementation.ignore_schema?(state, schema_spec) ->
+          schema = %Schema{
+            fields: [],
+            module_name: nil,
+            type_name: :map
+          }
+
           State.put_schema(state, ref, schema)
-        end
 
-      implementation.ignore_schema?(state, schema_spec) ->
-        schema = %Schema{
-          fields: [],
-          module_name: nil,
-          type_name: :map
-        }
+        :else ->
+          {state, fields} = process_schema_fields(state, schema_spec, ref, seen_refs)
+          {module_name, type_name} = implementation.schema_module_and_type(state, schema_spec)
 
-        State.put_schema(state, ref, schema)
+          schema = %Schema{
+            context: [context],
+            fields: fields,
+            module_name: module_name,
+            type_name: type_name
+          }
 
-      :else ->
-        {state, fields} = process_schema_fields(state, schema_spec, ref)
-        {module_name, type_name} = implementation.schema_module_and_type(state, schema_spec)
-
-        schema = %Schema{
-          context: [context],
-          fields: fields,
-          module_name: module_name,
-          type_name: type_name
-        }
-
-        State.put_schema(state, ref, schema)
+          State.put_schema(state, ref, schema)
+      end
     end
   end
 
-  @spec process_schema_fields(State.t(), SchemaSpec.t(), reference) :: {State.t(), [Field.t()]}
-  defp process_schema_fields(state, schema_spec, schema_ref) do
+  @spec process_schema_fields(State.t(), SchemaSpec.t(), reference, MapSet.t()) ::
+          {State.t(), [Field.t()]}
+  defp process_schema_fields(state, schema_spec, schema_ref, seen_refs) do
     %SchemaSpec{properties: properties, required: required} = schema_spec
 
-    for {field_name, %SchemaSpec{nullable: nullable?} = field_spec} <- properties,
-        reduce: {state, []} do
+    for {field_name, field_spec} <- properties, reduce: {state, []} do
       {state, fields} ->
+        nullable? =
+          case field_spec do
+            %SchemaSpec{nullable: nullable?} -> nullable?
+            {:ref, _} -> false
+          end
+
         required? = is_list(required) and field_name in required
         context = {:field, schema_ref, field_name}
         {state, type} = Type.from_schema(state, field_spec)
@@ -405,7 +416,7 @@ defmodule OpenAPI.Processor do
           Type.reduce(type, state, fn t, state ->
             if is_reference(t) do
               schema = Map.fetch!(state.schema_specs_by_ref, t)
-              process_schema(state, t, schema, context)
+              process_schema(state, t, schema, context, seen_refs)
             else
               state
             end

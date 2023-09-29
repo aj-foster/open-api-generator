@@ -1,5 +1,6 @@
 defmodule OpenAPI.Processor.Type do
   alias OpenAPI.Processor.State
+  alias OpenAPI.Spec
   alias OpenAPI.Spec.Schema
 
   @typedoc "Literal values, as found in `const` and `enum` definitions"
@@ -160,8 +161,14 @@ defmodule OpenAPI.Processor.Type do
   encounters an object schema as a sub-field of the given schema, it will potentially modify the
   processor state in order to stash a new reference.
   """
-  @spec from_schema(%State{}, Schema.t()) :: {State.t(), t}
+  @spec from_schema(%State{}, Schema.t() | Spec.ref()) :: {State.t(), t}
   def from_schema(state, schema)
+
+  # Schema references
+  #
+  def from_schema(state, {:ref, full_path}) do
+    State.put_schema_ref(state, full_path)
+  end
 
   # Primitives
   #

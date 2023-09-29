@@ -10,6 +10,7 @@ defmodule OpenAPI.Reader.State do
 
   alias OpenAPI.Reader.Config
   alias OpenAPI.Spec
+  alias OpenAPI.Spec.Schema
   alias OpenAPI.Spec.Path.Parameter
 
   @typedoc "Decode function for raw Yaml"
@@ -30,6 +31,7 @@ defmodule OpenAPI.Reader.State do
           last_ref_path: [Spec.path_segment()],
           path_parameters: [Parameter.t()],
           refs: %{optional(String.t()) => map},
+          schema_specs_by_path: %{Spec.full_path() => Schema.t()},
           spec: Spec.t() | nil
         }
 
@@ -47,6 +49,7 @@ defmodule OpenAPI.Reader.State do
     :last_ref_path,
     :path_parameters,
     :refs,
+    :schema_specs_by_path,
     :spec
   ]
 
@@ -68,6 +71,7 @@ defmodule OpenAPI.Reader.State do
       last_ref_path: [],
       path_parameters: [],
       refs: %{},
+      schema_specs_by_path: %{},
       spec: nil
     }
   end
@@ -172,5 +176,12 @@ defmodule OpenAPI.Reader.State do
     {state, {:ref, {absolute_file, path_segments}}}
   end
 
-  def with_schema_ref(state, yaml, decoder), do: decoder.(state, yaml)
+  def with_schema_ref(state, yaml, decoder) do
+    {state, schema} = decoder.(state, yaml)
+
+    ref_full_path = {schema."$oag_last_ref_file", schema."$oag_last_ref_path"}
+    schema_specs_by_path = Map.put(state.schema_specs_by_path, ref_full_path, schema)
+
+    {%__MODULE__{state | schema_specs_by_path: schema_specs_by_path}, schema}
+  end
 end

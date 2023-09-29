@@ -11,6 +11,9 @@ defmodule OpenAPI.Processor.State do
       and processed so far.
     * `profile`: Name of the active configuration profile. Callbacks must use this field when
       looking up configuration from the application environment.
+    * `schema_specs_by_path`: Map of raw schema specifications keyed by the original paths where
+      they could be found in the spec files, as provided by the read phase. This map may include
+      schemas that are not used in operations.
     * `schema_specs_by_ref`: Cumulative map of raw schema specifications keyed by the internal
       `ref`s used to refer to them in types.
     * `schema_refs_by_path`: Cumulative map of internal `ref`s used to refer to schemas keyed by
@@ -24,6 +27,7 @@ defmodule OpenAPI.Processor.State do
   """
   alias OpenAPI.Processor.Operation
   alias OpenAPI.Processor.Schema
+  alias OpenAPI.Spec
   alias OpenAPI.Spec.Schema, as: SchemaSpec
 
   @type t :: %__MODULE__{
@@ -40,6 +44,7 @@ defmodule OpenAPI.Processor.State do
     :implementation,
     :operations,
     :profile,
+    :schema_specs_by_path,
     :schema_specs_by_ref,
     :schema_refs_by_path,
     :schemas_by_ref,
@@ -55,6 +60,7 @@ defmodule OpenAPI.Processor.State do
       implementation: implementation(profile),
       operations: [],
       profile: profile,
+      schema_specs_by_path: state.schema_specs_by_path,
       schema_specs_by_ref: %{},
       schema_refs_by_path: %{},
       schemas_by_ref: %{},
@@ -95,6 +101,15 @@ defmodule OpenAPI.Processor.State do
   end
 
   @doc """
+  For schema references, put a placeholder ref in the state without a schema spec
+  """
+  @spec put_schema_ref(t, Spec.full_path()) :: {t, reference}
+  def put_schema_ref(state, path) do
+    schema_spec = Map.fetch!(state.schema_specs_by_path, path)
+    put_schema_spec(state, schema_spec)
+  end
+
+  @doc """
   Add a schema spec to the processor state and generate a reference for it
   """
   @spec put_schema_spec(t, SchemaSpec.t()) :: {t, reference}
@@ -107,8 +122,12 @@ defmodule OpenAPI.Processor.State do
     path = {last_ref_file, last_ref_path}
 
     if ref = Map.get(state.schema_refs_by_path, path) do
-      existing_schema_spec = Map.fetch!(state.schema_specs_by_ref, ref)
-      schema_spec = SchemaSpec.merge_contexts(existing_schema_spec, schema_spec)
+      schema_spec =
+        if existing_schema_spec = Map.get(state.schema_specs_by_ref, ref) do
+          SchemaSpec.merge_contexts(existing_schema_spec, schema_spec)
+        else
+          schema_spec
+        end
 
       state = %__MODULE__{
         state

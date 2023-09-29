@@ -103,7 +103,11 @@ defmodule OpenAPI.Reader do
       |> read_all()
       |> decode_all()
 
-    %OpenAPI.State{state | spec: reader_result.spec}
+    %OpenAPI.State{
+      state
+      | spec: reader_result.spec,
+        schema_specs_by_path: reader_result.schema_specs_by_path
+    }
   end
 
   @spec read_all(State.t()) :: State.t()

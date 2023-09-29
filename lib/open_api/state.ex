@@ -15,6 +15,9 @@ defmodule OpenAPI.State do
       `t:OpenAPI.Processor.Schema.t/0` structs. The reference-keyed map is included to make it
       easier for render callbacks to look up a schema by its reference, as this is often how
       operations will refer to them.
+    * `schema_specs_by_path`: After the read phase, contains a map of all schema specs keyed on
+      their base file and last referenced paths. This allows for easy lookup of schema specs from
+      `t:OpenAPI.Spec.ref/0` references.
     * `spec`: After the read phase, contains the parsed and merged OpenAPI description(s).
 
   All of this state is managed by the code generator between phases, and it is unlikely that a
@@ -30,6 +33,7 @@ defmodule OpenAPI.State do
           files: [OpenAPI.Renderer.File.t()],
           operations: [OpenAPI.Processor.Operation.t()],
           schemas: %{reference => OpenAPI.Processor.Schema.t()},
+          schema_specs_by_path: %{Spec.full_path() => Spec.Schema.t()},
           spec: Spec.t() | nil
         }
 
@@ -41,6 +45,7 @@ defmodule OpenAPI.State do
     :files,
     :operations,
     :schemas,
+    :schema_specs_by_path,
     :spec
   ]
 
@@ -52,6 +57,7 @@ defmodule OpenAPI.State do
       files: [],
       operations: [],
       schemas: %{},
+      schema_specs_by_path: %{},
       spec: nil
     }
   end
