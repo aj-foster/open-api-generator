@@ -2,7 +2,7 @@ defmodule OpenAPI.Spec.Path.Operation do
   @moduledoc "Raw operation from the OpenAPI spec"
   import OpenAPI.Reader.State
 
-  alias OpenAPI.Reader.State
+  alias OpenAPI.Spec
   alias OpenAPI.Spec.Path.Parameter
   alias OpenAPI.Spec.ExternalDocumentation
   alias OpenAPI.Spec.RequestBody
@@ -11,9 +11,9 @@ defmodule OpenAPI.Spec.Path.Operation do
 
   @type t :: %__MODULE__{
           "$oag_base_file": String.t(),
-          "$oag_base_file_path": [State.path_segment()],
+          "$oag_base_file_path": [Spec.path_segment()],
           "$oag_last_ref_file": String.t() | nil,
-          "$oag_last_ref_path": [State.path_segment()],
+          "$oag_last_ref_path": [Spec.path_segment()],
           "$oag_path": String.t(),
           "$oag_path_method": String.t(),
           "$oag_path_parameters": [Parameter.t()],
