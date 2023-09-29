@@ -87,6 +87,8 @@ defmodule OpenAPI.Reader do
   as one API description, although plugins will have the opportunity to see the source of the data
   when necessary.
   """
+  require Logger
+
   alias OpenAPI.Reader.Config
   alias OpenAPI.Reader.State
   alias OpenAPI.Spec
@@ -109,6 +111,7 @@ defmodule OpenAPI.Reader do
     files
     |> Map.keys()
     |> Enum.reduce(state, fn relative_filename, state ->
+      Logger.debug("Reading file #{relative_filename}")
       read_file(state, relative_filename)
     end)
   end

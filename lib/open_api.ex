@@ -22,6 +22,8 @@ defmodule OpenAPI do
   [configuration](/guides/configuration.md), [plugins](/guides/plugins.md), or
   [creating a client library](/guides/client-author-guide.md).
   """
+  require Logger
+
   alias OpenAPI.Call
   alias OpenAPI.Processor
   alias OpenAPI.Reader
@@ -34,6 +36,14 @@ defmodule OpenAPI do
   """
   @spec run(String.t(), [String.t()]) :: term
   def run(profile, files) do
+    Logger.debug("""
+    Beginning code generation
+    Profile: #{inspect(profile)}
+    Files: [
+      #{Enum.map_join(files, ",\n  ", &"\"#{&1}\"")}
+    ]
+    """)
+
     Call.new(profile, files)
     |> State.new()
     |> Reader.run()
