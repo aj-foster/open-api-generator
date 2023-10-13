@@ -1,7 +1,7 @@
 defmodule OpenAPI.Generator.OperationTest do
   use ExUnit.Case, async: true
 
-  alias OpenAPI.Generator.Operation
+  alias OpenAPI.Spec.Path.Operation
   alias OpenAPI.Spec.Path
 
   describe "names/1" do

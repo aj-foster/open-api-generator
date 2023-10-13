@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Add** Added OpenAPI.Test.RecorderCase to easily create code from specs in `test/fixture/<test>.{yml|yaml}`
 **Add**: Added headers and cookie parameter location handling. The request options now contain tuples such as `{"X-Header-Value", "some header value"}` and `{"cookie-name", "some cookie value"}`.
 The options used to generate the cookie and headers value are also forwarded in the `opts` keyword argument to `client.request`
 

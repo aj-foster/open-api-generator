@@ -1,0 +1,34 @@
+openapi: "3.1.0"
+info:
+  title: Parameters in cookie and headers
+  version: 1
+paths:
+  "/req-headers":
+    get:
+      description: "Example endpoint"
+      operationId: example
+      summary: "Example endpoint"
+      parameters:
+        - description: |-
+            Header parameter example.
+            The corresponding option should be :header_param
+          example: header param value
+          in: header
+          name: X-Header-Param
+          schema:
+            type: string
+        - description: |-
+           This Parameter is passed as a cookie
+           It should be set using the name :cookie_param
+          example: cookie-value
+          in: cookie
+          name: cookie-param
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                type: string
