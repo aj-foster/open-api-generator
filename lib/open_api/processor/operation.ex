@@ -40,6 +40,8 @@ defmodule OpenAPI.Processor.Operation do
           request_path: String.t(),
           request_path_parameters: [Param.t()],
           request_query_parameters: [Param.t()],
+          request_header_parameters: [Param.t()],
+          request_cookie_parameters: [Param.t()],
           responses: response_body
         }
 
@@ -52,6 +54,8 @@ defmodule OpenAPI.Processor.Operation do
     :request_path,
     :request_path_parameters,
     :request_query_parameters,
+    :request_header_parameters,
+    :request_cookie_parameters,
     :responses
   ]
 

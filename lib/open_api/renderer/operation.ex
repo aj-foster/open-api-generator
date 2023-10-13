@@ -146,9 +146,11 @@ defmodule OpenAPI.Renderer.Operation do
       end
 
     query = render_query(operation)
+    headers = render_headers(operation)
+    cookie = render_cookie(operation)
     call = render_call(state, operation)
 
-    operation_body = Util.clean_list([client, query, call])
+    operation_body = Util.clean_list([client, query, headers, cookie, call])
 
     quote do
       def unquote(name)(unquote_splicing(arguments)) do
@@ -173,6 +175,53 @@ defmodule OpenAPI.Renderer.Operation do
     end
   end
 
+  @spec render_headers(Operation.t()) :: Macro.t() | nil
+  defp render_headers(operation) do
+    %Operation{request_header_parameters: header_params} = operation
+
+    if length(header_params) > 0 do
+      params =
+        header_params
+        |> Enum.sort_by(& &1.name)
+        |> Enum.map(fn param -> {param.name, Util.header_name_to_atom(param)} end)
+
+      # iex(2)> quote do fn {:atom, value}-> {"Atom", value}  end  end
+      # {:fn, [],
+      #   [{:->, [], [[atom: {:value, [], Elixir}], {"Atom", {:value, [], Elixir}}]}]}
+      fn_clause = fn {str_param, atom_param} ->
+        {:->, [], [[{atom_param, {:value, [], Elixir}}], {str_param, {:value, [], Elixir}}]}
+      end
+
+      quote do
+        header_parameters =
+          Keyword.take(opts, unquote(params |> Enum.map(&elem(&1, 1))))
+          |> Enum.map(unquote({:fn, [], Enum.map(params, fn_clause)}))
+      end
+    end
+  end
+
+  @spec render_cookie(Operation.t()) :: Macro.t() | nil
+  defp render_cookie(operation) do
+    %Operation{request_cookie_parameters: cookie_params} = operation
+
+    if length(cookie_params) > 0 do
+      params =
+        cookie_params
+        |> Enum.sort_by(& &1.name)
+        |> Enum.map(fn %{name: name} = param -> {name, param |> Util.header_name_to_atom()} end)
+
+      fn_clause = fn {str_param, atom_param} ->
+        {:->, [], [[{atom_param, {:value, [], Elixir}}], {str_param, {:value, [], Elixir}}]}
+      end
+
+      quote do
+        cookie_parameters =
+          Keyword.take(opts, unquote(params |> Enum.map(&elem(&1, 1))))
+          |> Enum.map(unquote({:fn, [], Enum.map(params, fn_clause)}))
+      end
+    end
+  end
+
   @spec render_call(State.t(), Operation.t()) :: Macro.t()
   defp render_call(state, operation) do
     %Operation{
@@ -183,6 +232,8 @@ defmodule OpenAPI.Renderer.Operation do
       request_path: request_path,
       request_path_parameters: path_params,
       request_query_parameters: query_params,
+      request_cookie_parameters: cookie_params,
+      request_header_parameters: header_params,
       responses: responses
     } = operation
 
@@ -240,6 +291,20 @@ defmodule OpenAPI.Renderer.Operation do
         end
       end
 
+    cookie =
+      if length(cookie_params) > 0 do
+        quote do
+          {:cookie, cookie_parameters}
+        end
+      end
+
+    headers =
+      if length(header_params) > 0 do
+        quote do
+          {:headers, header_parameters}
+        end
+      end
+
     request =
       if length(request_body) > 0 do
         body =
@@ -276,7 +341,7 @@ defmodule OpenAPI.Renderer.Operation do
       end
 
     request_details =
-      [args, call, url, body, method, query, request, responses, options]
+      [args, call, url, body, method, query, headers, cookie, request, responses, options]
       |> Enum.reject(&is_nil/1)
 
     quote do

@@ -274,6 +274,8 @@ defmodule OpenAPI.Processor do
 
     path_params = Enum.filter(all_params, &(&1.location == :path))
     query_params = Enum.filter(all_params, &(&1.location == :query))
+    header_parameters = Enum.filter(all_params, &(&1.location == :header))
+    cookie_parameters = Enum.filter(all_params, &(&1.location == :cookie))
 
     docstring = implementation.operation_docstring(state, operation_spec, query_params)
     module_names = implementation.operation_module_names(state, operation_spec)
@@ -300,6 +302,8 @@ defmodule OpenAPI.Processor do
           request_path: request_path,
           request_path_parameters: path_params,
           request_query_parameters: query_params,
+          request_header_parameters: header_parameters,
+          request_cookie_parameters: cookie_parameters,
           responses: response_body
         }
 
