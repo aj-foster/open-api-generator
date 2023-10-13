@@ -14,6 +14,7 @@ defmodule OpenAPI.Renderer.Util do
   alias OpenAPI.Processor.Type
   alias OpenAPI.Renderer.File
   alias OpenAPI.Renderer.State
+  alias OpenAPI.Processor.Operation.Param
 
   @doc """
   Flatten and remove `nil` elements from a list of AST nodes
@@ -189,6 +190,49 @@ defmodule OpenAPI.Renderer.Util do
   end
 
   def to_readable_type(_state, type), do: type
+
+  @doc """
+    Transforms "X-Parameter-name" parameters to :parameter_name atom.
+
+    The transformation
+
+    * removes "X-" from the parameter name
+    * applies &String.downcase/1
+    * replaces "-" with "_"
+
+    This function uses &String.to_atom/1, so it is unsafe for untrusted input.
+  """
+  @spec header_name_to_atom(Param.t()) :: atom()
+  def header_name_to_atom(%Param{name: "x-" <> name} = param),
+    do: header_name_to_atom(%Param{param | name: name})
+
+  def header_name_to_atom(%Param{name: "X-" <> name} = param),
+    do: header_name_to_atom(%Param{param | name: name})
+
+  def header_name_to_atom(%Param{name: name}),
+    do:
+      name
+      |> String.replace("-", "_")
+      |> String.downcase()
+      |> String.to_atom()
+
+  @doc """
+  Transforms string typed cookie parameters into atoms
+
+  The transformation
+
+  * applies &String.downcase/1
+  * replaces "-" with "_"
+
+  This function uses &String.to_atom/1, so it is unsafe for untrusted input.
+  """
+  @spec cookie_name_to_atom(Param.t()) :: atom()
+  def cookie_name_to_atom(%Param{name: name}),
+    do:
+      name
+      |> String.downcase()
+      |> String.replace("-", "_")
+      |> String.to_atom()
 
   @doc """
   Render an internal type as a typespec
