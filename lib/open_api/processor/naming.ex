@@ -74,7 +74,7 @@ defmodule OpenAPI.Processor.Naming do
   Examples:
 
     * Operation `foo` with tag `bar` => `Bar.foo`
-    * Operation `foo/bar` with tag `baz` => `Baz.foo_bar`
+    * Operation `foo/bar` with tag `baz` => `Foo.bar` and `Baz.bar`
     * Operation `foo/bar` without tags => `Foo.bar`
 
   Each operation may exist in multiple modules depending on the quantity of tags and the format
