@@ -24,7 +24,7 @@ defmodule OpenAPI.Spec.Schema.Discriminator do
   def decode(state, yaml) do
     discriminator = %__MODULE__{
       property_name: Map.fetch!(yaml, "propertyName"),
-      mapping: Map.fetch!(yaml, "mapping")
+      mapping: Map.get(yaml, "mapping", %{})
     }
 
     {state, discriminator}
