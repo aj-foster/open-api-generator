@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Add**: New configuration option `output.operation_call.request` to modify the format of output request information in the operation function call.
+  Use `:map` to output it as a map instead of a list of tuples.
+
 ### 0.1.0-rc.3 (2023-09-29)
 
 **Fix**: Cyclical schema references would result in an infinite loop during the read phase.

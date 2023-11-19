@@ -278,6 +278,11 @@ Remember that all configuration values must be contained within a profile.
   Defaults to the current working directory.
   See `OpenAPI.Renderer.Module.filename/2` for more information.
 
+* `output.operation_call.request`: Format of the `request` key in the body of an operation function.
+  By default, the possible request body schemas are formatted as a `:list` of tuples with the content type and the schema.
+  A value of `:map` will cause a map to be output instead.
+  See `OpenAPI.Renderer.Operation.render_function/2` for more information.
+
 * `output.operation_subdirectory`: Subdirectory to use for all rendered files containing operations.
   This is an optional way to colocate generated operation modules in a single directory away from other parts of the client library.
   Defaults to the same location as `output.location`.

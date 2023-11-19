@@ -72,6 +72,9 @@ config :oapi_generator,
       base_module: Example,
       extra_fields: [__info__: :map],
       location: "example/lib",
+      operation_call: [
+        request: :map
+      ],
       request_type: :inline,
       response_type: :inline,
       schema_subdirectory: "schemas",

@@ -22,6 +22,9 @@ defmodule OpenAPI.Renderer.Operation do
       config :oapi_generator, default: [
         output: [
           base_module: nil,
+          operation_call: [
+            request: :list
+          ],
           types: [
             error: nil
           ]
@@ -101,6 +104,19 @@ defmodule OpenAPI.Renderer.Operation do
 
   This implementation constructs a function that calls a dynamically chosen client module's
   `request` function with details about the operation.
+
+  ## Configuration
+
+  Use `output.operation_call` to modify the format of output code within the function call. For
+  example, the following will output a map for the request body information:
+
+      config :oapi_generator, default: [
+        output: [
+          operation_call: [
+            request: :map
+          ]
+        ]
+      ]
 
   ## Example
 
@@ -265,16 +281,7 @@ defmodule OpenAPI.Renderer.Operation do
       end
 
     request =
-      if length(request_body) > 0 do
-        body =
-          Enum.map(request_body, fn {content_type, type} ->
-            {content_type, Util.to_readable_type(state, type)}
-          end)
-
-        quote do
-          {:request, unquote(body)}
-        end
-      end
+      render_call_request_info(state, request_body, config(state)[:operation_call][:request])
 
     responses =
       if length(responses) > 0 do
@@ -388,7 +395,56 @@ defmodule OpenAPI.Renderer.Operation do
   end
 
   #
-  # Helpers
+  # Public Helpers
+  #
+
+  @doc """
+  Renders a keyword list element containing information about the request body
+
+  The second argument accepts a format for the output code, which can be `:map` or the default of
+  `:list`.
+
+  This function is called by the default implementation of
+  `c:OpenAPI.Renderer.render_operation_function/2` (see `render_function/2`). It returns code
+  similar to this:
+
+      # Default format:
+      request: [{"application/json", {MySchema, :t}}]
+
+      # With format `:map`:
+      request: %{"application/json" => {MySchema, :t}}
+
+  **Warning**: This function is public for the benefit of plugin implementers who wish to
+  replicate portions of the default implementation. It is subject to change.
+  """
+  @spec render_call_request_info(State.t(), Operation.request_body(), atom) :: Macro.t()
+  def render_call_request_info(state, request_body, format)
+  def render_call_request_info(_state, [], _format), do: nil
+
+  def render_call_request_info(state, request_body, :map) do
+    body =
+      Enum.map(request_body, fn {content_type, type} ->
+        {content_type, Util.to_readable_type(state, type)}
+      end)
+
+    quote do
+      {:request, unquote({:%{}, [], body})}
+    end
+  end
+
+  def render_call_request_info(state, request_body, _default_list) do
+    body =
+      Enum.map(request_body, fn {content_type, type} ->
+        {content_type, Util.to_readable_type(state, type)}
+      end)
+
+    quote do
+      {:request, unquote(body)}
+    end
+  end
+
+  #
+  # Private Helpers
   #
 
   @spec config(OpenAPI.Renderer.State.t()) :: Keyword.t()
