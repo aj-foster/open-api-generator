@@ -157,8 +157,20 @@ defmodule OpenAPI.Renderer.Operation do
     end
   end
 
+  @doc """
+  Render code to handle query params in the body of an operation function
+
+  This function is called by the default implementation of
+  `c:OpenAPI.Renderer.render_operation_function/2` (see `render_function/2`). It returns code
+  similar to this:
+
+      query = Keyword.take(opts, [:param1, :param2])
+
+  **Warning**: This function is public for the benefit of plugin implementers who wish to
+  replicate portions of the default implementation. It is subject to change.
+  """
   @spec render_query(Operation.t()) :: Macro.t() | nil
-  defp render_query(operation) do
+  def render_query(operation) do
     %Operation{request_query_parameters: query_params} = operation
 
     if length(query_params) > 0 do
@@ -173,8 +185,20 @@ defmodule OpenAPI.Renderer.Operation do
     end
   end
 
+  @doc """
+  Render a call to `client.request/1` in the body of an operation function
+
+  This function is called by the default implementation of
+  `c:OpenAPI.Renderer.render_operation_function/2` (see `render_function/2`). It returns code
+  similar to this:
+
+      client.request(%{...})
+
+  **Warning**: This function is public for the benefit of plugin implementers who wish to
+  replicate portions of the default implementation. It is subject to change.
+  """
   @spec render_call(State.t(), Operation.t()) :: Macro.t()
-  defp render_call(state, operation) do
+  def render_call(state, operation) do
     %Operation{
       function_name: function_name,
       module_name: module_name,
