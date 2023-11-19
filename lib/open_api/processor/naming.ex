@@ -47,12 +47,18 @@ defmodule OpenAPI.Processor.Naming do
   """
   @doc default_implementation: true
   @spec operation_function(State.t(), OperationSpec.t()) :: atom
-  def operation_function(_state, operation_spec) do
-    %OperationSpec{operation_id: id} = operation_spec
-
+  def operation_function(_state, %OperationSpec{operation_id: id}) when not is_nil(id) do
     id
     |> String.split("/", trim: true)
     |> List.last()
+    |> normalize_identifier()
+    |> String.to_atom()
+  end
+
+  def operation_function(_state, operation_spec) do
+    %OperationSpec{"$oag_path": path, "$oag_path_method": method} = operation_spec
+
+    "#{path}_#{method}"
     |> normalize_identifier()
     |> String.to_atom()
   end
@@ -105,12 +111,18 @@ defmodule OpenAPI.Processor.Naming do
   def operation_modules(state, operation_spec) do
     config = config(state)
     %OperationSpec{operation_id: id, tags: tags} = operation_spec
-    [_function | modules] = String.split(id, "/", trim: true) |> Enum.reverse()
+
+    modules =
+      if id do
+        String.split(id, "/", trim: true)
+        |> Enum.slice(0..-2)
+      else
+        []
+      end
 
     id_name =
       if length(modules) > 0 do
         modules
-        |> Enum.reverse()
         |> Enum.map(&normalize_identifier/1)
         |> Enum.map(&Macro.camelize/1)
         |> Module.concat()

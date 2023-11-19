@@ -29,6 +29,18 @@ defmodule OpenAPI.Processor.NamingTest do
       spec = %OperationSpec{operation_id: "get-/crm/v3/objects/companies/{companyId}_getById"}
       assert Naming.operation_function(state, spec) == :company_id_get_by_id
     end
+
+    test "falls back to path-based name when operation ID is missing", %{state: state} do
+      Application.put_env(:oapi_generator, @profile, [])
+
+      spec = %OperationSpec{
+        operation_id: nil,
+        "$oag_path": "/test/api/{param}",
+        "$oag_path_method": :put
+      }
+
+      assert Naming.operation_function(state, spec) == :test_api_param_put
+    end
   end
 
   describe "operation_modules/2" do
@@ -66,6 +78,12 @@ defmodule OpenAPI.Processor.NamingTest do
       Application.put_env(:oapi_generator, @profile, [])
       spec = %OperationSpec{operation_id: "test/example_op", tags: ["my ModName"]}
       assert Naming.operation_modules(state, spec) == [Test, MyModName]
+    end
+
+    test "handles missing operation IDs", %{state: state} do
+      Application.put_env(:oapi_generator, @profile, [])
+      spec = %OperationSpec{operation_id: nil, tags: ["my ModName"]}
+      assert Naming.operation_modules(state, spec) == [MyModName]
     end
   end
 
