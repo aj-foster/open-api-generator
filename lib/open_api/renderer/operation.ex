@@ -344,7 +344,7 @@ defmodule OpenAPI.Renderer.Operation do
 
     opts = quote(do: keyword)
 
-    arguments = Util.clean_list([path_parameters, request_body, opts])
+    arguments = path_parameters ++ Enum.reject([request_body, opts], &is_nil/1)
     return_type = render_return_type(state, responses)
 
     quote do
