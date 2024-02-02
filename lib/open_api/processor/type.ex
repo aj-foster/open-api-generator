@@ -136,6 +136,11 @@ defmodule OpenAPI.Processor.Type do
   def from_schema(state, %Schema{one_of: types}) when is_list(types),
     do: create_union(state, types)
 
+  # Intersections
+  #
+  def from_schema(state, %Schema{all_of: types} = schema_spec) when is_list(types),
+    do: create_intersection(state, schema_spec, types)
+
   # Objects
   #
   def from_schema(state, %Schema{properties: properties} = schema_spec) when is_map(properties) do
@@ -174,7 +179,24 @@ defmodule OpenAPI.Processor.Type do
   defp string_type(%Schema{format: "uuid"}), do: {:string, :uuid}
   defp string_type(_schema), do: {:string, :generic}
 
-  @spec create_union(State.t(), [Schema.t()]) :: t
+  @spec create_intersection(State.t(), Schema.t(), [Schema.t()]) :: {State.t(), t}
+  defp create_intersection(state, schema_spec, types) do
+    properties =
+      Enum.reduce(types, %{}, fn type, properties ->
+        case type do
+          {:ref, full_path} ->
+            schema_spec = Map.fetch!(state.schema_specs_by_path, full_path)
+            Map.merge(properties, schema_spec.properties)
+
+          %Schema{properties: schema_properties} when is_map(properties) ->
+            Map.merge(properties, schema_properties)
+        end
+      end)
+
+    State.put_schema_spec(state, %{schema_spec | properties: properties})
+  end
+
+  @spec create_union(State.t(), [Schema.t()]) :: {State.t(), t}
   defp create_union(state, types) do
     {state, types} =
       Enum.reduce(types, {state, []}, fn type, {state, types} ->
