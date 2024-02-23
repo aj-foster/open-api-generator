@@ -362,6 +362,8 @@ defmodule OpenAPI.Processor do
 
   @spec process_schema(State.t(), reference, SchemaSpec.t(), tuple, MapSet.t()) :: State.t()
   defp process_schema(state, ref, schema_spec, context, seen_refs \\ MapSet.new()) do
+    schema_spec = SchemaSpec.add_context(schema_spec, context)
+
     if MapSet.member?(seen_refs, ref) do
       state
     else
@@ -391,7 +393,7 @@ defmodule OpenAPI.Processor do
           {module_name, type_name} = implementation.schema_module_and_type(state, schema_spec)
 
           schema = %Schema{
-            context: [context],
+            context: schema_spec."$oag_schema_context",
             fields: fields,
             module_name: module_name,
             type_name: type_name
