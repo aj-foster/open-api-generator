@@ -351,8 +351,12 @@ defmodule OpenAPI.Renderer do
           |> then(&%File{&1 | contents: implementation.format(state, &1)})
           |> then(&%File{&1 | location: implementation.location(state, &1)})
 
-        implementation.write(state, file)
-        %State{state | files: Map.put(files_by_module, module, file)}
+        if file.contents != "" do
+          implementation.write(state, file)
+          %State{state | files: Map.put(files_by_module, module, file)}
+        else
+          state
+        end
     end
   end
 end

@@ -49,6 +49,8 @@ defmodule OpenAPI.Renderer.Util do
   """
   @doc default_implementation: true
   @spec format(State.t(), File.t()) :: iodata
+  def format(_state, %File{ast: nil}), do: ""
+
   def format(_state, file) do
     %File{ast: ast} = file
 
