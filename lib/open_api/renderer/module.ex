@@ -139,25 +139,30 @@ defmodule OpenAPI.Renderer.Module do
         file_module
       ])
 
-    moduledoc = implementation.render_moduledoc(state, file)
-    using = implementation.render_using(state, file)
-    default_client = implementation.render_default_client(state, file)
     schema = implementation.render_schema(state, file)
     operations = implementation.render_operations(state, file)
 
-    header =
-      [moduledoc, using]
-      |> Util.clean_list()
-      |> Util.put_newlines()
+    if length(schema) > 0 or length(operations) > 0 do
+      moduledoc = implementation.render_moduledoc(state, file)
+      using = implementation.render_using(state, file)
+      default_client = implementation.render_default_client(state, file)
 
-    module_contents =
-      [header, default_client, schema, operations]
-      |> Util.clean_list()
+      header =
+        [moduledoc, using]
+        |> Util.clean_list()
+        |> Util.put_newlines()
 
-    quote do
-      defmodule unquote(module_name) do
-        (unquote_splicing(module_contents))
+      module_contents =
+        [header, default_client, schema, operations]
+        |> Util.clean_list()
+
+      quote do
+        defmodule unquote(module_name) do
+          (unquote_splicing(module_contents))
+        end
       end
+    else
+      nil
     end
   end
 
