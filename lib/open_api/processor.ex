@@ -389,8 +389,10 @@ defmodule OpenAPI.Processor do
           State.put_schema(state, ref, schema)
 
         :else ->
-          {state, fields} = process_schema_fields(state, schema_spec, ref, seen_refs)
           {module_name, type_name} = implementation.schema_module_and_type(state, schema_spec)
+
+          {state, fields} =
+            process_schema_fields(state, schema_spec, ref, module_name, type_name, seen_refs)
 
           schema = %Schema{
             context: schema_spec."$oag_schema_context",
@@ -404,9 +406,16 @@ defmodule OpenAPI.Processor do
     end
   end
 
-  @spec process_schema_fields(State.t(), SchemaSpec.t(), reference, MapSet.t()) ::
+  @spec process_schema_fields(State.t(), SchemaSpec.t(), reference, module, atom, MapSet.t()) ::
           {State.t(), [Field.t()]}
-  defp process_schema_fields(state, schema_spec, schema_ref, seen_refs) do
+  defp process_schema_fields(
+         state,
+         schema_spec,
+         parent_ref,
+         parent_module,
+         parent_type,
+         seen_refs
+       ) do
     %SchemaSpec{properties: properties, required: required} = schema_spec
 
     for {field_name, field_spec} <- properties, reduce: {state, []} do
@@ -418,7 +427,7 @@ defmodule OpenAPI.Processor do
           end
 
         required? = is_list(required) and field_name in required
-        context = {:field, schema_ref, field_name}
+        context = {:field, parent_ref, parent_module, parent_type, field_name}
         {state, type} = Type.from_schema(state, field_spec)
 
         state =

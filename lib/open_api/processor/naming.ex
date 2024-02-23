@@ -585,6 +585,13 @@ defmodule OpenAPI.Processor.Naming do
     {module, "t"}
   end
 
+  def raw_schema_module_and_type(%SchemaSpec{
+        "$oag_schema_context": [{:field, _parent_ref, parent_module, parent_type, field_name}]
+      }) do
+    module = Enum.join([parent_module, Macro.camelize(field_name)], ".")
+    {module, to_string(parent_type)}
+  end
+
   def raw_schema_module_and_type(_schema_spec) do
     {nil, "map"}
   end
