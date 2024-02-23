@@ -532,6 +532,26 @@ defmodule OpenAPI.Processor.Naming do
   end
 
   def raw_schema_module_and_type(%SchemaSpec{
+        "$oag_last_ref_path": [
+          "components",
+          "responses",
+          schema_name,
+          "content",
+          content_type,
+          "schema"
+        ]
+      }) do
+    module =
+      schema_name
+      |> normalize_identifier()
+      |> Macro.camelize()
+
+    type = Enum.join([readable_content_type(content_type), "resp"], "_")
+
+    {module, type}
+  end
+
+  def raw_schema_module_and_type(%SchemaSpec{
         "$oag_schema_context": [{:request, op_module, op_function, content_type}]
       }) do
     type = Enum.join([op_function, readable_content_type(content_type), "req"], "_")
