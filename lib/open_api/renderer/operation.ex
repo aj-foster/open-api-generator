@@ -34,6 +34,7 @@ defmodule OpenAPI.Renderer.Operation do
   """
   alias OpenAPI.Processor.Operation
   alias OpenAPI.Processor.Operation.Param
+  alias OpenAPI.Processor.Schema
   alias OpenAPI.Renderer.File
   alias OpenAPI.Renderer.State
   alias OpenAPI.Renderer.Util
@@ -43,18 +44,50 @@ defmodule OpenAPI.Renderer.Operation do
 
   Default implementation of `c:OpenAPI.Renderer.render_operations/2`.
 
-  This implementation simply iterates through the operations contained in a file, sorted by their
-  function name, and calls the `c:OpenAPI.Renderer.render_operation/2` callback for each. The
-  results are returned as a list of nodes.
+  This implementation iterates through the operations contained in a file, sorted by their
+  function name, and calls both `c:OpenAPI.Renderer.render_operation/2` and
+  `c:OpenAPI.Renderer.render_schema_types/2` callbacks for each. The latter is only given schemas
+  that have an output format of `:typed_map` and relate exclusively to the operation. Afterwards,
+  it calls `c:OpenAPI.Renderer.render_schema_field_function/2` for all schemas that had types
+  output earlier. It returns a list of AST nodes.
   """
   @spec render_all(State.t(), File.t()) :: Macro.t()
   def render_all(state, file) do
     %State{implementation: implementation} = state
-    %File{operations: operations} = file
+    %File{module: module, operations: operations, schemas: schemas} = file
 
-    for operation <- Enum.sort_by(operations, & &1.function_name) do
-      implementation.render_operation(state, operation)
-    end
+    related_schemas =
+      schemas
+      |> Enum.filter(&(&1.output_format == :typed_map))
+      |> Enum.filter(fn
+        # %Schema{context: [{:request, ^module, _, _}]} -> true
+        %Schema{context: [{:response, ^module, _, _, _}]} -> true
+        _else -> false
+      end)
+      |> Enum.group_by(&{&1.module_name, &1.type_name})
+      |> Enum.map(fn {_module_and_type, schemas} -> Enum.reduce(schemas, &Schema.merge/2) end)
+      |> List.flatten()
+      |> Enum.sort_by(& &1.type_name)
+
+    related_schemas_by_operation =
+      Enum.group_by(related_schemas, fn
+        # %Schema{context: [{:request, ^module, operation_name, _}]} -> operation_name
+        %Schema{context: [{:response, ^module, operation_name, _, _}]} -> operation_name
+        _else -> :unknown
+      end)
+
+    operations =
+      for operation <- Enum.sort_by(operations, & &1.function_name) do
+        related_schemas = related_schemas_by_operation[operation.function_name] || []
+
+        Util.clean_list([
+          implementation.render_schema_types(state, related_schemas),
+          implementation.render_operation(state, operation)
+        ])
+      end
+
+    related_schema_fields = implementation.render_schema_field_function(state, related_schemas)
+    Util.clean_list([operations, related_schema_fields])
   end
 
   @doc """

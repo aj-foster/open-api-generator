@@ -76,6 +76,7 @@ defmodule OpenAPI.Renderer.Schema do
       |> Enum.group_by(&{&1.module_name, &1.type_name})
       |> Enum.map(fn {_module_and_type, schemas} -> Enum.reduce(schemas, &Schema.merge/2) end)
       |> List.flatten()
+      |> Enum.sort_by(& &1.type_name)
 
     if length(non_operation_schemas) > 0 do
       types = implementation.render_schema_types(state, non_operation_schemas)
@@ -99,13 +100,21 @@ defmodule OpenAPI.Renderer.Schema do
   """
   @spec render_types(State.t(), [Schema.t()]) :: Macro.t()
   def render_types(state, schemas) do
-    for %Schema{fields: fields, type_name: type} <- schemas do
+    for %Schema{fields: fields, output_format: format, type_name: type} <- schemas do
       fields = render_type_fields(state, fields)
 
-      quote do
-        @type unquote({type, [], nil}) :: %__MODULE__{
-                unquote_splicing(fields)
-              }
+      if format == :struct do
+        quote do
+          @type unquote({type, [], nil}) :: %__MODULE__{
+                  unquote_splicing(fields)
+                }
+        end
+      else
+        quote do
+          @type unquote({type, [], nil}) :: %{
+                  unquote_splicing(fields)
+                }
+        end
       end
       |> Util.put_newlines()
     end
