@@ -222,4 +222,34 @@ defmodule OpenAPI.Processor.Type do
   def reduce({:array, type}, acc, cb), do: reduce(type, acc, cb)
   def reduce({:union, types}, acc, cb), do: Enum.reduce(types, acc, cb)
   def reduce(type, acc, cb), do: cb.(type, acc)
+
+  # Experimental!
+  @doc false
+  def merge(type_a, type_b)
+  def merge(same_type, same_type), do: same_type
+  def merge({:const, value_a}, {:const, value_b}), do: {:enum, Enum.sort([value_a, value_b])}
+  def merge({:enum, values}, {:const, value}), do: {:enum, Enum.sort([value | values])}
+  def merge({:const, value}, {:enum, values}), do: {:enum, Enum.sort([value | values])}
+  def merge({:enum, values_a}, {:enum, values_b}), do: {:enum, Enum.sort(values_a ++ values_b)}
+
+  def merge({:union, types_a}, {:union, types_b}) do
+    types =
+      (types_a ++ types_b)
+      |> Enum.uniq()
+      |> Enum.sort()
+
+    {:union, types}
+  end
+
+  def merge(type_a, type_b) do
+    [type_a, type_b]
+    |> Enum.uniq()
+    |> Enum.sort()
+    |> case do
+      [] -> :null
+      [:null] -> :null
+      [type] -> type
+      types -> {:union, types}
+    end
+  end
 end

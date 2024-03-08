@@ -16,6 +16,7 @@ defmodule OpenAPI.Processor.Schema do
   need to modify this struct directly.
   """
   alias OpenAPI.Processor.Schema.Field
+  alias OpenAPI.Processor.Type
   alias OpenAPI.Spec.Schema, as: SchemaSpec
 
   @typedoc "Format of rendering the schema (full struct or inline typespec)"
@@ -83,9 +84,24 @@ defmodule OpenAPI.Processor.Schema do
   @doc false
   @spec merge(t, t) :: t
   def merge(schema_a, schema_b) do
+    fields_a = Map.new(schema_a.fields, fn field -> {field.name, field} end)
+    fields_b = Map.new(schema_b.fields, fn field -> {field.name, field} end)
+
+    fields =
+      Map.merge(fields_a, fields_b, fn name, field_a, field_b ->
+        %Field{
+          name: name,
+          nullable: field_a.nullable or field_b.nullable,
+          private: field_a.private and field_b.private,
+          required: field_a.required and field_b.required,
+          type: Type.merge(field_a.type, field_b.type)
+        }
+      end)
+      |> Map.values()
+
     %__MODULE__{
       context: Enum.uniq(schema_a.context ++ schema_b.context),
-      fields: Enum.uniq(schema_a.fields ++ schema_b.fields),
+      fields: fields,
       module_name: schema_a.module_name,
       output_format: schema_a.output_format,
       ref: schema_a.ref,
