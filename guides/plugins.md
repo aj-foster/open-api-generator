@@ -97,6 +97,7 @@ Below is a list of all available callbacks in order of their use, along with the
     * `c:OpenAPI.Processor.operation_response_body/2`: `OpenAPI.Processor.Operation.response_body/2`
 * For each schema
   * `c:OpenAPI.Processor.ignore_schema?/2`: `OpenAPI.Processor.Ignore.ignore_schema?/2`
+  * `c:OpenAPI.Processor.schema_format/2`: `OpenAPI.Processor.Format.schema_format/2`
   * `c:OpenAPI.Processor.schema_module_and_type/2`: `OpenAPI.Processor.Naming.schema_module_and_type/2`
 
 **Renderer**: `OpenAPI.Renderer`

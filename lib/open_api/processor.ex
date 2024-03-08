@@ -17,6 +17,7 @@ defmodule OpenAPI.Processor do
   processor. For this purpose, this module is a Behaviour with most of its critical logic
   implemented as optional callbacks.
   """
+  alias OpenAPI.Processor.Format
   alias OpenAPI.Processor.Operation
   alias OpenAPI.Processor.Operation.Param
   alias OpenAPI.Processor.Schema
@@ -40,6 +41,7 @@ defmodule OpenAPI.Processor do
       state
       |> State.new()
       |> collect_operations_and_schemas()
+      |> record_schema_output_format()
 
     %OpenAPI.State{state | operations: operations, schemas: schemas_by_ref}
   end
@@ -60,7 +62,7 @@ defmodule OpenAPI.Processor do
       defdelegate operation_request_body(state, operation_spec), to: OpenAPI.Processor
       defdelegate operation_request_method(state, operation_spec), to: OpenAPI.Processor
       defdelegate operation_response_body(state, operation_spec), to: OpenAPI.Processor
-      defdelegate schema_module_and_type(state, schema_spec), to: OpenAPI.Processor
+      defdelegate schema_format(state, schema), to: OpenAPI.Processor
 
       defoverridable ignore_operation?: 2,
                      ignore_schema?: 2,
@@ -70,6 +72,7 @@ defmodule OpenAPI.Processor do
                      operation_request_body: 2,
                      operation_request_method: 2,
                      operation_response_body: 2,
+                     schema_format: 2,
                      schema_module_and_type: 2
     end
   end
@@ -86,6 +89,7 @@ defmodule OpenAPI.Processor do
                       operation_request_body: 2,
                       operation_request_method: 2,
                       operation_response_body: 2,
+                      schema_format: 2,
                       schema_module_and_type: 2
 
   @doc """
@@ -179,6 +183,21 @@ defmodule OpenAPI.Processor do
               Operation.response_body_unprocessed()
 
   @doc """
+  Choose the output format for the given schema
+
+  Schemas can be output in a number of different ways, the most common of which are structs and
+  typed maps. This callback chooses which output format to use for a processed schema. This
+  decision may influence the naming (module and type) given to the schema.
+
+  The special value `:unknown` may be returned from this callback to delay / re-enqueue the
+  schema for processing. This may appropriate, for example, if the schema's parent has not yet
+  been processed. Note that continually returning `:unknown` can cause an infinite loop.
+
+  See `OpenAPI.Processor.Format.schema_format/2` for the default implementation.
+  """
+  @callback schema_format(state :: State.t(), schema :: Schema.t()) :: Format.format() | :unknown
+
+  @doc """
   Choose the name of the module and type for the given schema
 
   Each module may contain multiple schemas with distinct types. By convention, the default
@@ -230,6 +249,9 @@ defmodule OpenAPI.Processor do
   defdelegate operation_response_body(state, operation_spec),
     to: OpenAPI.Processor.Operation,
     as: :response_body
+
+  @doc false
+  defdelegate schema_format(state, schema), to: OpenAPI.Processor.Format
 
   @doc false
   defdelegate schema_module_and_type(state, schema_spec), to: OpenAPI.Processor.Naming
@@ -449,6 +471,40 @@ defmodule OpenAPI.Processor do
         }
 
         {state, [field | fields]}
+    end
+  end
+
+  @spec record_schema_output_format(State.t()) :: State.t()
+  defp record_schema_output_format(state) do
+    %State{schemas_by_ref: schemas_by_ref} = state
+
+    to_process =
+      schemas_by_ref
+      |> Map.values()
+      |> :queue.from_list()
+
+    do_record_schema_output_format(state, to_process)
+  end
+
+  @spec do_record_schema_output_format(State.t(), :queue.queue(Schema.t())) :: State.t()
+  defp do_record_schema_output_format(state, to_process) do
+    %State{implementation: implementation} = state
+
+    case :queue.out(to_process) do
+      {{:value, schema}, to_process} ->
+        case implementation.schema_format(state, schema) do
+          :unknown ->
+            to_process = :queue.in(schema, to_process)
+            do_record_schema_output_format(state, to_process)
+
+          format ->
+            schema = %Schema{schema | output_format: format}
+            state = State.put_schema(state, schema.ref, schema)
+            do_record_schema_output_format(state, to_process)
+        end
+
+      {:empty, _to_process} ->
+        state
     end
   end
 end

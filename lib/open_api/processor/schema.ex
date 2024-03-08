@@ -8,6 +8,7 @@ defmodule OpenAPI.Processor.Schema do
     * `context`: List of contexts where the schema is found in the API description.
     * `fields`: List of `t:OpenAPI.Processor.Schema.Field.t/0` structs contained in the schema.
     * `module_name`: Name of the module where the schema will be defined.
+    * `output_format`: Intended format of the output (ex. struct or typespec).
     * `type_name`: Name of the schema's type within its module.
 
   All of this data is managed by the code generator, and it is unlikely that a callback would
@@ -15,18 +16,22 @@ defmodule OpenAPI.Processor.Schema do
   """
   alias OpenAPI.Spec.Schema, as: SchemaSpec
 
+  @typedoc "Format of rendering the schema (full struct or inline typespec)"
+  @type format :: :struct | :type | :none
+
   @typedoc "Processed schema used by the renderer"
   @type t :: %__MODULE__{
           context: [tuple],
           fields: [],
           module_name: module,
+          output_format: format | nil,
           type_name: atom
         }
 
   defstruct context: [],
             fields: [],
             module_name: nil,
-            type_name: :t
+            output_format: nil,
 
   @doc false
   @spec add_context(t, tuple) :: t
@@ -43,5 +48,11 @@ defmodule OpenAPI.Processor.Schema do
       ) do
     contexts = Enum.uniq(new_contexts ++ contexts)
     %__MODULE__{schema | context: contexts}
+  end
+
+  @doc false
+  @spec put_output_format(t, format) :: t
+  def put_output_format(schema, format) do
+    %__MODULE__{schema | output_format: format}
   end
 end
