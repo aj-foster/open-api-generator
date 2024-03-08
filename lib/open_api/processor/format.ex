@@ -19,7 +19,7 @@ defmodule OpenAPI.Processor.Format do
   def schema_format(state, schema_spec)
 
   def schema_format(_state, %Schema{context: [{:request, _, _, _}]}), do: :typed_map
-  def schema_format(_state, %Schema{context: [{:response, _, _, _}]}), do: :typed_map
+  def schema_format(_state, %Schema{context: [{:response, _, _, _, _}]}), do: :typed_map
 
   def schema_format(state, %Schema{context: [{:field, parent_ref, _}]}) do
     %State{schemas_by_ref: schemas_by_ref} = state

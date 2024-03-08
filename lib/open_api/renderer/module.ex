@@ -32,7 +32,6 @@ defmodule OpenAPI.Renderer.Module do
       ]
   """
   alias OpenAPI.Renderer.File
-  alias OpenAPI.Renderer.Schema
   alias OpenAPI.Renderer.State
   alias OpenAPI.Renderer.Util
 
@@ -225,11 +224,9 @@ defmodule OpenAPI.Renderer.Module do
   """
   @spec render_using(State.t(), File.t()) :: Macro.t()
   def render_using(state, file) do
-    %File{module: module, operations: operations, schemas: schemas} = file
+    %File{operations: operations, schemas: schemas} = file
 
-    struct_schema_count =
-      Enum.count(schemas, fn schema -> Schema.output_format(state, module, schema) == :struct end)
-
+    struct_schema_count = Enum.count(schemas, fn schema -> schema.output_format == :struct end)
     operation_use = config(state)[:operation_use]
     schema_use = config(state)[:schema_use]
 
