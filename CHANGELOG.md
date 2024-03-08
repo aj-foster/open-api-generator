@@ -7,53 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-**Add**: New configuration option `output.operation_call.request` to modify the format of output request information in the operation function call.
+### 0.1.0-rc.4 (2024-03-08)
+
+* **Breaking**: Output schemas that represent subfields of an already-output schema.
+
+* **Add**: Output full structs for any schemas in the `responses` component portion of the spec.
+* **Add**: New plugin callback `c:OpenAPI.Processor.schema_format/2` to set the output format of a schema (ex. `:struct` or `:typed_map`).
+* **Add**: Support schemas that utilize `allOf` with a naive intersection type.
+* **Add**: New configuration option `output.operation_call.request` to modify the format of output request information in the operation function call.
   Use `:map` to output it as a map instead of a list of tuples.
+
+* **Fix**: Avoid outputting empty files.
+* **Fix**: Avoid accidentally unwrapping array types in operation typespecs.
+* **Fix**: Support API descriptions that have a discriminator without a `mapping` key (thanks [@s3cur3](https://github.com/s3cur3)!).
 
 ### 0.1.0-rc.3 (2023-09-29)
 
-**Fix**: Cyclical schema references would result in an infinite loop during the read phase.
+* **Fix**: Cyclical schema references would result in an infinite loop during the read phase.
   This has been fixed specifically for schema references; if references that don't point to schemas create a cycle, generation will still fail.
 
 ### 0.1.0-rc.2 (2023-09-27)
 
-**Fix**: Schemas that only appeared in union types were not properly processed, resulting in more plain `map` types than intended.
+* **Fix**: Schemas that only appeared in union types were not properly processed, resulting in more plain `map` types than intended.
 
 ### 0.1.0-rc.1 (2023-09-26)
 
-**Fix**: Schema output was non-deterministic due to map ordering and an issue tracking contexts.
-**Fix**: Warn when an enum type is invalid (ex. contains schemas).
+* **Fix**: Schema output was non-deterministic due to map ordering and an issue tracking contexts.
+* **Fix**: Warn when an enum type is invalid (ex. contains schemas).
   In this case, the type will be expanded to `:any` but otherwise continue processing.
-**Fix**: Map types were output as the literal atom `:map` instead of `map` in typespecs.
-**Fix**: Preserve indentation of operation docstrings.
-**Fix**: Always include `args` in client calls, even if the list is empty.
-**Fix**: Ensure the app is started in `mix api.gen`.
+* **Fix**: Map types were output as the literal atom `:map` instead of `map` in typespecs.
+* **Fix**: Preserve indentation of operation docstrings.
+* **Fix**: Always include `args` in client calls, even if the list is empty.
+* **Fix**: Ensure the app is started in `mix api.gen`.
   This resolves an issue in which configured processor or renderer modules may not be available.
 
 ## 0.1.0-rc.0 (2023-09-06)
 
-**Breaking**: This is a major release.
+* **Breaking**: This is a major release.
   See the [migration guide](guides/migration.md) for more information.
-**Add**: Plugin system for overriding the behavior of this library.
+* **Add**: Plugin system for overriding the behavior of this library.
   See the [plugins guide](guides/plugins.md) for more information.
-**Add**: Additional internal types to represent string variations, enums, etc.
-**Fix**: Uniformly normalize names of operations and schemas.
+* **Add**: Additional internal types to represent string variations, enums, etc.
+* **Fix**: Uniformly normalize names of operations and schemas.
 
 ### 0.0.8 (2023-09-06)
 
-**Fix**: Path parameters are now collected from more locations in the spec.
+* **Fix**: Path parameters are now collected from more locations in the spec.
   Previously, the generator only noticed path parameters declared in the individual path _items_.
   This may cause breaking changes in some operation functions, however they were likely unusable before.
-**Fix**: Ensure all path parameter keys are properly underscored (thanks [wingyplus](https://github.com/wingyplus)!).
+* **Fix**: Ensure all path parameter keys are properly underscored (thanks [wingyplus](https://github.com/wingyplus)!).
 
 ### 0.0.7 (2023-06-07)
 
-**Add**: `schema_use` option to add optional `use [Module]` statements within schemas.
-**Add**: `operation_default_module` and `operation_use_tags` options for controlling the creation of operation modules (thanks [@xadhoom](https://github.com/xadhoom)!).
-**Add**: New _Client Author Guide_ for assisting client library authors.
-**Fix**: Allow empty/missing `tags` and `components` keys in the specification (thanks [@rubas](https://github.com/rubas)!).
-**Fix**: Allow missing server variable object in the specification (thanks [@xadhoom](https://github.com/xadhoom)!).
-**Fix**: Keep acronyms intact when naming operations (thanks [@feynmanliang](https://github.com/feynmanliang)!).
+* **Add**: `schema_use` option to add optional `use [Module]` statements within schemas.
+* **Add**: `operation_default_module` and `operation_use_tags` options for controlling the creation of operation modules (thanks [@xadhoom](https://github.com/xadhoom)!).
+* **Add**: New _Client Author Guide_ for assisting client library authors.
+* **Fix**: Allow empty/missing `tags` and `components` keys in the specification (thanks [@rubas](https://github.com/rubas)!).
+* **Fix**: Allow missing server variable object in the specification (thanks [@xadhoom](https://github.com/xadhoom)!).
+* **Fix**: Keep acronyms intact when naming operations (thanks [@feynmanliang](https://github.com/feynmanliang)!).
 
 ### 0.0.6 (2023-05-17)
 
