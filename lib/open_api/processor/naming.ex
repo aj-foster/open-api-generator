@@ -27,6 +27,7 @@ defmodule OpenAPI.Processor.Naming do
         ]
       ]
   """
+  alias OpenAPI.Processor.Schema
   alias OpenAPI.Processor.State
   alias OpenAPI.Spec.Path.Operation, as: OperationSpec
   alias OpenAPI.Spec.Schema, as: SchemaSpec
@@ -218,10 +219,12 @@ defmodule OpenAPI.Processor.Naming do
   sharing the same struct for their responses (with distinct typespecs).
   """
   @doc default_implementation: true
-  @spec schema_module_and_type(State.t(), SchemaSpec.t()) :: {module | nil, atom}
-  def schema_module_and_type(state, schema_spec) do
+  @spec schema_module_and_type(State.t(), Schema.t()) :: {module | nil, atom}
+  def schema_module_and_type(state, schema) do
+    schema_spec = Map.fetch!(state.schema_specs_by_ref, schema.ref)
+
     {module, type} =
-      raw_schema_module_and_type(schema_spec)
+      raw_schema_module_and_type(state, schema, schema_spec)
       |> merge_schema(state)
       |> rename_schema(state)
       |> group_schema(state)
@@ -472,10 +475,17 @@ defmodule OpenAPI.Processor.Naming do
 
       module =
         cond do
-          module == group -> module
-          String.starts_with?(module, "#{group}.") -> module
-          String.starts_with?(module, group) -> String.replace_leading(module, group, "#{group}.")
-          :else -> module
+          module == group ->
+            module
+
+          String.starts_with?(module, "#{group}.") ->
+            module
+
+          String.match?(module, ~r/^(#{group})[A-Z]/) ->
+            String.replace(module, ~r/^(#{group})/, "#{group}.")
+
+          :else ->
+            module
         end
 
       {module, type}
@@ -518,9 +528,11 @@ defmodule OpenAPI.Processor.Naming do
 
   Callers of this function will almost certainly want to perform further processing.
   """
-  @spec raw_schema_module_and_type(SchemaSpec.t()) ::
+  @spec raw_schema_module_and_type(State.t(), Schema.t(), SchemaSpec.t()) ::
           {module :: String.t() | nil, type :: String.t()}
-  def raw_schema_module_and_type(%SchemaSpec{
+  def raw_schema_module_and_type(state, schema, schema_spec)
+
+  def raw_schema_module_and_type(_state, _schema, %SchemaSpec{
         "$oag_last_ref_path": ["components", "schemas", schema_name]
       }) do
     module =
@@ -531,7 +543,18 @@ defmodule OpenAPI.Processor.Naming do
     {module, "t"}
   end
 
-  def raw_schema_module_and_type(%SchemaSpec{
+  def raw_schema_module_and_type(_state, _schema, %SchemaSpec{
+        "$oag_last_ref_path": ["components", "schemas", schema_name, "items"]
+      }) do
+    module =
+      schema_name
+      |> normalize_identifier()
+      |> Macro.camelize()
+
+    {module, "t"}
+  end
+
+  def raw_schema_module_and_type(_state, _schema, %SchemaSpec{
         "$oag_last_ref_path": [
           "components",
           "responses",
@@ -551,17 +574,21 @@ defmodule OpenAPI.Processor.Naming do
     {module, type}
   end
 
-  def raw_schema_module_and_type(%SchemaSpec{
-        "$oag_schema_context": [{:request, op_module, op_function, content_type}]
-      }) do
+  def raw_schema_module_and_type(
+        _state,
+        %Schema{context: [{:request, op_module, op_function, content_type}]},
+        _schema_spec
+      ) do
     type = Enum.join([op_function, readable_content_type(content_type), "req"], "_")
 
-    {to_string(op_module), type}
+    {inspect(op_module), type}
   end
 
-  def raw_schema_module_and_type(%SchemaSpec{
-        "$oag_schema_context": [{:response, op_module, op_function, status_code, content_type}]
-      }) do
+  def raw_schema_module_and_type(
+        _state,
+        %Schema{context: [{:response, op_module, op_function, status_code, content_type}]},
+        _schema_spec
+      ) do
     type =
       Enum.join(
         [
@@ -573,10 +600,11 @@ defmodule OpenAPI.Processor.Naming do
         "_"
       )
 
-    {to_string(op_module), type}
+    {inspect(op_module), type}
   end
 
-  def raw_schema_module_and_type(%SchemaSpec{title: schema_title}) when is_binary(schema_title) do
+  def raw_schema_module_and_type(_state, _schema, %SchemaSpec{title: schema_title})
+      when is_binary(schema_title) do
     module =
       schema_title
       |> normalize_identifier()
@@ -585,14 +613,27 @@ defmodule OpenAPI.Processor.Naming do
     {module, "t"}
   end
 
-  def raw_schema_module_and_type(%SchemaSpec{
-        "$oag_schema_context": [{:field, _parent_ref, parent_module, parent_type, field_name}]
-      }) do
-    module = Enum.join([parent_module, Macro.camelize(field_name)], ".")
+  def raw_schema_module_and_type(
+        state,
+        %Schema{context: [{:field, parent_ref, field_name}]},
+        _schema_spec
+      ) do
+    %State{implementation: implementation, schemas_by_ref: schemas_by_ref} = state
+
+    {parent_module, parent_type} =
+      case Map.fetch!(schemas_by_ref, parent_ref) do
+        %Schema{module_name: nil, type_name: nil} = parent ->
+          implementation.schema_module_and_type(state, parent)
+
+        %Schema{module_name: parent_module, type_name: parent_type} ->
+          {parent_module, parent_type}
+      end
+
+    module = Enum.join([inspect(parent_module), Macro.camelize(field_name)])
     {module, to_string(parent_type)}
   end
 
-  def raw_schema_module_and_type(_schema_spec) do
+  def raw_schema_module_and_type(_state, _schema, _schema_spec) do
     {nil, "map"}
   end
 

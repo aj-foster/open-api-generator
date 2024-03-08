@@ -67,14 +67,15 @@ defmodule OpenAPI.Renderer.Schema do
   @spec render(State.t(), File.t()) :: Macro.t()
   def render(state, file) do
     %State{implementation: implementation} = state
-    %File{module: module, schemas: schemas} = file
+    %File{schemas: schemas} = file
 
     # Reject schemas that only appear in a single request or response body.
     non_operation_schemas =
       schemas
-      |> Enum.filter(fn schema -> output_format(state, module, schema) == :struct end)
-      |> Enum.sort_by(& &1.type_name)
-      |> Enum.dedup_by(&{&1.module_name, &1.type_name, &1.fields})
+      |> Enum.filter(&(&1.output_format == :struct))
+      |> Enum.group_by(&{&1.module_name, &1.type_name})
+      |> Enum.map(fn {_module_and_type, schemas} -> Enum.reduce(schemas, &Schema.merge/2) end)
+      |> List.flatten()
 
     if length(non_operation_schemas) > 0 do
       types = implementation.render_schema_types(state, non_operation_schemas)
@@ -232,17 +233,4 @@ defmodule OpenAPI.Renderer.Schema do
     Application.get_env(:oapi_generator, profile, [])
     |> Keyword.get(:output, [])
   end
-
-  # Not yet ready for public consumption
-  @doc false
-  @spec output_format(State.t(), module, Schema.t()) :: :struct | :type
-  def output_format(_state, module, %Schema{context: [{:request, module, _, _}]}), do: :type
-  def output_format(_state, module, %Schema{context: [{:response, module, _, _, _}]}), do: :type
-
-  def output_format(state, _module, %Schema{context: [{:field, parent_ref, _, _, _}]}) do
-    parent_schema = Map.fetch!(state.schemas, parent_ref)
-    output_format(state, parent_schema.module_name, parent_schema)
-  end
-
-  def output_format(_state, _module, _schema), do: :struct
 end

@@ -42,6 +42,7 @@ defmodule OpenAPI.Processor do
       |> State.new()
       |> collect_operations_and_schemas()
       |> record_schema_output_format()
+      |> record_schema_module_and_type()
 
     %OpenAPI.State{state | operations: operations, schemas: schemas_by_ref}
   end
@@ -63,6 +64,7 @@ defmodule OpenAPI.Processor do
       defdelegate operation_request_method(state, operation_spec), to: OpenAPI.Processor
       defdelegate operation_response_body(state, operation_spec), to: OpenAPI.Processor
       defdelegate schema_format(state, schema), to: OpenAPI.Processor
+      defdelegate schema_module_and_type(state, schema), to: OpenAPI.Processor
 
       defoverridable ignore_operation?: 2,
                      ignore_schema?: 2,
@@ -207,8 +209,7 @@ defmodule OpenAPI.Processor do
 
   See `OpenAPI.Processor.Naming.schema_module_and_type/2` for the default implementation.
   """
-  @callback schema_module_and_type(state :: State.t(), schema_spec :: SchemaSpec.t()) ::
-              {module, atom}
+  @callback schema_module_and_type(state :: State.t(), schema :: Schema.t()) :: {module, atom}
 
   #
   # Default Implementations
@@ -393,51 +394,26 @@ defmodule OpenAPI.Processor do
       seen_refs = MapSet.put(seen_refs, ref)
 
       cond do
-        schema = Map.get(schemas_by_ref, ref) ->
-          if implementation.ignore_schema?(state, schema_spec) do
-            state
-          else
-            schema = Schema.merge_contexts(schema, schema_spec)
-            State.put_schema(state, ref, schema)
-          end
-
         implementation.ignore_schema?(state, schema_spec) ->
-          schema = %Schema{
-            fields: [],
-            module_name: nil,
-            type_name: :map
-          }
+          schema = Schema.map(ref)
+          State.put_new_schema(state, ref, schema)
 
+        schema = Map.get(schemas_by_ref, ref) ->
+          schema = Schema.merge_contexts(schema, schema_spec)
           State.put_schema(state, ref, schema)
 
         :else ->
-          {module_name, type_name} = implementation.schema_module_and_type(state, schema_spec)
+          {state, fields} = process_schema_fields(state, schema_spec, ref, seen_refs)
 
-          {state, fields} =
-            process_schema_fields(state, schema_spec, ref, module_name, type_name, seen_refs)
-
-          schema = %Schema{
-            context: schema_spec."$oag_schema_context",
-            fields: fields,
-            module_name: module_name,
-            type_name: type_name
-          }
-
+          schema = Schema.new(ref, schema_spec, fields)
           State.put_schema(state, ref, schema)
       end
     end
   end
 
-  @spec process_schema_fields(State.t(), SchemaSpec.t(), reference, module, atom, MapSet.t()) ::
+  @spec process_schema_fields(State.t(), SchemaSpec.t(), reference, MapSet.t()) ::
           {State.t(), [Field.t()]}
-  defp process_schema_fields(
-         state,
-         schema_spec,
-         parent_ref,
-         parent_module,
-         parent_type,
-         seen_refs
-       ) do
+  defp process_schema_fields(state, schema_spec, parent_ref, seen_refs) do
     %SchemaSpec{properties: properties, required: required} = schema_spec
 
     for {field_name, field_spec} <- properties, reduce: {state, []} do
@@ -449,7 +425,7 @@ defmodule OpenAPI.Processor do
           end
 
         required? = is_list(required) and field_name in required
-        context = {:field, parent_ref, parent_module, parent_type, field_name}
+        context = {:field, parent_ref, field_name}
         {state, type} = Type.from_schema(state, field_spec)
 
         state =
@@ -505,6 +481,18 @@ defmodule OpenAPI.Processor do
 
       {:empty, _to_process} ->
         state
+    end
+  end
+
+  @spec record_schema_module_and_type(State.t()) :: State.t()
+  defp record_schema_module_and_type(state) do
+    %State{implementation: implementation, schemas_by_ref: schemas_by_ref} = state
+
+    for {_ref, schema} <- schemas_by_ref, reduce: state do
+      state ->
+        {module, type} = implementation.schema_module_and_type(state, schema)
+        schema = %Schema{schema | module_name: module, type_name: type}
+        State.put_schema(state, schema.ref, schema)
     end
   end
 end

@@ -124,6 +124,14 @@ defmodule OpenAPI.Processor.State do
   end
 
   @doc """
+  Add a processed schema to the processor state by its reference only if is is not already present
+  """
+  @spec put_new_schema(t, reference, Schema.t()) :: t
+  def put_new_schema(state, ref, schema) do
+    %__MODULE__{state | schemas_by_ref: Map.put_new(state.schemas_by_ref, ref, schema)}
+  end
+
+  @doc """
   Add a processed schema to the processor state by its reference
   """
   @spec put_schema(t, reference, Schema.t()) :: t
