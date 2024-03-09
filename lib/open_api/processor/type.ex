@@ -124,17 +124,17 @@ defmodule OpenAPI.Processor.Type do
 
   # Unions
   #
-  def from_schema(state, %Schema{type: types} = schema) when is_list(types) do
-    types
-    |> Enum.map(&%Schema{schema | type: &1})
-    |> then(&create_union(state, &1))
-  end
-
   def from_schema(state, %Schema{any_of: types}) when is_list(types),
     do: create_union(state, types)
 
   def from_schema(state, %Schema{one_of: types}) when is_list(types),
     do: create_union(state, types)
+
+  def from_schema(state, %Schema{type: types} = schema) when is_list(types) do
+    types
+    |> Enum.map(&%Schema{schema | type: &1})
+    |> then(&create_union(state, &1))
+  end
 
   # Intersections
   #
