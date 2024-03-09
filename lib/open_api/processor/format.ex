@@ -12,23 +12,45 @@ defmodule OpenAPI.Processor.Format do
   """
   alias OpenAPI.Processor.Schema
   alias OpenAPI.Processor.State
+  alias OpenAPI.Spec.Schema, as: SchemaSpec
 
   @type format :: :struct | :typed_map | :map
 
   @spec schema_format(State.t(), Schema.t()) :: format | :unknown
-  def schema_format(state, schema_spec)
+  def schema_format(state, schema) do
+    %State{schemas_by_ref: schemas_by_ref, schema_specs_by_ref: schema_specs_by_ref} = state
+    %Schema{ref: ref} = schema
 
-  def schema_format(_state, %Schema{context: [{:request, _, _, _}]}), do: :typed_map
-  def schema_format(_state, %Schema{context: [{:response, _, _, _, _}]}), do: :typed_map
+    schema_spec = Map.fetch!(schema_specs_by_ref, ref)
 
-  def schema_format(state, %Schema{context: [{:field, parent_ref, _}]}) do
-    %State{schemas_by_ref: schemas_by_ref} = state
+    case {schema, schema_spec} do
+      {_, %SchemaSpec{"$oag_last_ref_path": ["components", "schemas", _name]}} ->
+        :struct
 
-    case Map.fetch!(schemas_by_ref, parent_ref) do
-      %Schema{output_format: nil} -> :unknown
-      %Schema{output_format: format} -> format
+      {_, %SchemaSpec{"$oag_last_ref_path": ["components", "schemas", _name, "items"]}} ->
+        :struct
+
+      {_,
+       %SchemaSpec{"$oag_last_ref_path": ["components", "responses", _, "content", _, "schema"]}} ->
+        :struct
+
+      {%Schema{context: [{:request, _, _, _}]}, _} ->
+        :typed_map
+
+      {%Schema{context: [{:response, _, _, _, _}]}, _} ->
+        :typed_map
+
+      {_, %SchemaSpec{title: title}} when is_binary(title) ->
+        :struct
+
+      {%Schema{context: [{:field, parent_ref, _}]}, _} ->
+        case Map.fetch!(schemas_by_ref, parent_ref) do
+          %Schema{output_format: nil} -> :unknown
+          %Schema{output_format: format} -> format
+        end
+
+      _else ->
+        :map
     end
   end
-
-  def schema_format(_state, _schema), do: :struct
 end
