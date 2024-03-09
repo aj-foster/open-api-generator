@@ -139,8 +139,8 @@ defmodule OpenAPI.Renderer.Module do
         file_module
       ])
 
-    schema = implementation.render_schema(state, file)
     operations = implementation.render_operations(state, file)
+    schema = implementation.render_schema(state, file)
 
     if length(schema) > 0 or length(operations) > 0 do
       moduledoc = implementation.render_moduledoc(state, file)
@@ -153,7 +153,7 @@ defmodule OpenAPI.Renderer.Module do
         |> Util.put_newlines()
 
       module_contents =
-        [header, default_client, schema, operations]
+        [header, default_client, operations, schema]
         |> Util.clean_list()
 
       quote do

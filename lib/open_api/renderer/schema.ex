@@ -67,7 +67,7 @@ defmodule OpenAPI.Renderer.Schema do
   @spec render(State.t(), File.t()) :: Macro.t()
   def render(state, file) do
     %State{implementation: implementation} = state
-    %File{schemas: schemas} = file
+    %File{module: module, schemas: schemas} = file
 
     # Reject schemas that only appear in a single request or response body.
     non_operation_schemas =
@@ -78,15 +78,37 @@ defmodule OpenAPI.Renderer.Schema do
       |> List.flatten()
       |> Enum.sort_by(& &1.type_name)
 
-    if length(non_operation_schemas) > 0 do
-      types = implementation.render_schema_types(state, non_operation_schemas)
-      struct = implementation.render_schema_struct(state, non_operation_schemas)
-      field_function = implementation.render_schema_field_function(state, non_operation_schemas)
+    output_schemas =
+      schemas
+      |> Enum.filter(fn
+        %Schema{output_format: :struct} -> true
+        # %Schema{context: [{:request, ^module, _, _}]} -> true
+        %Schema{context: [{:response, ^module, _, _, _}], output_format: :typed_map} -> true
+        _else -> false
+      end)
+      |> Enum.group_by(&{&1.module_name, &1.type_name})
+      |> Enum.map(fn {_module_and_type, schemas} -> Enum.reduce(schemas, &Schema.merge/2) end)
+      |> List.flatten()
+      |> Enum.sort_by(& &1.type_name)
 
-      Util.clean_list([types, struct, field_function])
-    else
-      []
-    end
+    types_and_struct =
+      if length(non_operation_schemas) > 0 do
+        types = implementation.render_schema_types(state, non_operation_schemas)
+        struct = implementation.render_schema_struct(state, non_operation_schemas)
+
+        [types, struct]
+      else
+        []
+      end
+
+    field_function =
+      if length(output_schemas) > 0 do
+        implementation.render_schema_field_function(state, output_schemas)
+      else
+        []
+      end
+
+    Util.clean_list([types_and_struct, field_function])
   end
 
   @doc """

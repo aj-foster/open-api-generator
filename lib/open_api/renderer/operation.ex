@@ -76,18 +76,14 @@ defmodule OpenAPI.Renderer.Operation do
         _else -> :unknown
       end)
 
-    operations =
-      for operation <- Enum.sort_by(operations, & &1.function_name) do
-        related_schemas = related_schemas_by_operation[operation.function_name] || []
+    for operation <- Enum.sort_by(operations, & &1.function_name) do
+      related_schemas = related_schemas_by_operation[operation.function_name] || []
 
-        Util.clean_list([
-          implementation.render_schema_types(state, related_schemas),
-          implementation.render_operation(state, operation)
-        ])
-      end
-
-    related_schema_fields = implementation.render_schema_field_function(state, related_schemas)
-    Util.clean_list([operations, related_schema_fields])
+      Util.clean_list([
+        implementation.render_schema_types(state, related_schemas),
+        implementation.render_operation(state, operation)
+      ])
+    end
   end
 
   @doc """

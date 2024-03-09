@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* **Fix**: `anyOf` and `oneOf` definitions now take precedence over generic union types.
+* **Fix**: Modules with both schema(s) and operations no longer define `__field__/1` twice.
+
 ### 0.1.0-rc.4 (2024-03-08)
 
 * **Breaking**: Output schemas that represent subfields of an already-output schema.
