@@ -116,7 +116,7 @@ defmodule OpenAPI.Processor.Naming do
     modules =
       if id do
         String.split(id, "/", trim: true)
-        |> Enum.slice(0..-2)
+        |> Enum.slice(0..-2//1)
       else
         []
       end
