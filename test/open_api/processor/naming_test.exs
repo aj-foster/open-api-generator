@@ -128,9 +128,21 @@ defmodule OpenAPI.Processor.NamingTest do
   describe "normalize_identifier/1" do
     test "normalizes identifiers" do
       assert Naming.normalize_identifier("example") == "example"
+      assert Naming.normalize_identifier("example", :camel) == "Example"
+
       assert Naming.normalize_identifier("example_op") == "example_op"
+      assert Naming.normalize_identifier("example_op", :camel) == "ExampleOp"
+
       assert Naming.normalize_identifier("exampleOp") == "example_op"
+      assert Naming.normalize_identifier("exampleOp", :camel) == "ExampleOp"
+
       assert Naming.normalize_identifier("mod_{NAME}/example-Op") == "mod_name_example_op"
+      assert Naming.normalize_identifier("mod_{NAME}/example-Op", :camel) == "ModNAMEExampleOp"
+    end
+
+    test "preserves abbreviations" do
+      assert Naming.normalize_identifier("OpenAPISpec") == "open_api_spec"
+      assert Naming.normalize_identifier("OpenAPISpec", :camel) == "OpenAPISpec"
     end
   end
 end
