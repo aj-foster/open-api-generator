@@ -124,8 +124,7 @@ defmodule OpenAPI.Processor.Naming do
     id_name =
       if length(modules) > 0 do
         modules
-        |> Enum.map(&normalize_identifier/1)
-        |> Enum.map(&Macro.camelize/1)
+        |> Enum.map(&normalize_identifier(&1, :camel))
         |> Module.concat()
       end
 
@@ -134,8 +133,7 @@ defmodule OpenAPI.Processor.Naming do
         Enum.map(tags, fn tag ->
           tag
           |> String.split("/", trim: true)
-          |> Enum.map(&normalize_identifier/1)
-          |> Enum.map(&Macro.camelize/1)
+          |> Enum.map(&normalize_identifier(&1, :camel))
           |> Module.concat()
         end)
       else
@@ -493,24 +491,49 @@ defmodule OpenAPI.Processor.Naming do
   end
 
   @doc """
-  Normalize an identifier into snake_case
+  Normalize an identifier into CamelCase or snake_case
 
   ## Example
 
       iex> normalize_identifier("get-/customer/purchases/{date}_byId")
       "get_customer_purchases_date_by_id"
 
+      iex> normalize_identifier("openAPISpec", :camel)
+      "OpenAPISpec"
+
   """
-  @spec normalize_identifier(String.t()) :: String.t()
-  def normalize_identifier(input) do
+  @spec normalize_identifier(String.t(), :camel | :snake) :: String.t()
+  def normalize_identifier(input, casing \\ :snake)
+
+  def normalize_identifier(input, :camel) do
     input
-    |> String.split(~r/([^A-Za-z0-9]+)?([A-Z]+)?([a-z0-9]+)?/, include_captures: true, trim: true)
-    |> Enum.map_join("_", fn segment ->
+    |> segment_identifier()
+    |> Enum.map(fn segment ->
+      if String.match?(segment, ~r/^[A-Z]+$/) do
+        segment
+      else
+        String.capitalize(segment)
+      end
+    end)
+    |> Enum.join()
+  end
+
+  def normalize_identifier(input, :snake) do
+    input
+    |> segment_identifier()
+    |> Enum.map_join("_", &String.downcase/1)
+  end
+
+  @doc false
+  def segment_identifier(input) do
+    input
+    |> String.split(~r/[^A-Za-z0-9]+|([A-Z]?[a-z0-9]+)/, include_captures: true, trim: true)
+    |> Enum.map(fn segment ->
       segment
       |> String.replace(~r/^[^A-Za-z]+/, "")
       |> String.replace(~r/[^A-Za-z0-9]+$/, "")
-      |> String.downcase()
     end)
+    |> Enum.reject(&(&1 == ""))
   end
 
   @doc """
@@ -535,22 +558,14 @@ defmodule OpenAPI.Processor.Naming do
   def raw_schema_module_and_type(_state, _schema, %SchemaSpec{
         "$oag_last_ref_path": ["components", "schemas", schema_name]
       }) do
-    module =
-      schema_name
-      |> normalize_identifier()
-      |> Macro.camelize()
-
+    module = normalize_identifier(schema_name, :camel)
     {module, "t"}
   end
 
   def raw_schema_module_and_type(_state, _schema, %SchemaSpec{
         "$oag_last_ref_path": ["components", "schemas", schema_name, "items"]
       }) do
-    module =
-      schema_name
-      |> normalize_identifier()
-      |> Macro.camelize()
-
+    module = normalize_identifier(schema_name, :camel)
     {module, "t"}
   end
 
@@ -564,11 +579,7 @@ defmodule OpenAPI.Processor.Naming do
           "schema"
         ]
       }) do
-    module =
-      schema_name
-      |> normalize_identifier()
-      |> Macro.camelize()
-
+    module = normalize_identifier(schema_name, :camel)
     type = Enum.join([readable_content_type(content_type), "resp"], "_")
 
     {module, type}
@@ -605,11 +616,7 @@ defmodule OpenAPI.Processor.Naming do
 
   def raw_schema_module_and_type(_state, _schema, %SchemaSpec{title: schema_title})
       when is_binary(schema_title) do
-    module =
-      schema_title
-      |> normalize_identifier()
-      |> Macro.camelize()
-
+    module = normalize_identifier(schema_title, :camel)
     {module, "t"}
   end
 
