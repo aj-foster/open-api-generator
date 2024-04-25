@@ -1,0 +1,54 @@
+components:
+  schemas:
+    RequestTOTPCreate:
+      additionalProperties: false
+      description: |
+        Object for a TOTP token config, with confirmation OTP.
+      properties:
+        otp:
+          description: The OTP as obtained from the authenticator app/device
+          type: string
+        uri:
+          description: The OTP Auth URI obtained from `TOTPRequest`
+          type: string
+        verification_code:
+          description: The opaque signature obtained from `TOTPRequest`
+          type: string
+      required:
+        - uri
+        - otp
+        - verification_code
+      title: TOTPCreate
+      type: object
+info:
+  title: Acme API
+  version: "1"
+openapi: 3.0.0
+paths:
+  /api/v1/me/totp:
+    post:
+      callbacks: {}
+      description: |
+        Saves a config obtained with `TOTPRequest`, along with a device generated
+        OTP to confirm it's correctness.
+      operationId: Controllers.ApiV1.TOTP.totp_save
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestTOTPCreate"
+        description: The TOTP config to save
+        required: false
+      responses:
+        "201":
+          description: TOTP request config saved
+        "429":
+          description: Too many requests, retry later
+      summary: Saves a TOTP config
+      tags: []
+servers:
+  - url: "{endpoint_url}"
+    variables:
+      endpoint_url:
+        default: https://localhost:5443/
