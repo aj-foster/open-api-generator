@@ -145,7 +145,12 @@ defmodule OpenAPI.Processor.Type do
 
   # Objects
   #
-  def from_schema(state, %Schema{properties: properties} = schema_spec) when is_map(properties) do
+  def from_schema(state, %Schema{additional_properties: true, properties: properties})
+      when map_size(properties) == 0 do
+    {state, :map}
+  end
+
+  def from_schema(state, %Schema{} = schema_spec) do
     State.put_schema_spec(state, schema_spec)
   end
 
