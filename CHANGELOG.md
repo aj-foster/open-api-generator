@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## 0.1.0
+
+This release is a major change from version `0.0.8`.
+It includes support for plugins, sub-schemas, and more.
+See the [plugins guide](guides/plugins.md) and [migration guide](guides/migration.md) for more information, and check out the release candidate notes below for a comprehensive list of changes.
+
+Changes since the last release candidate:
+
 * **Fix**: `anyOf` and `oneOf` definitions now take precedence over generic union types.
 * **Fix**: Modules with both schema(s) and operations no longer define `__field__/1` twice.
 * **Fix**: Add URL encoded form types to the readable type helper, and fix its fallback clause.
