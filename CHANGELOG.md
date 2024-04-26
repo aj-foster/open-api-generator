@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **Fix**: `anyOf` and `oneOf` definitions now take precedence over generic union types.
 * **Fix**: Modules with both schema(s) and operations no longer define `__field__/1` twice.
+* **Fix**: Add URL encoded form types to the readable type helper, and fix its fallback clause.
 
 ### 0.1.0-rc.4 (2024-03-08)
 

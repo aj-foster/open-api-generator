@@ -656,7 +656,8 @@ defmodule OpenAPI.Processor.Naming do
   def readable_content_type(content_type)
   def readable_content_type("application/json"), do: "json"
   def readable_content_type("application/json+" <> _), do: "json"
-  def readable_content_type(""), do: ""
+  def readable_content_type("application/x-www-form-urlencoded"), do: "form"
+  def readable_content_type(_), do: ""
 
   #
   # Private Helpers
