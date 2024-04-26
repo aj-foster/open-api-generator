@@ -199,6 +199,7 @@ defmodule OpenAPI.Renderer.Util do
   # Unnatural
   def to_type(_state, :any), do: quote(do: any)
   def to_type(_state, :map), do: quote(do: map)
+  def to_type(_state, :unknown), do: quote(do: any)
 
   # Primitives
   def to_type(_state, :boolean), do: quote(do: boolean)

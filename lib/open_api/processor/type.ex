@@ -1,4 +1,6 @@
 defmodule OpenAPI.Processor.Type do
+  require Logger
+
   alias OpenAPI.Processor.State
   alias OpenAPI.Spec
   alias OpenAPI.Spec.Schema
@@ -149,8 +151,9 @@ defmodule OpenAPI.Processor.Type do
 
   # Fallback
   #
-  def from_schema(_state, schema) do
-    raise "Unknown type: #{inspect(schema)}"
+  def from_schema(state, schema) do
+    Logger.warning("Unknown type: #{inspect(schema)}")
+    {state, :unknown}
   end
 
   @spec string_type(Schema.t()) :: {:string, string_format}
