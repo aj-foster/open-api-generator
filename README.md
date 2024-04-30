@@ -2,7 +2,7 @@
 
 [![Hex.pm](https://img.shields.io/hexpm/v/oapi_generator)](https://hex.pm/packages/oapi_generator)
 [![Documentation](https://img.shields.io/badge/hex-docs-blue)](https://hexdocs.pm/oapi_generator)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) 
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 _A highly-configurable code generator that combines ergonomics with maintainability._
 
@@ -50,9 +50,13 @@ The real power of this library is in the available configuration.
 Although the options are conceptually simple, they add up to a better user experience.
 
 This project uses configuration profiles to allow multiple configurations with the same package.
-To get started, create a profile called `default` in your configuration:
+To get started, create a profile called `default` in your configuration file:
 
 ```elixir
+# config/config.exs
+
+import Config
+
 config :oapi_generator, default: [
   output: [
     base_module: Example,

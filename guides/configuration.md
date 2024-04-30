@@ -16,6 +16,8 @@ For example:
 ```elixir
 # config/config.exs
 
+Import Config
+
 config :oapi_generator,
   my_profile: [
     output: [
@@ -287,7 +289,7 @@ Remember that all configuration values must be contained within a profile.
   This is an optional way to colocate generated operation modules in a single directory away from other parts of the client library.
   Defaults to the same location as `output.location`.
   See `OpenAPI.Renderer.Module.filename/2` for more information.
-  
+
 * `output.operation_use`: Module to include as a `use` statement at the top of every module containing operations.
   Defaults to no used module.
   See `OpenAPI.Renderer.Module.render_using/2` for more information.
