@@ -16,7 +16,7 @@ For example:
 ```elixir
 # config/config.exs
 
-Import Config
+import Config
 
 config :oapi_generator,
   my_profile: [
