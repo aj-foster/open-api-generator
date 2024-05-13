@@ -30,21 +30,52 @@ defmodule OpenAPI.Renderer do
     quote do
       @behaviour OpenAPI.Renderer
 
+      @impl OpenAPI.Renderer
       defdelegate format(state, file), to: OpenAPI.Renderer
+
+      @impl OpenAPI.Renderer
       defdelegate location(state, file), to: OpenAPI.Renderer
+
+      @impl OpenAPI.Renderer
       defdelegate render(state, file), to: OpenAPI.Renderer
+
+      @impl OpenAPI.Renderer
       defdelegate render_default_client(state, file), to: OpenAPI.Renderer
+
+      @impl OpenAPI.Renderer
       defdelegate render_moduledoc(state, file), to: OpenAPI.Renderer
+
+      @impl OpenAPI.Renderer
       defdelegate render_operations(state, file), to: OpenAPI.Renderer
+
+      @impl OpenAPI.Renderer
       defdelegate render_operation(state, operation), to: OpenAPI.Renderer
+
+      @impl OpenAPI.Renderer
       defdelegate render_operation_doc(state, operation), to: OpenAPI.Renderer
+
+      @impl OpenAPI.Renderer
       defdelegate render_operation_function(state, operation), to: OpenAPI.Renderer
+
+      @impl OpenAPI.Renderer
       defdelegate render_operation_spec(state, operation), to: OpenAPI.Renderer
+
+      @impl OpenAPI.Renderer
       defdelegate render_schema(state, file), to: OpenAPI.Renderer
+
+      @impl OpenAPI.Renderer
       defdelegate render_schema_field_function(state, schemas), to: OpenAPI.Renderer
+
+      @impl OpenAPI.Renderer
       defdelegate render_schema_struct(state, schemas), to: OpenAPI.Renderer
+
+      @impl OpenAPI.Renderer
       defdelegate render_schema_types(state, schemas), to: OpenAPI.Renderer
+
+      @impl OpenAPI.Renderer
       defdelegate render_using(state, file), to: OpenAPI.Renderer
+
+      @impl OpenAPI.Renderer
       defdelegate write(state, file), to: OpenAPI.Renderer
 
       defoverridable format: 2,
