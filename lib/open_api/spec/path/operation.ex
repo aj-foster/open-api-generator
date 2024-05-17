@@ -134,6 +134,7 @@ defmodule OpenAPI.Spec.Path.Operation do
 
         key =
           cond do
+            is_integer(key) -> key
             key == "default" -> :default
             String.match?(key, ~r/^[1-5]XX$/) -> key
             :else -> String.to_integer(key)
