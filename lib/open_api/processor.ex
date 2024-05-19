@@ -439,7 +439,7 @@ defmodule OpenAPI.Processor do
           end)
 
         field = %Field{
-          name: field_name,
+          name: OpenAPI.Processor.Naming.normalize_identifier(field_name, :snake),
           nullable: nullable?,
           private: false,
           required: required?,
