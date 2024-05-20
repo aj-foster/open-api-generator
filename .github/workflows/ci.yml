@@ -40,3 +40,13 @@ jobs:
         with:
           comment_mode: "off"
           junit_files: _build/test/lib/oapi_generator/*.xml
+
+  diff:
+    name: "Generate Diff"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch Workflow
+        env:
+          GH_TOKEN: ${{ secrets.DIFF_TOKEN }}
+        run: |
+          gh workflow run generate.yml --repo aj-foster/open-api-diffs --field ref=$GITHUB_SHA
