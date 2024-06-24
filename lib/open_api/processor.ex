@@ -55,15 +55,34 @@ defmodule OpenAPI.Processor do
     quote do
       @behaviour OpenAPI.Processor
 
+      @impl OpenAPI.Processor
       defdelegate ignore_operation?(state, operation), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate ignore_schema?(state, schema), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate operation_docstring(state, operation_spec, params), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate operation_function_name(state, operation_spec), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate operation_module_names(state, operation_spec), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate operation_request_body(state, operation_spec), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate operation_request_method(state, operation_spec), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate operation_response_body(state, operation_spec), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate schema_format(state, schema), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate schema_module_and_type(state, schema), to: OpenAPI.Processor
 
       defoverridable ignore_operation?: 2,
