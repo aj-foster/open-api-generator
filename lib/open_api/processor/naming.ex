@@ -545,7 +545,7 @@ defmodule OpenAPI.Processor.Naming do
   @doc false
   def segment_identifier(input) do
     [first_segment | segments] =
-      String.split(input, ~r/[^A-Za-z0-9]+|([A-Z]?[a-z]+[0-9]+?)/,
+      String.split(input, ~r/[^A-Za-z0-9]+|([A-Z]?[a-z]+[0-9]?+)/,
         include_captures: true,
         trim: true
       )
