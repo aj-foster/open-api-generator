@@ -5,21 +5,32 @@ on: [pull_request]
 jobs:
   test:
     name: "Test"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+    # See https://hexdocs.pm/elixir/compatibility-and-deprecations.html#compatibility-between-elixir-and-erlang-otp
+    strategy:
+      matrix:
+        include:
+          - pair:
+              otp: "23.3.4.20"
+              elixir: "1.14.5"
+          - pair:
+              otp: "26.2.5"
+              elixir: "1.16.2"
+            lint: lint
     env:
       MIX_ENV: test
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup BEAM
         uses: erlef/setup-beam@v1
         with:
-          otp-version: "25.2"
-          elixir-version: "1.14.2"
+          otp-version: ${{matrix.pair.otp}}
+          elixir-version: ${{matrix.pair.elixir}}
 
       - name: Fetch Hex Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: hex-cache
         with:
           path: |
@@ -28,6 +39,10 @@ jobs:
           key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-mix-
+
+      - name: Check Code Format
+        run: mix format --check-formatted
+        if: ${{matrix.lint}}
 
       - name: Run Tests
         run: |
