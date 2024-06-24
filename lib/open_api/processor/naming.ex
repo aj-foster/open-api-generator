@@ -501,8 +501,11 @@ defmodule OpenAPI.Processor.Naming do
       iex> normalize_identifier("openAPISpec", :camel)
       "OpenAPISpec"
 
+      iex> normalize_identifier("get-/customer/purchases/{date}_byId", :lower_camel)
+      "getCustomerPurchasesDateById"
+
   """
-  @spec normalize_identifier(String.t(), :camel | :snake) :: String.t()
+  @spec normalize_identifier(String.t(), :camel | :lower_camel | :snake) :: String.t()
   def normalize_identifier(input, casing \\ :snake)
 
   def normalize_identifier(input, :camel) do
@@ -518,6 +521,21 @@ defmodule OpenAPI.Processor.Naming do
     |> Enum.join()
   end
 
+  def normalize_identifier(input, :lower_camel) do
+    [first_segment | segments] = segment_identifier(input)
+
+    segments =
+      Enum.map(segments, fn segment ->
+        if String.match?(segment, ~r/^[A-Z]+$/) do
+          segment
+        else
+          String.capitalize(segment)
+        end
+      end)
+
+    Enum.join([first_segment | segments])
+  end
+
   def normalize_identifier(input, :snake) do
     input
     |> segment_identifier()
@@ -526,12 +544,17 @@ defmodule OpenAPI.Processor.Naming do
 
   @doc false
   def segment_identifier(input) do
-    input
-    |> String.split(~r/[^A-Za-z0-9]+|([A-Z]?[a-z0-9]+)/, include_captures: true, trim: true)
+    [first_segment | segments] =
+      String.split(input, ~r/[^A-Za-z0-9]+|([A-Z]?[a-z]+[0-9]?+)/,
+        include_captures: true,
+        trim: true
+      )
+
+    first_segment = String.replace(first_segment, ~r/^[^A-Za-z]+/, "")
+
+    [first_segment | segments]
     |> Enum.map(fn segment ->
-      segment
-      |> String.replace(~r/^[^A-Za-z]+/, "")
-      |> String.replace(~r/[^A-Za-z0-9]+$/, "")
+      String.replace(segment, ~r/[^A-Za-z0-9]+$/, "")
     end)
     |> Enum.reject(&(&1 == ""))
   end

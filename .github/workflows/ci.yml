@@ -64,4 +64,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.DIFF_TOKEN }}
         run: |
-          gh workflow run generate.yml --repo aj-foster/open-api-diffs --field ref=$GITHUB_SHA
+          gh workflow run generate.yml --repo aj-foster/open-api-diffs --field ref=$GITHUB_HEAD_REF
