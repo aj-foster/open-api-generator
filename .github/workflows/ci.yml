@@ -14,8 +14,8 @@ jobs:
               otp: "23.3.4.20"
               elixir: "1.14.5"
           - pair:
-              otp: "26.2.5"
-              elixir: "1.16.2"
+              otp: "27.0"
+              elixir: "1.17.1"
             lint: lint
     env:
       MIX_ENV: test
