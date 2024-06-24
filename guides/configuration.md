@@ -244,6 +244,10 @@ Remember that all configuration values must be contained within a profile.
   Defaults to `Operations`.
   See `OpenAPI.Processor.Naming.operation_modules/2` for more information.
 
+* `naming.field_casing`: Either `:camel`, `:snake`, or `nil` (default) to output schema field names as `camelCase`, `snake_case`, or leave the fields name as-is from the API description.
+  Changing the field casing is likely to be a breaking change for clients, unless the API description consistently uses the same casing.
+  Setting this field may be necessary if field names require normalization (ex. if a field begins with a number).
+
 * `naming.group`: List of module namespaces to use while naming operations and schemas.
   Defaults to an empty list of modules.
   See `OpenAPI.Processor.Naming.group_schema/2` for more information.

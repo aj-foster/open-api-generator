@@ -438,8 +438,15 @@ defmodule OpenAPI.Processor do
             end
           end)
 
+        field_name =
+          case config(state, :field_casing) do
+            :camel -> OpenAPI.Processor.Naming.normalize_identifier(field_name, :lower_camel)
+            :snake -> OpenAPI.Processor.Naming.normalize_identifier(field_name, :snake)
+            _else -> field_name
+          end
+
         field = %Field{
-          name: OpenAPI.Processor.Naming.normalize_identifier(field_name, :snake),
+          name: field_name,
           nullable: nullable?,
           private: false,
           required: required?,
@@ -494,5 +501,14 @@ defmodule OpenAPI.Processor do
         schema = %Schema{schema | module_name: module, type_name: type}
         State.put_schema(state, schema.ref, schema)
     end
+  end
+
+  @spec config(OpenAPI.Processor.State.t(), atom) :: term
+  @spec config(OpenAPI.Processor.State.t(), atom, term) :: term
+  defp config(state, key, default \\ nil) do
+    %OpenAPI.Processor.State{profile: profile} = state
+
+    Application.get_env(:oapi_generator, profile, [])
+    |> Keyword.get(key, default)
   end
 end

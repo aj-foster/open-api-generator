@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet._
+* **Add**: New configuration option `naming.field_case` to choose between `:camel` case, `:snake` case, or performing no normalization (the default).
+  Using this option may be necessary for API descriptions that include non-normalized field names (for example, fields that begin with a number or symbol).
+  Setting this configuration would be a breaking change for any clients based on API descriptions that have inconsistent field casing.
 
 ### 0.1.1 (2024-05-17)
 
