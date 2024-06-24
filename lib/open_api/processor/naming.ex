@@ -526,12 +526,17 @@ defmodule OpenAPI.Processor.Naming do
 
   @doc false
   def segment_identifier(input) do
-    input
-    |> String.split(~r/[^A-Za-z0-9]+|([A-Z]?[a-z0-9]+)/, include_captures: true, trim: true)
+    [first_segment | segments] =
+      String.split(input, ~r/[^A-Za-z0-9]+|([A-Z]?[a-z]+)|([0-9]+)/,
+        include_captures: true,
+        trim: true
+      )
+
+    first_segment = String.replace(first_segment, ~r/^[^A-Za-z]+/, "")
+
+    [first_segment | segments]
     |> Enum.map(fn segment ->
-      segment
-      |> String.replace(~r/^[^A-Za-z]+/, "")
-      |> String.replace(~r/[^A-Za-z0-9]+$/, "")
+      String.replace(segment, ~r/[^A-Za-z0-9]+$/, "")
     end)
     |> Enum.reject(&(&1 == ""))
   end
