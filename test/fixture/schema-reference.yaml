@@ -1,0 +1,29 @@
+openapi: "3.1.0"
+info:
+  title: Schema Reference Spec
+  version: 1
+paths:
+  "/example_reference":
+    get:
+      description: "Example reference endpoint"
+      operationId: example_reference
+      summary: "Example reference endpoint"
+      responses:
+        "200":
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                "$ref": "#/components/schemas/user_reference"
+components:
+  schemas:
+    user:
+      type: object
+      properties:
+        id:
+          type: integer
+      required:
+        - id
+        - team
+    user_reference:
+      "$ref": "#/components/schemas/user"

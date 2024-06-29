@@ -90,8 +90,15 @@ defmodule OpenAPI.Processor.Type do
   # Schema references
   #
   def from_schema(state, {:ref, full_path}) do
-    schema_spec = Map.fetch!(state.schema_specs_by_path, full_path)
-    from_schema(state, schema_spec)
+    with {_absolute_file, ["components", "schemas", schema_name]} <- full_path,
+         %State{spec: %Spec{components: %Spec.Components{schemas: schemas}}} = state,
+         {:ref, _} = schema_ref <- Map.get(schemas, schema_name) do
+      from_schema(state, schema_ref)
+    else
+      _ ->
+        schema_spec = Map.fetch!(state.schema_specs_by_path, full_path)
+        from_schema(state, schema_spec)
+    end
   end
 
   # Primitives
