@@ -55,15 +55,34 @@ defmodule OpenAPI.Processor do
     quote do
       @behaviour OpenAPI.Processor
 
+      @impl OpenAPI.Processor
       defdelegate ignore_operation?(state, operation), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate ignore_schema?(state, schema), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate operation_docstring(state, operation_spec, params), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate operation_function_name(state, operation_spec), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate operation_module_names(state, operation_spec), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate operation_request_body(state, operation_spec), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate operation_request_method(state, operation_spec), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate operation_response_body(state, operation_spec), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate schema_format(state, schema), to: OpenAPI.Processor
+
+      @impl OpenAPI.Processor
       defdelegate schema_module_and_type(state, schema), to: OpenAPI.Processor
 
       defoverridable ignore_operation?: 2,
@@ -438,6 +457,13 @@ defmodule OpenAPI.Processor do
             end
           end)
 
+        field_name =
+          case config(state, :field_casing) do
+            :camel -> OpenAPI.Processor.Naming.normalize_identifier(field_name, :lower_camel)
+            :snake -> OpenAPI.Processor.Naming.normalize_identifier(field_name, :snake)
+            _else -> field_name
+          end
+
         field = %Field{
           name: field_name,
           nullable: nullable?,
@@ -494,5 +520,14 @@ defmodule OpenAPI.Processor do
         schema = %Schema{schema | module_name: module, type_name: type}
         State.put_schema(state, schema.ref, schema)
     end
+  end
+
+  @spec config(OpenAPI.Processor.State.t(), atom) :: term
+  @spec config(OpenAPI.Processor.State.t(), atom, term) :: term
+  defp config(state, key, default \\ nil) do
+    %OpenAPI.Processor.State{profile: profile} = state
+
+    Application.get_env(:oapi_generator, profile, [])
+    |> Keyword.get(key, default)
   end
 end

@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - '*'
+      - "*"
 
 jobs:
   publish:
@@ -16,8 +16,8 @@ jobs:
       - name: Setup BEAM
         uses: erlef/setup-beam@v1
         with:
-          otp-version: "25.2"
-          elixir-version: "1.14.2"
+          otp-version: "27.0"
+          elixir-version: "1.17.1"
 
       - name: Publish Package
         run: |

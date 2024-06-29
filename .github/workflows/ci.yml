@@ -5,21 +5,32 @@ on: [pull_request]
 jobs:
   test:
     name: "Test"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+    # See https://hexdocs.pm/elixir/compatibility-and-deprecations.html#compatibility-between-elixir-and-erlang-otp
+    strategy:
+      matrix:
+        include:
+          - pair:
+              otp: "23.3.4.20"
+              elixir: "1.14.5"
+          - pair:
+              otp: "27.0"
+              elixir: "1.17.1"
+            lint: lint
     env:
       MIX_ENV: test
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup BEAM
         uses: erlef/setup-beam@v1
         with:
-          otp-version: "25.2"
-          elixir-version: "1.14.2"
+          otp-version: ${{matrix.pair.otp}}
+          elixir-version: ${{matrix.pair.elixir}}
 
       - name: Fetch Hex Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: hex-cache
         with:
           path: |
@@ -29,17 +40,25 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-
 
+      - name: Check Code Format
+        run: mix format --check-formatted
+        if: ${{matrix.lint}}
+
       - name: Run Tests
         run: |
           mix deps.get
           mix test
 
       - name: Publish Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        if: ${{ success() || failure() }}
+        uses: dorny/test-reporter@v1
+        if: ${{ failure() }}
         with:
-          comment_mode: "off"
-          junit_files: _build/test/lib/oapi_generator/*.xml
+          fail-on-error: "false"
+          list-suites: failed
+          list-tests: failed
+          name: Results
+          path: _build/test/lib/oapi_generator/*.xml
+          reporter: java-junit
 
   diff:
     name: "Generate Diff"
@@ -49,4 +68,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.DIFF_TOKEN }}
         run: |
-          gh workflow run generate.yml --repo aj-foster/open-api-diffs --field ref=$GITHUB_SHA
+          gh workflow run generate.yml --repo aj-foster/open-api-diffs --field ref=$GITHUB_HEAD_REF

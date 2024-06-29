@@ -8,7 +8,7 @@ defmodule OpenAPI.MixProject do
     [
       app: :oapi_generator,
       version: @version,
-      elixir: "~> 1.13",
+      elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       name: "OpenAPI Generator",
@@ -29,6 +29,7 @@ defmodule OpenAPI.MixProject do
   defp deps do
     [
       {:ex_doc, "~> 0.29", only: :dev, runtime: false},
+      {:junit_formatter, "~> 3.4", only: [:test]},
       {:yaml_elixir, "~> 2.9"}
     ]
   end

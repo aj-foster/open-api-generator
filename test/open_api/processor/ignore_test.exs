@@ -52,7 +52,9 @@ defmodule OpenAPI.Processor.IgnoreTest do
       base_file_path = ["components", "schemas", "ignored_schema"]
       schema = %OpenAPI.Spec.Schema{schema | "$oag_base_file_path": base_file_path}
 
-      Application.put_env(:oapi_generator, @profile, ignore: ["components/schemas/ignored_schema"])
+      Application.put_env(:oapi_generator, @profile,
+        ignore: ["components/schemas/ignored_schema"]
+      )
 
       assert Ignore.ignore_schema?(state, schema)
     end
@@ -68,7 +70,9 @@ defmodule OpenAPI.Processor.IgnoreTest do
       ref_path = ["components", "schemas", "ignored_schema"]
       schema = %OpenAPI.Spec.Schema{schema | "$oag_last_ref_path": ref_path}
 
-      Application.put_env(:oapi_generator, @profile, ignore: ["components/schemas/ignored_schema"])
+      Application.put_env(:oapi_generator, @profile,
+        ignore: ["components/schemas/ignored_schema"]
+      )
 
       assert Ignore.ignore_schema?(state, schema)
     end

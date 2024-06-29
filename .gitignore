@@ -27,3 +27,6 @@ oapi_generator-*.tar
 
 # Test output files
 /example*
+
+# Test specifications
+/specs
