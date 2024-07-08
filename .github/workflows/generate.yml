@@ -35,11 +35,18 @@ jobs:
         run: |
           echo "REF=${{ inputs.ref }}" >> $GITHUB_ENV
 
-      - name: Checkout
+      - name: Checkout (Diffs)
         uses: actions/checkout@v4
         with:
           repository: "aj-foster/open-api-diffs"
-          ref: main
+          ref: reduced
+          path: diffs
+
+      - name: Checkout (Generator)
+        uses: actions/checkout@v4
+        with:
+          repository: "aj-foster/open-api-generator"
+          path: generator
 
       - name: Setup BEAM
         uses: erlef/setup-beam@v1
@@ -49,11 +56,14 @@ jobs:
 
       - name: Generate Code
         run: |
+          cd diffs/
           elixir generate.exs "$REF"
 
       - name: Save Code
         run: |
+          cd ../generator/
           git checkout --orphan temporary-branch
+          mv ../diffs/output .
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add output/
