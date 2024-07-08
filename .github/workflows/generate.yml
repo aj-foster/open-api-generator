@@ -39,7 +39,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: "aj-foster/open-api-diffs"
-          ref: reduced
+          ref: main
           path: diffs
 
       - name: Checkout (Generator)
