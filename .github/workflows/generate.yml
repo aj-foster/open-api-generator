@@ -61,7 +61,7 @@ jobs:
 
       - name: Save Code
         run: |
-          cd ../generator/
+          cd generator/
           git checkout --orphan temporary-branch
           mv ../diffs/output .
           git config user.name "github-actions[bot]"
