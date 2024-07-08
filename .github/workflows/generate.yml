@@ -1,4 +1,4 @@
-name: Generate
+name: Diffs
 
 on:
   push:
@@ -14,10 +14,12 @@ on:
 
 permissions:
   contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
   generate:
-    name: Generate Diff
+    name: Generate
     runs-on: ubuntu-latest
     steps:
       - name: Setup Ref (Push)
@@ -71,3 +73,7 @@ jobs:
           git commit -m "Generated output for aj-foster/open-api-generator@$REF"
           git tag -f "_diff/$REF"
           git push --tags --force
+
+      - name: Summary
+        if: github.event_name == 'pull_request'
+        run: echo "[Changes to Generated Files](https://github.com/aj-foster/open-api-generator/compare/_diff/main.._diff/$REF)" >> $GITHUB_STEP_SUMMARY
