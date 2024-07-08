@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## 0.2.0 (2024-07-08)
+
 * **Breaking**: Snake case normalization (ex. function names) now correctly segments numbers.
   For example, an operation `v2example` is now output as `v2_example`.
   This may be a breaking change for clients with numbers in operation IDs.
@@ -16,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Setting this configuration would be a breaking change for any clients based on API descriptions that have inconsistent field casing.
 
 * **Fix**: Parameters listed in path items (as opposed to operations) now support refs.
+* **Fix**: References that point to references are now handled correctly.
 
 ### 0.1.1 (2024-05-17)
 
