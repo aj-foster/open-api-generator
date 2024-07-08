@@ -134,7 +134,11 @@ defmodule OpenAPI.Spec.Path.Item do
       |> Enum.with_index()
       |> Enum.reverse()
       |> Enum.reduce({state, []}, fn {parameter, index}, {state, list} ->
-        {state, element} = with_path(state, parameter, index, &Parameter.decode/2)
+        {state, element} =
+          with_path(state, parameter, index, fn state, parameter ->
+            with_ref(state, parameter, &Parameter.decode/2)
+          end)
+
         {state, [element | list]}
       end)
     end)

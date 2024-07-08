@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Using this option may be necessary for API descriptions that include non-normalized field names (for example, fields that begin with a number or symbol).
   Setting this configuration would be a breaking change for any clients based on API descriptions that have inconsistent field casing.
 
+* **Fix**: Parameters listed in path items (as opposed to operations) now support refs.
+
 ### 0.1.1 (2024-05-17)
 
 * **Fix**: Allow HTTP response codes encoded as integer keys instead of string keys.
