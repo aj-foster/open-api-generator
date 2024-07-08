@@ -36,9 +36,9 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-mix-${{matrix.pair.otp}}-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-mix-
+            ${{ runner.os }}-mix-${{matrix.pair.otp}}-
 
       - name: Check Code Format
         run: mix format --check-formatted
