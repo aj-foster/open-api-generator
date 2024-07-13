@@ -162,4 +162,21 @@ defmodule OpenAPI.Spec.Path.Item do
   end
 
   defp decode_servers(state, _yaml), do: {state, [%Server{url: "/"}]}
+
+  def merge(item_one, item_two) do
+    %__MODULE__{
+      summary: item_two.summary || item_one.summary,
+      description: item_two.description || item_one.description,
+      get: item_two.get || item_one.get,
+      put: item_two.put || item_one.put,
+      post: item_two.post || item_one.post,
+      delete: item_two.delete || item_one.delete,
+      options: item_two.options || item_one.options,
+      head: item_two.head || item_one.head,
+      patch: item_two.patch || item_one.patch,
+      trace: item_two.trace || item_one.trace,
+      servers: Enum.uniq_by(item_two.servers ++ item_one.servers, & &1.url),
+      parameters: Enum.uniq_by(item_two.parameters ++ item_one.parameters, &{&1.name, &1.in})
+    }
+  end
 end
