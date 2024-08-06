@@ -37,6 +37,7 @@ defmodule OpenAPI.Processor.Type do
           | :uri_reference
           | :uri_template
           | :uuid
+          | String.t()
 
   @typedoc """
   Basic type
@@ -204,6 +205,7 @@ defmodule OpenAPI.Processor.Type do
   defp string_type(%Schema{format: "uri-reference"}), do: {:string, :uri_reference}
   defp string_type(%Schema{format: "uri-template"}), do: {:string, :uri_template}
   defp string_type(%Schema{format: "uuid"}), do: {:string, :uuid}
+  defp string_type(%Schema{format: format}) when is_binary(format), do: {:string, format}
   defp string_type(_schema), do: {:string, :generic}
 
   @spec create_intersection(State.t(), Schema.t(), [Schema.t()]) :: {State.t(), t}
