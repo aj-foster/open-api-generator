@@ -8,6 +8,10 @@ defmodule OpenAPI.Processor.Type do
   @typedoc "Literal values, as found in `const` and `enum` definitions"
   @type literal :: binary | boolean | number | nil
 
+  @type boolean_format :: String.t()
+  @type integer_format :: String.t()
+  @type number_format :: String.t()
+
   @typedoc """
   Special cases of the string type
 
@@ -48,8 +52,11 @@ defmodule OpenAPI.Processor.Type do
   """
   @type primitive ::
           :boolean
+          | {:boolean, boolean_format}
           | :integer
+          | {:integer, integer_format}
           | :number
+          | {:number, number_format}
           | {:string, string_format}
           | :null
 
@@ -112,9 +119,9 @@ defmodule OpenAPI.Processor.Type do
     end
   end
 
-  def from_schema(state, %Schema{type: "boolean"}), do: {state, :boolean}
-  def from_schema(state, %Schema{type: "integer"}), do: {state, :integer}
-  def from_schema(state, %Schema{type: "number"}), do: {state, :number}
+  def from_schema(state, %Schema{type: "boolean"} = schema), do: {state, boolean_type(schema)}
+  def from_schema(state, %Schema{type: "integer"} = schema), do: {state, integer_type(schema)}
+  def from_schema(state, %Schema{type: "number"} = schema), do: {state, number_type(schema)}
   def from_schema(state, %Schema{type: "null"}), do: {state, :null}
   def from_schema(state, %Schema{type: "string"} = schema), do: {state, string_type(schema)}
 
@@ -180,6 +187,18 @@ defmodule OpenAPI.Processor.Type do
     Logger.warning("Unknown type: #{inspect(schema)}")
     {state, :unknown}
   end
+
+  @spec boolean_type(Schema.t()) :: {:boolean, boolean_format}
+  defp boolean_type(%Schema{format: format}) when is_binary(format), do: {:boolean, format}
+  defp boolean_type(_schema), do: :boolean
+
+  @spec integer_type(Schema.t()) :: {:integer, integer_format}
+  defp integer_type(%Schema{format: format}) when is_binary(format), do: {:integer, format}
+  defp integer_type(_schema), do: :integer
+
+  @spec number_type(Schema.t()) :: {:number, number_format}
+  defp number_type(%Schema{format: format}) when is_binary(format), do: {:number, format}
+  defp number_type(_schema), do: :number
 
   @spec string_type(Schema.t()) :: {:string, string_format}
   defp string_type(%Schema{format: "date"}), do: {:string, :date}
