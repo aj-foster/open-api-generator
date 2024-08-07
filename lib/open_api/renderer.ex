@@ -74,7 +74,7 @@ defmodule OpenAPI.Renderer do
       defdelegate render_schema_types(state, schemas), to: OpenAPI.Renderer
 
       @impl OpenAPI.Renderer
-      defdelegate render_type(state, schemas), to: OpenAPI.Renderer
+      defdelegate render_type(state, type), to: OpenAPI.Renderer
 
       @impl OpenAPI.Renderer
       defdelegate render_using(state, file), to: OpenAPI.Renderer
