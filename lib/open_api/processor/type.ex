@@ -9,8 +9,8 @@ defmodule OpenAPI.Processor.Type do
   @type literal :: binary | boolean | number | nil
 
   @type boolean_format :: String.t()
-  @type integer_format :: String.t()
-  @type number_format :: String.t()
+  @type integer_format :: :int32 | :int64 | String.t()
+  @type number_format :: :float | :double | String.t()
 
   @typedoc """
   Special cases of the string type
@@ -193,10 +193,14 @@ defmodule OpenAPI.Processor.Type do
   defp boolean_type(_schema), do: :boolean
 
   @spec integer_type(Schema.t()) :: {:integer, integer_format}
+  defp integer_type(%Schema{format: "int32"}), do: {:integer, :int32}
+  defp integer_type(%Schema{format: "int64"}), do: {:integer, :int64}
   defp integer_type(%Schema{format: format}) when is_binary(format), do: {:integer, format}
   defp integer_type(_schema), do: :integer
 
   @spec number_type(Schema.t()) :: {:number, number_format}
+  defp number_type(%Schema{format: "float"}), do: {:number, :float}
+  defp number_type(%Schema{format: "double"}), do: {:number, :double}
   defp number_type(%Schema{format: format}) when is_binary(format), do: {:number, format}
   defp number_type(_schema), do: :number
 
