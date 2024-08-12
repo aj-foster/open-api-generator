@@ -206,11 +206,20 @@ defmodule OpenAPI.Renderer.Util do
 
   # Primitives
   def to_type(_state, :boolean), do: quote(do: boolean)
-  def to_type(state, {:boolean, _}), do: to_type(state, :boolean)
+
+  def to_type(%State{implementation: implementation} = state, {:boolean, _}),
+    do: implementation.render_type(state, :boolean)
+
   def to_type(_state, :integer), do: quote(do: integer)
-  def to_type(state, {:integer, _}), do: to_type(state, :integer)
+
+  def to_type(%State{implementation: implementation} = state, {:integer, _}),
+    do: implementation.render_type(state, :integer)
+
   def to_type(_state, :number), do: quote(do: number)
-  def to_type(state, {:number, _}), do: to_type(state, :number)
+
+  def to_type(%State{implementation: implementation} = state, {:number, _}),
+    do: implementation.render_type(state, :number)
+
   def to_type(_state, :null), do: quote(do: nil)
 
   # Strings
