@@ -163,6 +163,7 @@ defmodule OpenAPI.Spec do
       openapi: openapi_one,
       info: info_one,
       servers: servers_one,
+      paths: paths_one,
       components: components_one,
       security: security_one,
       tags: tags_one,
@@ -171,6 +172,7 @@ defmodule OpenAPI.Spec do
 
     %__MODULE__{
       servers: servers_two,
+      paths: paths_two,
       components: components_two,
       security: security_two,
       tags: tags_two
@@ -179,10 +181,14 @@ defmodule OpenAPI.Spec do
     %__MODULE__{
       openapi: openapi_one,
       info: info_one,
-      servers: servers_one ++ servers_two,
+      servers: Enum.uniq_by(servers_two ++ servers_one, & &1.url),
+      paths:
+        Map.merge(paths_one, paths_two, fn _k, item_one, item_two ->
+          Item.merge(item_one, item_two)
+        end),
       components: Components.merge(components_one, components_two),
       security: security_one ++ security_two,
-      tags: tags_one ++ tags_two,
+      tags: Enum.uniq_by(tags_two ++ tags_one, & &1.name),
       external_docs: external_docs_one
     }
   end
