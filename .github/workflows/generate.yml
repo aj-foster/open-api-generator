@@ -30,7 +30,7 @@ jobs:
       - name: Setup Ref (Pull Request)
         if: github.event_name == 'pull_request'
         run: |
-          echo "REF=$GITHUB_HEAD_REF" >> $GITHUB_ENV
+          echo "REF=pr/$GITHUB_REF_NAME" >> $GITHUB_ENV
 
       - name: Setup Ref (Workflow Dispatch)
         if: github.event_name == 'workflow_dispatch'
@@ -59,7 +59,7 @@ jobs:
       - name: Generate Code
         run: |
           cd diffs/
-          elixir generate.exs "$REF"
+          elixir generate.exs "path:../generator"
 
       - name: Save Code
         run: |
