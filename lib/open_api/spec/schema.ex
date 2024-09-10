@@ -59,6 +59,7 @@ defmodule OpenAPI.Spec.Schema do
           xml: Spec.Schema.XML.t(),
           external_docs: Spec.ExternalDocumentation.t() | nil,
           example: any,
+          examples: list() | nil,
           deprecated: boolean
         }
 
@@ -103,6 +104,7 @@ defmodule OpenAPI.Spec.Schema do
     :xml,
     :external_docs,
     :example,
+    :examples,
     :deprecated
   ]
 
@@ -184,6 +186,7 @@ defmodule OpenAPI.Spec.Schema do
       xml: xml,
       external_docs: docs,
       example: Map.get(yaml, "example"),
+      examples: Map.get(yaml, "examples"),
       deprecated: Map.get(yaml, "deprecated", false)
     }
 
