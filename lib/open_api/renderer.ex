@@ -285,62 +285,80 @@ defmodule OpenAPI.Renderer do
   # Default Implementations
   #
 
+  @behaviour __MODULE__
+
   @doc false
+  @impl __MODULE__
   defdelegate format(state, file), to: OpenAPI.Renderer.Util
 
   @doc false
+  @impl __MODULE__
   defdelegate location(state, file), to: OpenAPI.Renderer.Module, as: :filename
 
   @doc false
+  @impl __MODULE__
   defdelegate render(state, file), to: OpenAPI.Renderer.Module
 
   @doc false
+  @impl __MODULE__
   defdelegate render_default_client(state, file), to: OpenAPI.Renderer.Module
 
   @doc false
+  @impl __MODULE__
   defdelegate render_moduledoc(state, file), to: OpenAPI.Renderer.Module
 
   @doc false
+  @impl __MODULE__
   defdelegate render_operations(state, file), to: OpenAPI.Renderer.Operation, as: :render_all
 
   @doc false
+  @impl __MODULE__
   defdelegate render_operation(state, operation), to: OpenAPI.Renderer.Operation, as: :render
 
   @doc false
+  @impl __MODULE__
   defdelegate render_operation_doc(state, operation),
     to: OpenAPI.Renderer.Operation,
     as: :render_doc
 
   @doc false
+  @impl __MODULE__
   defdelegate render_operation_function(state, operation),
     to: OpenAPI.Renderer.Operation,
     as: :render_function
 
   @doc false
+  @impl __MODULE__
   defdelegate render_operation_spec(state, operation),
     to: OpenAPI.Renderer.Operation,
     as: :render_spec
 
   @doc false
+  @impl __MODULE__
   defdelegate render_schema(state, file), to: OpenAPI.Renderer.Schema, as: :render
 
   @doc false
+  @impl __MODULE__
   defdelegate render_schema_field_function(state, schemas),
     to: OpenAPI.Renderer.Schema,
     as: :render_field_function
 
   @doc false
+  @impl __MODULE__
   defdelegate render_schema_struct(state, schemas),
     to: OpenAPI.Renderer.Schema,
     as: :render_struct
 
   @doc false
+  @impl __MODULE__
   defdelegate render_schema_types(state, schemas), to: OpenAPI.Renderer.Schema, as: :render_types
 
   @doc false
+  @impl __MODULE__
   defdelegate render_using(state, file), to: OpenAPI.Renderer.Module
 
   @doc false
+  @impl __MODULE__
   defdelegate write(state, file), to: OpenAPI.Renderer.Util
 
   #
