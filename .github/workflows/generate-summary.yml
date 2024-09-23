@@ -1,0 +1,35 @@
+name: Diffs Summary
+
+on:
+  workflow_run:
+    workflows: ["Diffs"]
+    types:
+      - completed
+
+jobs:
+  summary:
+    name: Summary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: "aj-foster/open-api-generator"
+          path: generator
+
+      - name: Save Code
+        run: |
+          cd generator/
+          git checkout --orphan temporary-branch
+          git rm -rf .
+          mv ../diffs/output .
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add output/
+          git commit -m "Generated output for aj-foster/open-api-generator@$REF"
+          git tag -f "_diff/$REF"
+          git push --tags --force
+
+      - name: Summary
+        if: github.event_name == 'pull_request'
+        run: echo "[Changes to Generated Files](https://github.com/aj-foster/open-api-generator/compare/_diff/main.._diff/$REF)" >> $GITHUB_STEP_SUMMARY
