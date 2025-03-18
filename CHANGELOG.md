@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet._
+* **Fix**: Module name generation when field name has `.` in it.
 
 ## 0.2.0 (2024-07-08)
 

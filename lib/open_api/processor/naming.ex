@@ -659,7 +659,7 @@ defmodule OpenAPI.Processor.Naming do
           {parent_module, parent_type}
       end
 
-    module = Enum.join([inspect(parent_module), Macro.camelize(field_name)])
+    module = Enum.join([inspect(parent_module), Macro.camelize(String.replace(field_name, ".", "_"))])
     {module, to_string(parent_type)}
   end
 
