@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  pull_request: {}
   workflow_dispatch:
     inputs:
       ref:
@@ -25,6 +26,11 @@ jobs:
         if: github.event_name == 'push'
         run: |
           echo "REF=main" >> $GITHUB_ENV
+
+      - name: Setup Ref (Pull Request)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "REF=pr/$GITHUB_REF_NAME" >> $GITHUB_ENV
 
       - name: Setup Ref (Workflow Dispatch)
         if: github.event_name == 'workflow_dispatch'
@@ -56,19 +62,13 @@ jobs:
           cd diffs/
           elixir generate.exs "path:../generator"
 
-      - name: Save Code
+      - name: Save PR number
         run: |
-          cd generator/
-          git checkout --orphan temporary-branch
-          git rm -rf .
-          mv ../diffs/output .
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add output/
-          git commit -m "Generated output for aj-foster/open-api-generator@$REF"
-          git tag -f "_diff/$REF"
-          git push --tags --force
+          echo ${{ github.event.number }} > diffs/output/pr_number.txt
+          echo $REF > diffs/output/ref.txt
 
-      - name: Summary
-        if: github.event_name == 'pull_request'
-        run: echo "[Changes to Generated Files](https://github.com/aj-foster/open-api-generator/compare/_diff/main.._diff/$REF)" >> $GITHUB_STEP_SUMMARY
+      - name: Save Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: diffs
+          path: diffs/output

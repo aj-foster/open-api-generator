@@ -1,0 +1,57 @@
+name: Summary
+
+on:
+  workflow_run:
+    workflows: ["Diffs"]
+    types:
+      - completed
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare Workspace
+        run: |
+          git checkout --orphan temporary-branch
+          git rm -rf .
+
+      - name: Download Code
+        uses: actions/download-artifact@v4
+        with:
+          name: diffs
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Commit and Push Code
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "PR=$(cat pr_number.txt)" >> $GITHUB_ENV
+          echo "REF=$(cat ref.txt)" >> $GITHUB_ENV
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add output/
+          git commit -m "Generated output for aj-foster/open-api-generator@$REF"
+          git tag -f "_diff/$REF"
+          git push --tags --force
+
+      - name: Summary
+        run: echo "[Changes to Generated Files](https://github.com/aj-foster/open-api-generator/compare/_diff/main.._diff/$REF)" >> $GITHUB_STEP_SUMMARY
+
+      - name: "Comment on PR"
+        uses: actions/github-script@v7
+        if: ${{ env.PR != '' }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { PR } = process.env
+            await github.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: PR,
+              body: '[Changes to Generated Files](https://github.com/aj-foster/open-api-generator/compare/_diff/main.._diff/$REF)'
+            });
