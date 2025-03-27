@@ -35,7 +35,7 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add output/
+          git add .
           git commit -m "Generated output for aj-foster/open-api-generator@$REF"
           git tag -f "_diff/$REF"
           git push --tags --force
