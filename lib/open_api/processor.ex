@@ -234,46 +234,58 @@ defmodule OpenAPI.Processor do
   # Default Implementations
   #
 
+  @behaviour __MODULE__
+
   @doc false
+  @impl __MODULE__
   defdelegate ignore_operation?(state, operation_spec), to: OpenAPI.Processor.Ignore
 
   @doc false
+  @impl __MODULE__
   defdelegate ignore_schema?(state, schema_spec), to: OpenAPI.Processor.Ignore
 
   @doc false
+  @impl __MODULE__
   defdelegate operation_docstring(state, operation_spec, params),
     to: OpenAPI.Processor.Operation,
     as: :docstring
 
   @doc false
+  @impl __MODULE__
   defdelegate operation_function_name(state, operation_spec),
     to: OpenAPI.Processor.Naming,
     as: :operation_function
 
   @doc false
+  @impl __MODULE__
   defdelegate operation_module_names(state, operation_spec),
     to: OpenAPI.Processor.Naming,
     as: :operation_modules
 
   @doc false
+  @impl __MODULE__
   defdelegate operation_request_body(state, operation_spec),
     to: OpenAPI.Processor.Operation,
     as: :request_body
 
   @doc false
+  @impl __MODULE__
   defdelegate operation_request_method(state, operation_spec),
     to: OpenAPI.Processor.Operation,
     as: :request_method
 
   @doc false
+  @impl __MODULE__
   defdelegate operation_response_body(state, operation_spec),
     to: OpenAPI.Processor.Operation,
     as: :response_body
 
   @doc false
+  @impl __MODULE__
   defdelegate schema_format(state, schema), to: OpenAPI.Processor.Format
 
   @doc false
+  @impl __MODULE__
   defdelegate schema_module_and_type(state, schema_spec), to: OpenAPI.Processor.Naming
 
   #
