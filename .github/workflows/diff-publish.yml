@@ -27,12 +27,14 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
 
-      - name: Commit and Push Code
-        if: github.event_name != 'pull_request'
+      - name: Setup Ref
         run: |
           echo "PR=$(cat pr_number.txt)" >> $GITHUB_ENV
           echo "REF=$(cat ref.txt)" >> $GITHUB_ENV
 
+      - name: Commit and Push Code
+        if: github.event_name != 'pull_request'
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
