@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-  pull_request: {}
   workflow_dispatch:
     inputs:
       ref:
@@ -27,11 +26,6 @@ jobs:
         run: |
           echo "REF=main" >> $GITHUB_ENV
 
-      - name: Setup Ref (Pull Request)
-        if: github.event_name == 'pull_request'
-        run: |
-          echo "REF=pr/$GITHUB_REF_NAME" >> $GITHUB_ENV
-
       - name: Setup Ref (Workflow Dispatch)
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -47,6 +41,7 @@ jobs:
       - name: Checkout (Generator)
         uses: actions/checkout@v4
         with:
+          ref: ${{ env.REF }}
           repository: "aj-foster/open-api-generator"
           path: generator
 
