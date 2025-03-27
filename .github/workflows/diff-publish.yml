@@ -51,10 +51,10 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { PR } = process.env
+            const { PR, REF } = process.env
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: PR,
-              body: '[Changes to Generated Files](https://github.com/aj-foster/open-api-generator/compare/_diff/main.._diff/$REF)'
+              body: `[Changes to Generated Files](https://github.com/aj-foster/open-api-generator/compare/_diff/main.._diff/${REF})`
             });
