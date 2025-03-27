@@ -31,6 +31,7 @@ jobs:
         run: |
           echo "PR=$(cat pr_number.txt)" >> $GITHUB_ENV
           echo "REF=$(cat ref.txt)" >> $GITHUB_ENV
+          rm pr_number.txt ref.txt
 
       - name: Commit and Push Code
         if: github.event_name != 'pull_request'
@@ -52,9 +53,21 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { PR, REF } = process.env
-            await github.rest.issues.createComment({
+
+            const comments = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: PR,
-              body: `[Changes to Generated Files](https://github.com/aj-foster/open-api-generator/compare/_diff/main.._diff/${REF})`
+              issue_number: PR
             });
+
+            if (comments.data.find(c => c.body.includes('<!-- DIFF SUMMARY -->'))) {
+              console.log('Comment already exists, skipping.');
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: PR,
+                body: `<!-- DIFF SUMMARY -->
+            [Changes to Generated Files](https://github.com/aj-foster/open-api-generator/compare/_diff/main.._diff/${REF})`
+              });
+            }
