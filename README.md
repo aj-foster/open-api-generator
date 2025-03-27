@@ -26,6 +26,8 @@ Think: the friendliness of your favorite hand-crafted client library applied to 
 For more on how this is accomplished, see **Configuration** below and the [configuration guide](guides/configuration.md).
 
 
+
+
 ## Installation
 
 This library is available on Hex.pm.
