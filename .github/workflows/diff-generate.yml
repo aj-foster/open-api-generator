@@ -25,7 +25,7 @@ jobs:
       - name: Setup Ref (Push)
         if: github.event_name == 'push'
         run: |
-          echo "REF=main" >> $GITHUB_ENV
+          echo "REF=${{ github.ref_name }}" >> $GITHUB_ENV
 
       - name: Setup Ref (Pull Request)
         if: github.event_name == 'pull_request'
@@ -44,10 +44,18 @@ jobs:
           ref: main
           path: diffs
 
-      - name: Checkout (Generator)
+      - name: Checkout (Generator) (Push or PR)
+        if: github.event_name != 'workflow_dispatch'
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.REF }}
+          repository: "aj-foster/open-api-generator"
+          path: generator
+
+      - name: Checkout (Generator) (Workflow Dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
           repository: "aj-foster/open-api-generator"
           path: generator
 
