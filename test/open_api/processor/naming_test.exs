@@ -169,7 +169,7 @@ defmodule OpenAPI.Processor.NamingTest do
              ) == {"SchemaModuleNameTest", "t"}
     end
 
-    test "returns schema module and type when field has a `.` in the name", %{state: state} do
+    test "normalizes field names", %{state: state} do
       state =
         state
         |> Map.put(:implementation, OpenAPI.Processor)
@@ -186,6 +186,14 @@ defmodule OpenAPI.Processor.NamingTest do
                state,
                %OpenAPI.Processor.Schema{
                  context: [{:field, "ref", "test.field"}]
+               },
+               %OpenAPI.Spec.Schema{}
+             ) == {"SchemaModuleNameTestField", "t"}
+
+      assert Naming.raw_schema_module_and_type(
+               state,
+               %OpenAPI.Processor.Schema{
+                 context: [{:field, "ref", "test/field"}]
                },
                %OpenAPI.Spec.Schema{}
              ) == {"SchemaModuleNameTestField", "t"}
