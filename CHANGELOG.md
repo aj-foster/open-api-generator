@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 * **Fix**: Module name generation when field name has `.` in it.
+* **Fix**: Successfully merge paths from multiple descriptions, and merge path items.
 
 ## 0.2.0 (2024-07-08)
 
