@@ -120,11 +120,7 @@ defmodule OpenAPI.Renderer do
                       render_schema_field_function: 2,
                       render_schema_struct: 2,
                       render_schema_types: 2,
-                      
-                      
-                      
-                      
-                      : 2,
+                      render_type: 2,
                       render_using: 2,
                       write: 2
 
