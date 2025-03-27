@@ -25,6 +25,7 @@ jobs:
         with:
           name: diffs
           run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
 
       - name: Commit and Push Code
         if: github.event_name != 'pull_request'
