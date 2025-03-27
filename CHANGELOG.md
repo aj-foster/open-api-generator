@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* **Breaking**: Officially drop support for Elixir 1.14 (and lower) and Erlang/OTP 23 (and lower).
+  Elixir 1.15+ and Erlang/OTP 24+ are supported.
+
 * **Fix**: Module name generation when field name has `.` in it.
 * **Fix**: Successfully merge paths from multiple descriptions, and merge path items.
 
