@@ -148,7 +148,8 @@ defmodule OpenAPI.Processor.NamingTest do
 
   describe "raw_schema_module_and_type/3" do
     test "returns schema module and type", %{state: state} do
-      state = state
+      state =
+        state
         |> Map.put(:implementation, OpenAPI.Processor)
         |> Map.put(:schemas_by_ref, %{
           "ref" => %OpenAPI.Processor.Schema{
@@ -160,16 +161,17 @@ defmodule OpenAPI.Processor.NamingTest do
         |> Map.put(:schema_specs_by_ref, %{"ref" => %OpenAPI.Spec.Schema{}})
 
       assert Naming.raw_schema_module_and_type(
-        state,
-        %OpenAPI.Processor.Schema{
-          context: [{:field, "ref", "test"}]
-        },
-        %OpenAPI.Spec.Schema{}
-      ) == {"SchemaModuleNameTest", "t"}
+               state,
+               %OpenAPI.Processor.Schema{
+                 context: [{:field, "ref", "test"}]
+               },
+               %OpenAPI.Spec.Schema{}
+             ) == {"SchemaModuleNameTest", "t"}
     end
 
     test "returns schema module and type when field has a `.` in the name", %{state: state} do
-      state = state
+      state =
+        state
         |> Map.put(:implementation, OpenAPI.Processor)
         |> Map.put(:schemas_by_ref, %{
           "ref" => %OpenAPI.Processor.Schema{
@@ -181,12 +183,12 @@ defmodule OpenAPI.Processor.NamingTest do
         |> Map.put(:schema_specs_by_ref, %{"ref" => %OpenAPI.Spec.Schema{}})
 
       assert Naming.raw_schema_module_and_type(
-        state,
-        %OpenAPI.Processor.Schema{
-          context: [{:field, "ref", "test.field"}]
-        },
-        %OpenAPI.Spec.Schema{}
-      ) == {"SchemaModuleNameTestField", "t"}
+               state,
+               %OpenAPI.Processor.Schema{
+                 context: [{:field, "ref", "test.field"}]
+               },
+               %OpenAPI.Spec.Schema{}
+             ) == {"SchemaModuleNameTestField", "t"}
     end
   end
 end
