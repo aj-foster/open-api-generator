@@ -1,0 +1,61 @@
+openapi: "3.1.0"
+info:
+  title: Spec with Sub Schema
+  version: 1
+paths:
+  "/example":
+    get:
+      description: "Example endpoint"
+      operationId: example
+      summary: "Example endpoint"
+      responses:
+        "200":
+          description: "Success"
+          content:
+            "application/json":
+              schema:
+                "$ref": "#/components/schemas/user"
+components:
+  schemas:
+    user:
+      type: object
+      properties:
+        id:
+          type: integer
+        team:
+          type: object
+          properties:
+            
+            api_key.created:
+              type: object
+              properties:
+                id:
+                  type: string
+                data:
+                  type: object
+                  properties:
+                    scopes:
+                      type: array
+                      items:
+                        type: string
+            api_key.updated:
+              type: object
+              properties:
+                id:
+                  type: string
+                changes_requested:
+                  type: object
+                  properties:
+                    scopes:
+                      type: array
+                      items:
+                        type: string
+            api_key.deleted:
+              type: object
+              properties:
+                id:
+                  type: string            
+
+      required:
+        - id
+        - team

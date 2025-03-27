@@ -145,4 +145,58 @@ defmodule OpenAPI.Processor.NamingTest do
       assert Naming.normalize_identifier("OpenAPISpec", :camel) == "OpenAPISpec"
     end
   end
+
+  describe "raw_schema_module_and_type/3" do
+    test "returns schema module and type", %{state: state} do
+      state =
+        state
+        |> Map.put(:implementation, OpenAPI.Processor)
+        |> Map.put(:schemas_by_ref, %{
+          "ref" => %OpenAPI.Processor.Schema{
+            ref: "ref",
+            module_name: SchemaModuleName,
+            type_name: "t"
+          }
+        })
+        |> Map.put(:schema_specs_by_ref, %{"ref" => %OpenAPI.Spec.Schema{}})
+
+      assert Naming.raw_schema_module_and_type(
+               state,
+               %OpenAPI.Processor.Schema{
+                 context: [{:field, "ref", "test"}]
+               },
+               %OpenAPI.Spec.Schema{}
+             ) == {"SchemaModuleNameTest", "t"}
+    end
+
+    test "normalizes field names", %{state: state} do
+      state =
+        state
+        |> Map.put(:implementation, OpenAPI.Processor)
+        |> Map.put(:schemas_by_ref, %{
+          "ref" => %OpenAPI.Processor.Schema{
+            ref: "ref",
+            module_name: SchemaModuleName,
+            type_name: "t"
+          }
+        })
+        |> Map.put(:schema_specs_by_ref, %{"ref" => %OpenAPI.Spec.Schema{}})
+
+      assert Naming.raw_schema_module_and_type(
+               state,
+               %OpenAPI.Processor.Schema{
+                 context: [{:field, "ref", "test.field"}]
+               },
+               %OpenAPI.Spec.Schema{}
+             ) == {"SchemaModuleNameTestField", "t"}
+
+      assert Naming.raw_schema_module_and_type(
+               state,
+               %OpenAPI.Processor.Schema{
+                 context: [{:field, "ref", "test/field"}]
+               },
+               %OpenAPI.Spec.Schema{}
+             ) == {"SchemaModuleNameTestField", "t"}
+    end
+  end
 end
