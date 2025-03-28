@@ -363,17 +363,17 @@ defmodule OpenAPI.Renderer.Operation do
     } = operation
 
     path_parameters =
-      for %Param{value_type: type} <- path_params do
-        quote(do: unquote(implementation.render_type(state, type)))
+      for %Param{name: name, value_type: type} <- path_params do
+        quote(do: unquote({String.to_atom(name), [], nil}) :: unquote(implementation.render_type(state, type)))
       end
 
     request_body =
       if length(request_body) > 0 do
         body_type = {:union, Enum.map(request_body, fn {_content_type, type} -> type end)}
-        quote(do: unquote(implementation.render_type(state, body_type)))
+        quote(do: body :: unquote(implementation.render_type(state, body_type)))
       end
 
-    opts = quote(do: keyword)
+    opts = quote(do: opts :: keyword)
 
     arguments = path_parameters ++ Enum.reject([request_body, opts], &is_nil/1)
     return_type = render_return_type(state, responses)
