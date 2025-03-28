@@ -10,8 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Breaking**: Officially drop support for Elixir 1.14 (and lower) and Erlang/OTP 23 (and lower).
   Elixir 1.15+ and Erlang/OTP 24+ are supported.
 
+* **Add**: Processor and Renderer modules now have proper `@behaviour` and `@impl` annotations.
+  Thanks [@McSym28](https://github.com/aj-foster/open-api-generator/pull/70)!
+* **Add**: Arguments in operation type specifications are now labeled by name (ex. `body :: map`) for additional clarity.
+  Thanks [@McSym28](https://github.com/aj-foster/open-api-generator/pull/71)!
+
 * **Fix**: Module name generation when field name has `.` in it.
+  Thanks [@bulld0zer](https://github.com/aj-foster/open-api-generator/pull/76)!
 * **Fix**: Successfully merge paths from multiple descriptions, and merge path items.
+  Thanks [@florius0](https://github.com/aj-foster/open-api-generator/pull/61)!
 
 ## 0.2.0 (2024-07-08)
 
