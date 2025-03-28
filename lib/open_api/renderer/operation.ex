@@ -364,7 +364,11 @@ defmodule OpenAPI.Renderer.Operation do
 
     path_parameters =
       for %Param{name: name, value_type: type} <- path_params do
-        quote(do: unquote({String.to_atom(name), [], nil}) :: unquote(implementation.render_type(state, type)))
+        quote(
+          do:
+            unquote({String.to_atom(name), [], nil}) ::
+              unquote(implementation.render_type(state, type))
+        )
       end
 
     request_body =
