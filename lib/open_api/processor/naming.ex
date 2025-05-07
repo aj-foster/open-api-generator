@@ -650,17 +650,18 @@ defmodule OpenAPI.Processor.Naming do
       ) do
     %State{implementation: implementation, schemas_by_ref: schemas_by_ref} = state
 
-    {parent_module, parent_type} =
-      case Map.fetch!(schemas_by_ref, parent_ref) do
-        %Schema{module_name: nil, type_name: nil} = parent ->
-          implementation.schema_module_and_type(state, parent)
+    case Map.fetch!(schemas_by_ref, parent_ref) do
+      %Schema{module_name: nil, type_name: nil} = parent ->
+        implementation.schema_module_and_type(state, parent)
 
-        %Schema{module_name: parent_module, type_name: parent_type} ->
-          {parent_module, parent_type}
-      end
+      %Schema{module_name: parent_module, type_name: "t"} ->
+        module = Enum.join([inspect(parent_module), normalize_identifier(field_name, :camel)])
+        {module, "t"}
 
-    module = Enum.join([inspect(parent_module), normalize_identifier(field_name, :camel)])
-    {module, to_string(parent_type)}
+      %Schema{module_name: parent_module, type_name: parent_type} ->
+        type = Enum.join([to_string(parent_type), normalize_identifier(field_name, :snake)], "_")
+        {inspect(parent_module), type}
+    end
   end
 
   def raw_schema_module_and_type(_state, _schema, _schema_spec) do
