@@ -178,6 +178,11 @@ defmodule OpenAPI.Processor.NamingTest do
             ref: "ref",
             module_name: SchemaModuleName,
             type_name: "t"
+          },
+          "sub_ref" => %OpenAPI.Processor.Schema{
+            ref: "sub_ref",
+            module_name: SchemaModuleName,
+            type_name: "something_else"
           }
         })
         |> Map.put(:schema_specs_by_ref, %{"ref" => %OpenAPI.Spec.Schema{}})
@@ -197,6 +202,14 @@ defmodule OpenAPI.Processor.NamingTest do
                },
                %OpenAPI.Spec.Schema{}
              ) == {"SchemaModuleNameTestField", "t"}
+
+      assert Naming.raw_schema_module_and_type(
+               state,
+               %OpenAPI.Processor.Schema{
+                 context: [{:field, "sub_ref", "test/field"}]
+               },
+               %OpenAPI.Spec.Schema{}
+             ) == {"SchemaModuleName", "something_else_test_field"}
     end
   end
 end
