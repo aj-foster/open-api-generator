@@ -5,7 +5,7 @@ on: [pull_request]
 jobs:
   test:
     name: "Test"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     # See https://hexdocs.pm/elixir/compatibility-and-deprecations.html#compatibility-between-elixir-and-erlang-otp
     strategy:
       matrix:
