@@ -84,6 +84,7 @@ defmodule OpenAPI.Renderer.Schema do
         %Schema{output_format: :struct} -> true
         # %Schema{context: [{:request, ^module, _, _}]} -> true
         %Schema{context: [{:response, ^module, _, _, _}], output_format: :typed_map} -> true
+        %Schema{context: [{:field, _, _}], output_format: :typed_map} -> true
         _else -> false
       end)
       |> Enum.group_by(&{&1.module_name, &1.type_name})
