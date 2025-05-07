@@ -214,6 +214,16 @@ defmodule OpenAPI.Renderer.Operation do
           )
         end
 
+      {{:value, %Schema{ref: ref} = schema}, to_process} ->
+        do_group_related_schemas(
+          %{
+            schemas_by_ref: schemas_by_ref,
+            group_by_ref: Map.put(group_by_ref, ref, :unknown),
+            final: Map.update(final, :unknown, [schema], fn schemas -> [schema | schemas] end)
+          },
+          to_process
+        )
+
       {:empty, _to_process} ->
         final
     end
