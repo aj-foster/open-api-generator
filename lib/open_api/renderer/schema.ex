@@ -81,11 +81,18 @@ defmodule OpenAPI.Renderer.Schema do
     output_schemas =
       schemas
       |> Enum.filter(fn
-        %Schema{output_format: :struct} -> true
+        %Schema{output_format: :struct} ->
+          true
+
         # %Schema{context: [{:request, ^module, _, _}]} -> true
-        %Schema{context: [{:response, ^module, _, _, _}], output_format: :typed_map} -> true
-        %Schema{context: [{:field, _, _}], output_format: :typed_map} -> true
-        _else -> false
+        %Schema{context: [{:response, ^module, _, _, _}], output_format: :typed_map} ->
+          true
+
+        %Schema{context: [{:field, parent_ref, _}], output_format: :typed_map} ->
+          parent_is_response?(parent_ref, module, state)
+
+        _else ->
+          false
       end)
       |> Enum.group_by(&{&1.module_name, &1.type_name})
       |> Enum.map(fn {_module_and_type, schemas} -> Enum.reduce(schemas, &Schema.merge/2) end)
@@ -110,6 +117,19 @@ defmodule OpenAPI.Renderer.Schema do
       end
 
     Util.clean_list([types_and_struct, field_function])
+  end
+
+  defp parent_is_response?(parent_ref, module, state) do
+    case Map.get(state.schemas, parent_ref) do
+      %Schema{context: [{:response, ^module, _, _, _}], output_format: :typed_map} ->
+        true
+
+      %Schema{context: [{:field, parent_ref, _}], output_format: :typed_map} ->
+        parent_is_response?(parent_ref, module, state)
+
+      _else ->
+        false
+    end
   end
 
   @doc """
