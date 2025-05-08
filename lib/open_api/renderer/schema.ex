@@ -140,6 +140,9 @@ defmodule OpenAPI.Renderer.Schema do
   This implementation uses the `output.extra_fields` configuration to add additional fields to
   the struct for private use by the client library. See **Extra Fields** in this module's
   documentation.
+
+  This function calls the `c:OpenAPI.Renderer.render_type/2` callback for every field's type
+
   """
   @spec render_types(State.t(), [Schema.t()]) :: Macro.t()
   def render_types(state, schemas) do
@@ -165,14 +168,16 @@ defmodule OpenAPI.Renderer.Schema do
 
   @spec render_type_fields(State.t(), [Field.t()]) :: Macro.t()
   defp render_type_fields(state, fields) do
+    %State{implementation: implementation} = state
+
     for field <- Enum.sort_by(fields ++ extra_fields(state), & &1.name) do
       %Field{name: name, nullable: nullable?, required: required?, type: type} = field
 
       rendered_type =
         if nullable? or not required? do
-          Util.to_type(state, {:union, [type, :null]})
+          implementation.render_type(state, {:union, [type, :null]})
         else
-          Util.to_type(state, type)
+          implementation.render_type(state, type)
         end
 
       quote do
