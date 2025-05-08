@@ -56,33 +56,176 @@ defmodule OpenAPI.Renderer.Operation do
     %State{implementation: implementation} = state
     %File{module: module, operations: operations, schemas: schemas} = file
 
-    related_schemas =
+    related_schemas_by_operation =
       schemas
       |> Enum.filter(&(&1.output_format == :typed_map))
-      |> Enum.filter(fn
-        # %Schema{context: [{:request, ^module, _, _}]} -> true
-        %Schema{context: [{:response, ^module, _, _, _}]} -> true
-        _else -> false
-      end)
+      |> filter_related_schemas(state, module)
       |> Enum.group_by(&{&1.module_name, &1.type_name})
       |> Enum.map(fn {_module_and_type, schemas} -> Enum.reduce(schemas, &Schema.merge/2) end)
       |> List.flatten()
-      |> Enum.sort_by(& &1.type_name)
-
-    related_schemas_by_operation =
-      Enum.group_by(related_schemas, fn
-        # %Schema{context: [{:request, ^module, operation_name, _}]} -> operation_name
-        %Schema{context: [{:response, ^module, operation_name, _, _}]} -> operation_name
-        _else -> :unknown
-      end)
+      |> group_related_schemas(state)
 
     for operation <- Enum.sort_by(operations, & &1.function_name) do
-      related_schemas = related_schemas_by_operation[operation.function_name] || []
+      related_schemas =
+        (related_schemas_by_operation[operation.function_name] || [])
+        |> Enum.sort_by(& &1.type_name)
 
       Util.clean_list([
         implementation.render_schema_types(state, related_schemas),
         implementation.render_operation(state, operation)
       ])
+    end
+  end
+
+  defp filter_related_schemas(schemas, state, module) do
+    to_process =
+      schemas
+      |> Enum.filter(&(&1.output_format == :typed_map))
+      |> :queue.from_list()
+
+    do_filter_related_schemas(
+      %{schemas_by_ref: state.schemas, module: module, filter_by_ref: %{}, final: []},
+      to_process
+    )
+  end
+
+  defp do_filter_related_schemas(
+         %{
+           schemas_by_ref: schemas_by_ref,
+           module: module,
+           filter_by_ref: filter_by_ref,
+           final: final
+         },
+         to_process
+       ) do
+    case :queue.out(to_process) do
+      {{:value, %Schema{context: [{:response, ^module, _, _, _}], ref: ref} = schema}, to_process} ->
+        do_filter_related_schemas(
+          %{
+            schemas_by_ref: schemas_by_ref,
+            module: module,
+            filter_by_ref: Map.put(filter_by_ref, ref, true),
+            final: [schema | final]
+          },
+          to_process
+        )
+
+      {{:value, %Schema{context: [{:field, parent_ref, _}], ref: ref} = schema}, to_process} ->
+        case Map.fetch(filter_by_ref, parent_ref) do
+          {:ok, true} ->
+            do_filter_related_schemas(
+              %{
+                schemas_by_ref: schemas_by_ref,
+                module: module,
+                filter_by_ref: Map.put(filter_by_ref, ref, true),
+                final: [schema | final]
+              },
+              to_process
+            )
+
+          {:ok, false} ->
+            do_filter_related_schemas(
+              %{
+                schemas_by_ref: schemas_by_ref,
+                module: module,
+                filter_by_ref: Map.put(filter_by_ref, ref, false),
+                final: final
+              },
+              to_process
+            )
+
+          :error ->
+            to_process = :queue.in(schema, to_process)
+
+            do_filter_related_schemas(
+              %{
+                schemas_by_ref: schemas_by_ref,
+                module: module,
+                filter_by_ref: filter_by_ref,
+                final: final
+              },
+              to_process
+            )
+        end
+
+      {{:value, %Schema{ref: ref}}, to_process} ->
+        do_filter_related_schemas(
+          %{
+            schemas_by_ref: schemas_by_ref,
+            module: module,
+            filter_by_ref: Map.put(filter_by_ref, ref, false),
+            final: final
+          },
+          to_process
+        )
+
+      {:empty, _to_process} ->
+        final
+    end
+  end
+
+  defp group_related_schemas(schemas, state) do
+    do_group_related_schemas(
+      %{schemas_by_ref: state.schemas, group_by_ref: %{}, final: %{}},
+      :queue.from_list(schemas)
+    )
+  end
+
+  defp do_group_related_schemas(
+         %{
+           schemas_by_ref: schemas_by_ref,
+           group_by_ref: group_by_ref,
+           final: final
+         },
+         to_process
+       ) do
+    case :queue.out(to_process) do
+      {{:value, %Schema{context: [{:response, _, operation, _, _}], ref: ref} = schema},
+       to_process} ->
+        do_group_related_schemas(
+          %{
+            schemas_by_ref: schemas_by_ref,
+            group_by_ref: Map.put(group_by_ref, ref, operation),
+            final: Map.update(final, operation, [schema], fn schemas -> [schema | schemas] end)
+          },
+          to_process
+        )
+
+      {{:value, %Schema{context: [{:field, parent_ref, _}], ref: ref} = schema}, to_process} ->
+        if operation = Map.get(group_by_ref, parent_ref) do
+          do_group_related_schemas(
+            %{
+              schemas_by_ref: schemas_by_ref,
+              group_by_ref: Map.put(group_by_ref, ref, operation),
+              final: Map.update(final, operation, [schema], fn schemas -> [schema | schemas] end)
+            },
+            to_process
+          )
+        else
+          to_process = :queue.in(schema, to_process)
+
+          do_group_related_schemas(
+            %{
+              schemas_by_ref: schemas_by_ref,
+              group_by_ref: group_by_ref,
+              final: final
+            },
+            to_process
+          )
+        end
+
+      {{:value, %Schema{ref: ref} = schema}, to_process} ->
+        do_group_related_schemas(
+          %{
+            schemas_by_ref: schemas_by_ref,
+            group_by_ref: Map.put(group_by_ref, ref, :unknown),
+            final: Map.update(final, :unknown, [schema], fn schemas -> [schema | schemas] end)
+          },
+          to_process
+        )
+
+      {:empty, _to_process} ->
+        final
     end
   end
 

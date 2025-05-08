@@ -16,7 +16,7 @@ defmodule OpenAPI.Processor.Format do
 
   @type format :: :struct | :typed_map | :map
 
-  @spec schema_format(State.t(), Schema.t()) :: format | :unknown
+  @spec schema_format(State.t(), Schema.t()) :: format
   def schema_format(state, schema) do
     %State{schemas_by_ref: schemas_by_ref, schema_specs_by_ref: schema_specs_by_ref} = state
     %Schema{ref: ref} = schema
@@ -44,10 +44,8 @@ defmodule OpenAPI.Processor.Format do
         :struct
 
       {%Schema{context: [{:field, parent_ref, _}]}, _} ->
-        case Map.fetch!(schemas_by_ref, parent_ref) do
-          %Schema{output_format: nil} -> :unknown
-          %Schema{output_format: format} -> format
-        end
+        parent_schema = Map.fetch!(schemas_by_ref, parent_ref)
+        schema_format(state, parent_schema)
 
       _else ->
         :map

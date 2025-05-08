@@ -163,13 +163,14 @@ defmodule OpenAPI.Processor.NamingTest do
       assert Naming.raw_schema_module_and_type(
                state,
                %OpenAPI.Processor.Schema{
-                 context: [{:field, "ref", "test"}]
+                 context: [{:field, "ref", "test"}],
+                 output_format: :struct
                },
                %OpenAPI.Spec.Schema{}
              ) == {"SchemaModuleNameTest", "t"}
     end
 
-    test "normalizes field names", %{state: state} do
+    test "normalizes field names based on output format", %{state: state} do
       state =
         state
         |> Map.put(:implementation, OpenAPI.Processor)
@@ -178,6 +179,11 @@ defmodule OpenAPI.Processor.NamingTest do
             ref: "ref",
             module_name: SchemaModuleName,
             type_name: "t"
+          },
+          "sub_ref" => %OpenAPI.Processor.Schema{
+            ref: "sub_ref",
+            module_name: SchemaModuleName,
+            type_name: "something_else"
           }
         })
         |> Map.put(:schema_specs_by_ref, %{"ref" => %OpenAPI.Spec.Schema{}})
@@ -185,7 +191,8 @@ defmodule OpenAPI.Processor.NamingTest do
       assert Naming.raw_schema_module_and_type(
                state,
                %OpenAPI.Processor.Schema{
-                 context: [{:field, "ref", "test.field"}]
+                 context: [{:field, "ref", "test.field"}],
+                 output_format: :struct
                },
                %OpenAPI.Spec.Schema{}
              ) == {"SchemaModuleNameTestField", "t"}
@@ -193,10 +200,47 @@ defmodule OpenAPI.Processor.NamingTest do
       assert Naming.raw_schema_module_and_type(
                state,
                %OpenAPI.Processor.Schema{
-                 context: [{:field, "ref", "test/field"}]
+                 context: [{:field, "ref", "test.field"}],
+                 output_format: :typed_map
+               },
+               %OpenAPI.Spec.Schema{}
+             ) == {"SchemaModuleName", "t_test_field"}
+
+      assert Naming.raw_schema_module_and_type(
+               state,
+               %OpenAPI.Processor.Schema{
+                 context: [{:field, "ref", "test/field"}],
+                 output_format: :struct
                },
                %OpenAPI.Spec.Schema{}
              ) == {"SchemaModuleNameTestField", "t"}
+
+      assert Naming.raw_schema_module_and_type(
+               state,
+               %OpenAPI.Processor.Schema{
+                 context: [{:field, "ref", "test/field"}],
+                 output_format: :typed_map
+               },
+               %OpenAPI.Spec.Schema{}
+             ) == {"SchemaModuleName", "t_test_field"}
+
+      assert Naming.raw_schema_module_and_type(
+               state,
+               %OpenAPI.Processor.Schema{
+                 context: [{:field, "sub_ref", "test/field"}],
+                 output_format: :struct
+               },
+               %OpenAPI.Spec.Schema{}
+             ) == {"SchemaModuleNameTestField", "something_else"}
+
+      assert Naming.raw_schema_module_and_type(
+               state,
+               %OpenAPI.Processor.Schema{
+                 context: [{:field, "sub_ref", "test/field"}],
+                 output_format: :typed_map
+               },
+               %OpenAPI.Spec.Schema{}
+             ) == {"SchemaModuleName", "something_else_test_field"}
     end
   end
 end

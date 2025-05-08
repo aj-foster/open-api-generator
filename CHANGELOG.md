@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Thanks [@bulld0zer](https://github.com/aj-foster/open-api-generator/pull/76)!
 * **Fix**: Successfully merge paths from multiple descriptions, and merge path items.
   Thanks [@florius0](https://github.com/aj-foster/open-api-generator/pull/61)!
+* **Fix**: Output format, output location, and grouping of sub-fields now supports multiple levels of nesting.
+* **Fix**: Object fields on response schemas are now named and output correctly based on the determined output format.
+
+* **Chore**: GitHub Action runner version has been updated.
+* **Chore**: `.tool-versions` updated to latest Erlang + Elixir
 
 ## 0.2.0 (2024-07-08)
 

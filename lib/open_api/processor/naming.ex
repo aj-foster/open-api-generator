@@ -645,7 +645,7 @@ defmodule OpenAPI.Processor.Naming do
 
   def raw_schema_module_and_type(
         state,
-        %Schema{context: [{:field, parent_ref, field_name}]},
+        %Schema{context: [{:field, parent_ref, field_name}], output_format: :struct},
         _schema_spec
       ) do
     %State{implementation: implementation, schemas_by_ref: schemas_by_ref} = state
@@ -653,14 +653,36 @@ defmodule OpenAPI.Processor.Naming do
     {parent_module, parent_type} =
       case Map.fetch!(schemas_by_ref, parent_ref) do
         %Schema{module_name: nil, type_name: nil} = parent ->
-          implementation.schema_module_and_type(state, parent)
+          {parent_module, parent_type} = implementation.schema_module_and_type(state, parent)
+          {inspect(parent_module), to_string(parent_type)}
 
         %Schema{module_name: parent_module, type_name: parent_type} ->
-          {parent_module, parent_type}
+          {inspect(parent_module), to_string(parent_type)}
       end
 
-    module = Enum.join([inspect(parent_module), normalize_identifier(field_name, :camel)])
-    {module, to_string(parent_type)}
+    module = Enum.join([parent_module, normalize_identifier(field_name, :camel)])
+    {module, parent_type}
+  end
+
+  def raw_schema_module_and_type(
+        state,
+        %Schema{context: [{:field, parent_ref, field_name}], output_format: :typed_map},
+        _schema_spec
+      ) do
+    %State{implementation: implementation, schemas_by_ref: schemas_by_ref} = state
+
+    {parent_module, parent_type} =
+      case Map.fetch!(schemas_by_ref, parent_ref) do
+        %Schema{module_name: nil, type_name: nil} = parent ->
+          {parent_module, parent_type} = implementation.schema_module_and_type(state, parent)
+          {inspect(parent_module), to_string(parent_type)}
+
+        %Schema{module_name: parent_module, type_name: parent_type} ->
+          {inspect(parent_module), to_string(parent_type)}
+      end
+
+    type = Enum.join([parent_type, normalize_identifier(field_name, :snake)], "_")
+    {parent_module, type}
   end
 
   def raw_schema_module_and_type(_state, _schema, _schema_spec) do
