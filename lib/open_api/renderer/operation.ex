@@ -56,19 +56,19 @@ defmodule OpenAPI.Renderer.Operation do
     %State{implementation: implementation} = state
     %File{module: module, operations: operations, schemas: schemas} = file
 
-    related_schemas =
+    related_schemas_by_operation =
       schemas
       |> Enum.filter(&(&1.output_format == :typed_map))
       |> filter_related_schemas(state, module)
       |> Enum.group_by(&{&1.module_name, &1.type_name})
       |> Enum.map(fn {_module_and_type, schemas} -> Enum.reduce(schemas, &Schema.merge/2) end)
       |> List.flatten()
-      |> Enum.sort_by(& &1.type_name)
-
-    related_schemas_by_operation = group_related_schemas(related_schemas, state)
+      |> group_related_schemas(state)
 
     for operation <- Enum.sort_by(operations, & &1.function_name) do
-      related_schemas = related_schemas_by_operation[operation.function_name] || []
+      related_schemas =
+        (related_schemas_by_operation[operation.function_name] || [])
+        |> Enum.sort_by(& &1.type_name)
 
       Util.clean_list([
         implementation.render_schema_types(state, related_schemas),
