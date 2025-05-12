@@ -124,7 +124,10 @@ defmodule OpenAPI.Processor.Naming do
     id_name =
       if length(modules) > 0 do
         modules
-        |> Enum.map(&normalize_identifier(&1, :camel))
+        |> Enum.map(fn module ->
+          normalize_identifier(module, :camel)
+          |> do_rename_schema(state)
+        end)
         |> Module.concat()
       end
 
@@ -133,7 +136,10 @@ defmodule OpenAPI.Processor.Naming do
         Enum.map(tags, fn tag ->
           tag
           |> String.split("/", trim: true)
-          |> Enum.map(&normalize_identifier(&1, :camel))
+          |> Enum.map(fn module ->
+            normalize_identifier(module, :camel)
+            |> do_rename_schema(state)
+          end)
           |> Module.concat()
         end)
       else
@@ -401,10 +407,14 @@ defmodule OpenAPI.Processor.Naming do
   def rename_schema({nil, type}, _state), do: {nil, type}
 
   def rename_schema({module, type}, state) do
+    {do_rename_schema(module, state), type}
+  end
+
+  defp do_rename_schema(module, state) do
     replacements = config(state)[:rename] || []
 
-    Enum.reduce(replacements, {module, type}, fn {pattern, replacement}, {module, type} ->
-      {String.replace(module, pattern, replacement), type}
+    Enum.reduce(replacements, module, fn {pattern, replacement}, module ->
+      String.replace(module, pattern, replacement)
     end)
   end
 
