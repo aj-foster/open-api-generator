@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **Breaking**: Officially drop support for Elixir 1.14 (and lower) and Erlang/OTP 23 (and lower).
   Elixir 1.15+ and Erlang/OTP 24+ are supported.
+* **Breaking**: Operation modules are now renamed using the same `naming.rename` configuration as schema modules.
 
 * **Add**: Processor and Renderer modules now have proper `@behaviour` and `@impl` annotations.
   Thanks [@McSym28](https://github.com/aj-foster/open-api-generator/pull/70)!
