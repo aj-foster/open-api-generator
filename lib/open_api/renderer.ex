@@ -8,6 +8,7 @@ defmodule OpenAPI.Renderer do
   """
   alias OpenAPI.Processor.Operation
   alias OpenAPI.Processor.Schema
+  alias OpenAPI.Processor.Type
   alias OpenAPI.Renderer.File
   alias OpenAPI.Renderer.State
 
@@ -73,6 +74,9 @@ defmodule OpenAPI.Renderer do
       defdelegate render_schema_types(state, schemas), to: OpenAPI.Renderer
 
       @impl OpenAPI.Renderer
+      defdelegate render_type(state, type), to: OpenAPI.Renderer
+
+      @impl OpenAPI.Renderer
       defdelegate render_using(state, file), to: OpenAPI.Renderer
 
       @impl OpenAPI.Renderer
@@ -92,6 +96,7 @@ defmodule OpenAPI.Renderer do
                      render_schema_field_function: 2,
                      render_schema_struct: 2,
                      render_schema_types: 2,
+                     render_type: 2,
                      render_using: 2,
                      write: 2
     end
@@ -115,6 +120,7 @@ defmodule OpenAPI.Renderer do
                       render_schema_field_function: 2,
                       render_schema_struct: 2,
                       render_schema_types: 2,
+                      render_type: 2,
                       render_using: 2,
                       write: 2
 
@@ -259,6 +265,13 @@ defmodule OpenAPI.Renderer do
   @callback render_schema_types(state :: State.t(), schemas :: [Schema.t()]) :: Macro.t()
 
   @doc """
+  Render the typespec for type
+
+  See `OpenAPI.Renderer.Util.to_type/2` for the default implementation.
+  """
+  @callback render_type(state :: State.t(), Type.t() | {module, atom}) :: Macro.t()
+
+  @doc """
   Render one or more `use` statements to include in the file
 
   Another route for customization of the outputted code is via meta-programming. This callback
@@ -352,6 +365,10 @@ defmodule OpenAPI.Renderer do
   @doc false
   @impl __MODULE__
   defdelegate render_schema_types(state, schemas), to: OpenAPI.Renderer.Schema, as: :render_types
+
+  @doc false
+  @impl __MODULE__
+  defdelegate render_type(state, type), to: OpenAPI.Renderer.Util, as: :to_type
 
   @doc false
   @impl __MODULE__
