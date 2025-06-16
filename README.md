@@ -70,6 +70,7 @@ It will create modules namespaced with `Example.` and save files in `lib/example
 
 Some the options supported by the generator out-of-the-box include:
 
+* Defining which module executes the requests
 * Ignoring schemas and operations
 * Renaming schemas
 * Grouping schemas into module namespaces
@@ -97,6 +98,11 @@ Once the library is installed and configured, use `mix api.gen` with the name of
 ```shell
 mix api.gen default path/to/rest-api-description/spec.yaml
 ```
+
+By default, all of the operation functions end in a call to `client.request/1`, where `client` is a module passed in as an option **or** a default module (set using the `output.default_client` configuration).
+As a library author, you create this module and define the `request/1` function.
+You can use any HTTP client and handle errors in whatever way best suits your project.
+
 
 ## Further Reading
 
