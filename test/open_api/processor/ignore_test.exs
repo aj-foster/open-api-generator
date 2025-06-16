@@ -41,6 +41,16 @@ defmodule OpenAPI.Processor.IgnoreTest do
       Application.put_env(:oapi_generator, @profile, ignore: [~r"^/ignore/"])
       assert Ignore.ignore_operation?(state, operation)
     end
+
+    test "ignores deprecated operation", %{operation: operation, state: state} do
+      operation = %OpenAPI.Spec.Path.Operation{operation | deprecated: true}
+
+      Application.put_env(:oapi_generator, @profile, ignore: [:deprecated])
+      assert Ignore.ignore_operation?(state, operation)
+
+      Application.put_env(:oapi_generator, @profile, ignore: [:deprecated_operations])
+      assert Ignore.ignore_operation?(state, operation)
+    end
   end
 
   describe "ignore_schema?/2" do
@@ -93,6 +103,16 @@ defmodule OpenAPI.Processor.IgnoreTest do
     test "ignores schema by title pattern", %{schema: schema, state: state} do
       schema = %OpenAPI.Spec.Schema{schema | title: "IgnoredSchema"}
       Application.put_env(:oapi_generator, @profile, ignore: [~r/^Ignored/])
+      assert Ignore.ignore_schema?(state, schema)
+    end
+
+    test "ignores deprecated schema", %{schema: schema, state: state} do
+      schema = %OpenAPI.Spec.Schema{schema | deprecated: true}
+
+      Application.put_env(:oapi_generator, @profile, ignore: [:deprecated])
+      assert Ignore.ignore_schema?(state, schema)
+
+      Application.put_env(:oapi_generator, @profile, ignore: [:deprecated_schemas])
       assert Ignore.ignore_schema?(state, schema)
     end
   end

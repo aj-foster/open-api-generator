@@ -236,6 +236,7 @@ config :oapi_generator, default: [
 Remember that all configuration values must be contained within a profile.
 
 * `ignore`: List of patterns (string or regular expression) representing operations or schemas to ignore during code generation.
+  Include the special atom `:deprecated` to ignore all deprecated schemas and operations, `:deprecated_schemas` to ignore deprecated schemas, and `:deprecated_operations` to ignore deprecated operations.
   Defaults to an empty list of patterns.
   See `OpenAPI.Processor.Ignore` for more information.
 

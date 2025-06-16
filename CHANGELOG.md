@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Thanks [@McSym28](https://github.com/aj-foster/open-api-generator/pull/70)!
 * **Add**: Arguments in operation type specifications are now labeled by name (ex. `body :: map`) for additional clarity.
   Thanks [@McSym28](https://github.com/aj-foster/open-api-generator/pull/71)!
+* **Add**: Option `ignore` can now accept `:deprecated`, `:deprecated_schemas`, and `:deprecated_operations` to optionally ignore portions of the API description that have been marked as deprecated.
 
 * **Fix**: Module name generation when field name has `.` in it.
   Thanks [@bulld0zer](https://github.com/aj-foster/open-api-generator/pull/76)!

@@ -17,7 +17,8 @@ defmodule OpenAPI.Processor.Ignore do
       config :oapi_generator, default: [
         ignore: [
           "IgnoredOperation",
-          ~r"/components/schemas/ignored-"
+          ~r"/components/schemas/ignored-",
+          :deprecated_schemas
         ]
       ]
 
@@ -26,6 +27,9 @@ defmodule OpenAPI.Processor.Ignore do
   compared for equality. Regular expressions are tested using `Regex.match?/2`.
 
   If any pattern matches the tested operation or schema, it will be excluded.
+
+  The special values `:deprecated`, `:deprecated_operations`, and `:deprecated_schemas` can be
+  used to ignore all operations and/or schemas that are marked as deprecated.
   """
   alias OpenAPI.Spec.Path.Operation, as: OperationSpec
   alias OpenAPI.Spec.Schema, as: SchemaSpec
@@ -49,17 +53,25 @@ defmodule OpenAPI.Processor.Ignore do
 
     patterns_to_ignore = config(state)
 
+    ignore_deprecated? =
+      :deprecated in patterns_to_ignore or
+        :deprecated_operations in patterns_to_ignore
+
     combinations_to_check =
       for x <- [operation_path, operation_id], y <- patterns_to_ignore do
         {x, y}
       end
 
-    Enum.any?(combinations_to_check, fn
-      {nil, _pattern} -> false
-      {value, %Regex{} = regex} -> Regex.match?(regex, value)
-      {value, value} -> true
-      {_value, _string_pattern} -> false
-    end)
+    if ignore_deprecated? and operation.deprecated do
+      true
+    else
+      Enum.any?(combinations_to_check, fn
+        {nil, _pattern} -> false
+        {value, %Regex{} = regex} -> Regex.match?(regex, value)
+        {value, value} -> true
+        {_value, _string_pattern} -> false
+      end)
+    end
   end
 
   @doc """
@@ -80,6 +92,10 @@ defmodule OpenAPI.Processor.Ignore do
 
     patterns_to_ignore = config(state)
 
+    ignore_deprecated? =
+      :deprecated in patterns_to_ignore or
+        :deprecated_schemas in patterns_to_ignore
+
     base_path = Enum.join(base_path, "/")
     ref_path = Enum.join(ref_path, "/")
 
@@ -88,12 +104,16 @@ defmodule OpenAPI.Processor.Ignore do
         {x, y}
       end
 
-    Enum.any?(combinations_to_check, fn
-      {nil, _pattern} -> false
-      {value, %Regex{} = regex} -> Regex.match?(regex, value)
-      {value, value} -> true
-      {_value, _string_pattern} -> false
-    end)
+    if ignore_deprecated? and schema.deprecated do
+      true
+    else
+      Enum.any?(combinations_to_check, fn
+        {nil, _pattern} -> false
+        {value, %Regex{} = regex} -> Regex.match?(regex, value)
+        {value, value} -> true
+        {_value, _string_pattern} -> false
+      end)
+    end
   end
 
   #
