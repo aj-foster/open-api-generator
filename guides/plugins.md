@@ -109,6 +109,7 @@ Below is a list of all available callbacks in order of their use, along with the
     * `c:OpenAPI.Renderer.render_default_client/2`: `OpenAPI.Renderer.Module.render_default_client/2`
     * `c:OpenAPI.Renderer.render_schema/2`: `OpenAPI.Renderer.Schema.render/2`
       * `c:OpenAPI.Renderer.render_schema_types/2`: `OpenAPI.Renderer.Schema.render_types/2`
+        * `c:OpenAPI.Renderer.render_type/2`: `OpenAPI.Renderer.Util.to_type/2`
       * `c:OpenAPI.Renderer.render_schema_struct/2`: `OpenAPI.Renderer.Schema.render_struct/2`
       * `c:OpenAPI.Renderer.render_schema_field_function/2`: `OpenAPI.Renderer.Schema.render_field_function/2`
     * `c:OpenAPI.Renderer.render_operations/2`: `OpenAPI.Renderer.Operation.render_all/2`
