@@ -470,7 +470,7 @@ defmodule OpenAPI.Processor do
           end)
 
         field_name =
-          case config(state, :field_casing) do
+          case config(state)[:field_casing] do
             :camel -> OpenAPI.Processor.Naming.normalize_identifier(field_name, :lower_camel)
             :snake -> OpenAPI.Processor.Naming.normalize_identifier(field_name, :snake)
             _else -> field_name
@@ -534,12 +534,11 @@ defmodule OpenAPI.Processor do
     end
   end
 
-  @spec config(OpenAPI.Processor.State.t(), atom) :: term
-  @spec config(OpenAPI.Processor.State.t(), atom, term) :: term
-  defp config(state, key, default \\ nil) do
+  @spec config(OpenAPI.Processor.State.t()) :: term
+  defp config(state) do
     %OpenAPI.Processor.State{profile: profile} = state
 
     Application.get_env(:oapi_generator, profile, [])
-    |> Keyword.get(key, default)
+    |> Keyword.get(:output, [])
   end
 end

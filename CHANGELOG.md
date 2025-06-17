@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Breaking**: Officially drop support for Elixir 1.14 (and lower) and Erlang/OTP 23 (and lower).
   Elixir 1.15+ and Erlang/OTP 24+ are supported.
 * **Breaking**: Operation modules are now renamed using the same `naming.rename` configuration as schema modules.
+* **Breaking**: Configuration option `field_casing` is now `output.field_casing` (which was previously, incorrectly, documented as `naming.field_casing`).
 
 * **Add**: Processor and Renderer modules now have proper `@behaviour` and `@impl` annotations.
   Thanks [@McSym28](https://github.com/aj-foster/open-api-generator/pull/70)!
@@ -33,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   For example, an operation `v2example` is now output as `v2_example`.
   This may be a breaking change for clients with numbers in operation IDs.
 
-* **Add**: New configuration option `naming.field_casing` to choose between `:camel` case, `:snake` case, or performing no normalization (`nil`, the default).
+* **Add**: New configuration option `output.field_casing` to choose between `:camel` case, `:snake` case, or performing no normalization (`nil`, the default).
   Using this option may be necessary for API descriptions that include non-normalized field names (for example, fields that begin with a number or symbol).
   Setting this configuration would be a breaking change for any clients based on API descriptions that have inconsistent field casing.
 
