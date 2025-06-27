@@ -258,14 +258,6 @@ defmodule OpenAPI.Renderer.Util do
           map
         end
 
-      %Schema{
-        context: [{:response, module, _op_function_name, _status, _content_type}],
-        module_name: module
-      } ->
-        quote do
-          map
-        end
-
       %Schema{module_name: module, type_name: type} ->
         module_name =
           Module.concat([
