@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Fix**: Output format, output location, and grouping of sub-fields now supports multiple levels of nesting.
 * **Fix**: Object fields on response schemas are now named and output correctly based on the determined output format.
 * **Fix**: Fix an issue with the default type given to parameters (thanks [@dballance](https://github.com/aj-foster/open-api-generator/issues/86))!
+* **Fix**: Typed map responses are now properly represented in their operations' function specs.
 
 * **Chore**: GitHub Action runner version has been updated.
 * **Chore**: `.tool-versions` updated to latest Erlang + Elixir
