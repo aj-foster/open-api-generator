@@ -5,8 +5,10 @@ defmodule OpenAPI.Processor.OperationTest do
   alias OpenAPI.Processor.Operation.Param
   alias OpenAPI.Spec.ExternalDocumentation
   alias OpenAPI.Spec.Path.Operation, as: OpSpec
+  alias OpenAPI.Spec.RequestBody
+  alias OpenAPI.Spec.Schema, as: SchemaSpec
 
-  describe "docstring/2" do
+  describe "docstring/4" do
     test "creates a docstring with minimal information" do
       operation = %OpSpec{
         "$oag_path": "/",
@@ -16,7 +18,7 @@ defmodule OpenAPI.Processor.OperationTest do
         summary: nil
       }
 
-      assert Operation.docstring(nil, operation, []) ==
+      assert Operation.docstring(nil, operation, [], []) ==
                """
                GET `/`
                """
@@ -31,7 +33,7 @@ defmodule OpenAPI.Processor.OperationTest do
         summary: "Does stuff"
       }
 
-      assert Operation.docstring(nil, operation, []) ==
+      assert Operation.docstring(nil, operation, [], []) ==
                """
                Does stuff
 
@@ -48,7 +50,7 @@ defmodule OpenAPI.Processor.OperationTest do
         summary: "Does stuff"
       }
 
-      assert Operation.docstring(nil, operation, []) ==
+      assert Operation.docstring(nil, operation, [], []) ==
                """
                Does stuff
 
@@ -73,7 +75,7 @@ defmodule OpenAPI.Processor.OperationTest do
         %Param{description: "Something else", name: "two", value_type: :string}
       ]
 
-      assert Operation.docstring(nil, operation, query_params) ==
+      assert Operation.docstring(nil, operation, query_params, []) ==
                """
                Does stuff
 
@@ -102,7 +104,7 @@ defmodule OpenAPI.Processor.OperationTest do
         %Param{description: "Something else", name: "two", value_type: :string}
       ]
 
-      assert Operation.docstring(nil, operation, query_params) ==
+      assert Operation.docstring(nil, operation, query_params, []) ==
                """
                Does stuff
 
@@ -117,6 +119,134 @@ defmodule OpenAPI.Processor.OperationTest do
 
                  * [More Info](https://google.com/)
 
+               """
+    end
+
+    test "creates a docstring with request body content types only" do
+      operation = %OpSpec{
+        "$oag_path": "/api/endpoint",
+        "$oag_path_method": "POST",
+        description: nil,
+        external_docs: nil,
+        summary: "Creates something",
+        request_body: nil
+      }
+
+      request_body_spec = [
+        {"application/json", %SchemaSpec{}},
+        {"application/x-www-form-urlencoded", %SchemaSpec{}}
+      ]
+
+      assert Operation.docstring(nil, operation, [], request_body_spec) ==
+               """
+               Creates something
+
+               ## Request Body
+
+                 * **Content Types**: `application/json`, `application/x-www-form-urlencoded`
+
+               """
+    end
+
+    test "creates a docstring with request body including description" do
+      operation = %OpSpec{
+        "$oag_path": "/api/endpoint",
+        "$oag_path_method": "POST",
+        description: nil,
+        external_docs: nil,
+        summary: "Creates something",
+        request_body: %RequestBody{
+          description: "The user data to create\n\nShould include name and email fields",
+          content: %{},
+          required: true
+        }
+      }
+
+      request_body_spec = [
+        {"application/json", %SchemaSpec{}}
+      ]
+
+      assert Operation.docstring(nil, operation, [], request_body_spec) ==
+               """
+               Creates something
+
+               ## Request Body
+
+                 * **Content Types**: `application/json`
+                 * **Description**: The user data to create
+                   
+                   Should include name and email fields
+
+               """
+    end
+
+    test "creates a docstring with everything including request body" do
+      operation = %OpSpec{
+        "$oag_path": "/api/endpoint",
+        "$oag_path_method": "POST",
+        description: "What more could I say?",
+        external_docs: %ExternalDocumentation{
+          description: "More Info",
+          url: "https://google.com/"
+        },
+        summary: "Creates something",
+        request_body: %RequestBody{
+          description: "The request payload",
+          content: %{},
+          required: true
+        }
+      }
+
+      query_params = [
+        %Param{description: "Filter parameter", name: "filter", value_type: :string}
+      ]
+
+      request_body_spec = [
+        {"application/json", %SchemaSpec{}}
+      ]
+
+      assert Operation.docstring(nil, operation, query_params, request_body_spec) ==
+               """
+               Creates something
+
+               What more could I say?
+
+               ## Options
+
+                 * `filter`: Filter parameter
+
+               ## Request Body
+
+                 * **Content Types**: `application/json`
+                 * **Description**: The request payload
+
+               ## Resources
+
+                 * [More Info](https://google.com/)
+
+               """
+    end
+
+    test "creates a docstring with empty request body spec" do
+      operation = %OpSpec{
+        "$oag_path": "/api/endpoint",
+        "$oag_path_method": "POST",
+        description: nil,
+        external_docs: nil,
+        summary: "Creates something",
+        request_body: %RequestBody{
+          description: "This description should not appear",
+          content: %{},
+          required: true
+        }
+      }
+
+      # Empty request body spec should not show request body section
+      request_body_spec = []
+
+      assert Operation.docstring(nil, operation, [], request_body_spec) ==
+               """
+               Creates something
                """
     end
   end

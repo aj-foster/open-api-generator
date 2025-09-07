@@ -62,7 +62,7 @@ defmodule OpenAPI.Processor do
       defdelegate ignore_schema?(state, schema), to: OpenAPI.Processor
 
       @impl OpenAPI.Processor
-      defdelegate operation_docstring(state, operation_spec, params), to: OpenAPI.Processor
+      defdelegate operation_docstring(state, operation_spec, params, request_body_spec), to: OpenAPI.Processor
 
       @impl OpenAPI.Processor
       defdelegate operation_function_name(state, operation_spec), to: OpenAPI.Processor
@@ -87,7 +87,7 @@ defmodule OpenAPI.Processor do
 
       defoverridable ignore_operation?: 2,
                      ignore_schema?: 2,
-                     operation_docstring: 3,
+                     operation_docstring: 4,
                      operation_function_name: 2,
                      operation_module_names: 2,
                      operation_request_body: 2,
@@ -104,7 +104,7 @@ defmodule OpenAPI.Processor do
 
   @optional_callbacks ignore_operation?: 2,
                       ignore_schema?: 2,
-                      operation_docstring: 3,
+                      operation_docstring: 4,
                       operation_function_name: 2,
                       operation_module_names: 2,
                       operation_request_body: 2,
@@ -143,7 +143,8 @@ defmodule OpenAPI.Processor do
   @callback operation_docstring(
               state :: State.t(),
               operation_spec :: OperationSpec.t(),
-              query_params :: [Param.t()]
+              query_params :: [Param.t()],
+              request_body_spec :: Operation.request_body_unprocessed()
             ) :: String.t()
 
   @doc """
@@ -246,7 +247,7 @@ defmodule OpenAPI.Processor do
 
   @doc false
   @impl __MODULE__
-  defdelegate operation_docstring(state, operation_spec, params),
+  defdelegate operation_docstring(state, operation_spec, params, request_body_spec),
     to: OpenAPI.Processor.Operation,
     as: :docstring
 
@@ -329,7 +330,6 @@ defmodule OpenAPI.Processor do
     path_params = Enum.filter(all_params, &(&1.location == :path))
     query_params = Enum.filter(all_params, &(&1.location == :query))
 
-    docstring = implementation.operation_docstring(state, operation_spec, query_params)
     module_names = implementation.operation_module_names(state, operation_spec)
     request_method = implementation.operation_request_method(state, operation_spec)
 
@@ -340,6 +340,9 @@ defmodule OpenAPI.Processor do
         {state, request_body} =
           implementation.operation_request_body(state, operation_spec)
           |> process_request_body(state, module_name, function_name)
+
+        request_body_spec = implementation.operation_request_body(state, operation_spec)
+        docstring = implementation.operation_docstring(state, operation_spec, query_params, request_body_spec)
 
         {state, response_body} =
           implementation.operation_response_body(state, operation_spec)

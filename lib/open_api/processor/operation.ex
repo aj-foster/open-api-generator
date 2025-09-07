@@ -58,12 +58,15 @@ defmodule OpenAPI.Processor.Operation do
   @doc """
   Create the contents of an `@doc` string for the given operation
 
-  Default implementation of `c:OpenAPI.Processor.operation_docstring/3`.
+  Default implementation of `c:OpenAPI.Processor.operation_docstring/4`.
 
   The docstring constructed by this function will contain a summary line provided by the operation
   summary (if available) or the request method and path otherwise. It will incorporate the
-  operation description (if available) and link to any included external documentation. Finally,
-  all query parameters (which are part of the `opts` argument) are documented.
+  operation description (if available) and link to any included external documentation. 
+  
+  If the operation has query parameters, they are documented in an "Options" section as they
+  are part of the `opts` argument. If the operation has a request body, it's documented in a
+  "Request Body" section with content types and description.
 
       @doc \"\"\"
       Summary of the operation or method and path
@@ -74,6 +77,11 @@ defmodule OpenAPI.Processor.Operation do
 
         * `param`: query parameter description
 
+      ## Request Body
+
+        * **Content Types**: `application/json`
+        * **Description**: Description of the request body
+
       ## Resources
 
         * [External Doc Description](link to external documentation)
@@ -81,8 +89,8 @@ defmodule OpenAPI.Processor.Operation do
       \"\"\"
   """
   @doc default_implementation: true
-  @spec docstring(State.t(), OperationSpec.t(), [Param.t()]) :: String.t()
-  def docstring(_state, operation, query_params) do
+  @spec docstring(State.t(), OperationSpec.t(), [Param.t()], request_body_unprocessed) :: String.t()
+  def docstring(_state, operation, query_params, request_body_spec) do
     %OperationSpec{
       "$oag_path": request_path,
       "$oag_path_method": request_method,
@@ -113,6 +121,30 @@ defmodule OpenAPI.Processor.Operation do
         end
       end
 
+    body_params = 
+      case request_body_spec do
+        [_|_] ->
+          %OperationSpec{request_body: request_body} = operation
+          if request_body && request_body.description do
+            description = String.replace(request_body.description, "\n", "\n    ")
+            content_types = 
+              request_body_spec
+              |> Enum.map(fn {content_type, _schema} -> "`#{content_type}`" end)
+              |> Enum.join(", ")
+            
+            "\n## Request Body\n\n  * **Content Types**: #{content_types}\n  * **Description**: #{description}\n"
+          else
+            content_types = 
+              request_body_spec
+              |> Enum.map(fn {content_type, _schema} -> "`#{content_type}`" end)
+              |> Enum.join(", ")
+            
+            "\n## Request Body\n\n  * **Content Types**: #{content_types}\n"
+          end
+        [] ->
+          nil
+      end
+
     resources =
       if external_docs && external_docs.url do
         if external_docs.description do
@@ -132,8 +164,8 @@ defmodule OpenAPI.Processor.Operation do
         end
       end
 
-    if options || resources do
-      "#{summary}#{description}#{options}#{resources}\n"
+    if options || body_params || resources do
+      "#{summary}#{description}#{options}#{body_params}#{resources}\n"
     else
       "#{summary}#{description}"
     end
