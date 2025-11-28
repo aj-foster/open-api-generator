@@ -58,12 +58,12 @@ defmodule OpenAPI.Processor.Operation do
   @doc """
   Create the contents of an `@doc` string for the given operation
 
-  Default implementation of `c:OpenAPI.Processor.operation_docstring/4`.
+  Default implementation of `c:OpenAPI.Processor.operation_docstring/3`.
 
   The docstring constructed by this function will contain a summary line provided by the operation
   summary (if available) or the request method and path otherwise. It will incorporate the
-  operation description (if available) and link to any included external documentation. 
-  
+  operation description (if available) and link to any included external documentation.
+
   If the operation has query parameters, they are documented in an "Options" section as they
   are part of the `opts` argument. If the operation has a request body, it's documented in a
   "Request Body" section with content types and description.
@@ -79,8 +79,9 @@ defmodule OpenAPI.Processor.Operation do
 
       ## Request Body
 
-        * **Content Types**: `application/json`
-        * **Description**: Description of the request body
+      **Content Types**: `application/json`
+
+      Description of the request body
 
       ## Resources
 
@@ -89,13 +90,14 @@ defmodule OpenAPI.Processor.Operation do
       \"\"\"
   """
   @doc default_implementation: true
-  @spec docstring(State.t(), OperationSpec.t(), [Param.t()], request_body_unprocessed) :: String.t()
-  def docstring(_state, operation, query_params, request_body_spec) do
+  @spec docstring(State.t(), OperationSpec.t(), [Param.t()]) :: String.t()
+  def docstring(_state, operation, query_params) do
     %OperationSpec{
       "$oag_path": request_path,
       "$oag_path_method": request_method,
       description: description,
       external_docs: external_docs,
+      request_body: request_body,
       summary: summary
     } = operation
 
@@ -118,31 +120,27 @@ defmodule OpenAPI.Processor.Operation do
           else
             "  * `#{name}`\n"
           end
-        end
+        end <> "\n"
       end
 
-    body_params = 
-      case request_body_spec do
-        [_|_] ->
-          %OperationSpec{request_body: request_body} = operation
-          if request_body && request_body.description do
-            description = String.replace(request_body.description, "\n", "\n    ")
-            content_types = 
-              request_body_spec
-              |> Enum.map(fn {content_type, _schema} -> "`#{content_type}`" end)
-              |> Enum.join(", ")
-            
-            "\n## Request Body\n\n  * **Content Types**: #{content_types}\n  * **Description**: #{description}\n"
-          else
-            content_types = 
-              request_body_spec
-              |> Enum.map(fn {content_type, _schema} -> "`#{content_type}`" end)
-              |> Enum.join(", ")
-            
-            "\n## Request Body\n\n  * **Content Types**: #{content_types}\n"
-          end
-        [] ->
-          nil
+    body_params =
+      if request_body do
+        %RequestBodySpec{
+          description: description,
+          content: content
+        } = request_body
+
+        content_types =
+          content
+          |> Map.keys()
+          |> Enum.map(&"`#{&1}`")
+          |> Enum.join(", ")
+
+        if description do
+          "\n## Request Body\n\n**Content Types**: #{content_types}\n\n#{description}\n"
+        else
+          "\n## Request Body\n\n**Content Types**: #{content_types}\n"
+        end
       end
 
     resources =
@@ -153,6 +151,7 @@ defmodule OpenAPI.Processor.Operation do
           ## Resources
 
             * [#{external_docs.description}](#{external_docs.url})
+
           """
         else
           """
@@ -160,15 +159,16 @@ defmodule OpenAPI.Processor.Operation do
           ## Resources
 
             * [Documentation](#{external_docs.url})
+
           """
         end
       end
 
-    if options || body_params || resources do
-      "#{summary}#{description}#{options}#{body_params}#{resources}\n"
-    else
-      "#{summary}#{description}"
-    end
+    String.replace(
+      "#{summary}#{description}#{options}#{body_params}#{resources}",
+      "\n\n\n",
+      "\n\n"
+    )
   end
 
   @doc """

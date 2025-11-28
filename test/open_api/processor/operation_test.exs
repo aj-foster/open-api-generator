@@ -8,7 +8,7 @@ defmodule OpenAPI.Processor.OperationTest do
   alias OpenAPI.Spec.RequestBody
   alias OpenAPI.Spec.Schema, as: SchemaSpec
 
-  describe "docstring/4" do
+  describe "docstring/3" do
     test "creates a docstring with minimal information" do
       operation = %OpSpec{
         "$oag_path": "/",
@@ -18,7 +18,7 @@ defmodule OpenAPI.Processor.OperationTest do
         summary: nil
       }
 
-      assert Operation.docstring(nil, operation, [], []) ==
+      assert Operation.docstring(nil, operation, []) ==
                """
                GET `/`
                """
@@ -33,7 +33,7 @@ defmodule OpenAPI.Processor.OperationTest do
         summary: "Does stuff"
       }
 
-      assert Operation.docstring(nil, operation, [], []) ==
+      assert Operation.docstring(nil, operation, []) ==
                """
                Does stuff
 
@@ -50,7 +50,7 @@ defmodule OpenAPI.Processor.OperationTest do
         summary: "Does stuff"
       }
 
-      assert Operation.docstring(nil, operation, [], []) ==
+      assert Operation.docstring(nil, operation, []) ==
                """
                Does stuff
 
@@ -75,7 +75,7 @@ defmodule OpenAPI.Processor.OperationTest do
         %Param{description: "Something else", name: "two", value_type: :string}
       ]
 
-      assert Operation.docstring(nil, operation, query_params, []) ==
+      assert Operation.docstring(nil, operation, query_params) ==
                """
                Does stuff
 
@@ -104,7 +104,7 @@ defmodule OpenAPI.Processor.OperationTest do
         %Param{description: "Something else", name: "two", value_type: :string}
       ]
 
-      assert Operation.docstring(nil, operation, query_params, []) ==
+      assert Operation.docstring(nil, operation, query_params) ==
                """
                Does stuff
 
@@ -129,22 +129,23 @@ defmodule OpenAPI.Processor.OperationTest do
         description: nil,
         external_docs: nil,
         summary: "Creates something",
-        request_body: nil
+        request_body: %RequestBody{
+          description: nil,
+          content: %{
+            "application/json" => %SchemaSpec{},
+            "application/x-www-form-urlencoded" => %SchemaSpec{}
+          },
+          required: true
+        }
       }
 
-      request_body_spec = [
-        {"application/json", %SchemaSpec{}},
-        {"application/x-www-form-urlencoded", %SchemaSpec{}}
-      ]
-
-      assert Operation.docstring(nil, operation, [], request_body_spec) ==
+      assert Operation.docstring(nil, operation, []) ==
                """
                Creates something
 
                ## Request Body
 
-                 * **Content Types**: `application/json`, `application/x-www-form-urlencoded`
-
+               **Content Types**: `application/json`, `application/x-www-form-urlencoded`
                """
     end
 
@@ -157,26 +158,24 @@ defmodule OpenAPI.Processor.OperationTest do
         summary: "Creates something",
         request_body: %RequestBody{
           description: "The user data to create\n\nShould include name and email fields",
-          content: %{},
+          content: %{
+            "application/json" => %SchemaSpec{}
+          },
           required: true
         }
       }
 
-      request_body_spec = [
-        {"application/json", %SchemaSpec{}}
-      ]
-
-      assert Operation.docstring(nil, operation, [], request_body_spec) ==
+      assert Operation.docstring(nil, operation, []) ==
                """
                Creates something
 
                ## Request Body
 
-                 * **Content Types**: `application/json`
-                 * **Description**: The user data to create
-                   
-                   Should include name and email fields
+               **Content Types**: `application/json`
 
+               The user data to create
+
+               Should include name and email fields
                """
     end
 
@@ -192,7 +191,9 @@ defmodule OpenAPI.Processor.OperationTest do
         summary: "Creates something",
         request_body: %RequestBody{
           description: "The request payload",
-          content: %{},
+          content: %{
+            "application/json" => %SchemaSpec{}
+          },
           required: true
         }
       }
@@ -201,11 +202,7 @@ defmodule OpenAPI.Processor.OperationTest do
         %Param{description: "Filter parameter", name: "filter", value_type: :string}
       ]
 
-      request_body_spec = [
-        {"application/json", %SchemaSpec{}}
-      ]
-
-      assert Operation.docstring(nil, operation, query_params, request_body_spec) ==
+      assert Operation.docstring(nil, operation, query_params) ==
                """
                Creates something
 
@@ -217,8 +214,9 @@ defmodule OpenAPI.Processor.OperationTest do
 
                ## Request Body
 
-                 * **Content Types**: `application/json`
-                 * **Description**: The request payload
+               **Content Types**: `application/json`
+
+               The request payload
 
                ## Resources
 
@@ -234,17 +232,10 @@ defmodule OpenAPI.Processor.OperationTest do
         description: nil,
         external_docs: nil,
         summary: "Creates something",
-        request_body: %RequestBody{
-          description: "This description should not appear",
-          content: %{},
-          required: true
-        }
+        request_body: nil
       }
 
-      # Empty request body spec should not show request body section
-      request_body_spec = []
-
-      assert Operation.docstring(nil, operation, [], request_body_spec) ==
+      assert Operation.docstring(nil, operation, []) ==
                """
                Creates something
                """
