@@ -62,8 +62,11 @@ defmodule OpenAPI.Processor.Operation do
 
   The docstring constructed by this function will contain a summary line provided by the operation
   summary (if available) or the request method and path otherwise. It will incorporate the
-  operation description (if available) and link to any included external documentation. Finally,
-  all query parameters (which are part of the `opts` argument) are documented.
+  operation description (if available) and link to any included external documentation.
+
+  If the operation has query parameters, they are documented in an "Options" section as they
+  are part of the `opts` argument. If the operation has a request body, it's documented in a
+  "Request Body" section with content types and description.
 
       @doc \"\"\"
       Summary of the operation or method and path
@@ -73,6 +76,12 @@ defmodule OpenAPI.Processor.Operation do
       ## Options
 
         * `param`: query parameter description
+
+      ## Request Body
+
+      **Content Types**: `application/json`
+
+      Description of the request body
 
       ## Resources
 
@@ -88,6 +97,7 @@ defmodule OpenAPI.Processor.Operation do
       "$oag_path_method": request_method,
       description: description,
       external_docs: external_docs,
+      request_body: request_body,
       summary: summary
     } = operation
 
@@ -110,6 +120,26 @@ defmodule OpenAPI.Processor.Operation do
           else
             "  * `#{name}`\n"
           end
+        end <> "\n"
+      end
+
+    body_params =
+      if request_body do
+        %RequestBodySpec{
+          description: description,
+          content: content
+        } = request_body
+
+        content_types =
+          content
+          |> Map.keys()
+          |> Enum.map(&"`#{&1}`")
+          |> Enum.join(", ")
+
+        if description do
+          "\n## Request Body\n\n**Content Types**: #{content_types}\n\n#{description}\n"
+        else
+          "\n## Request Body\n\n**Content Types**: #{content_types}\n"
         end
       end
 
@@ -121,6 +151,7 @@ defmodule OpenAPI.Processor.Operation do
           ## Resources
 
             * [#{external_docs.description}](#{external_docs.url})
+
           """
         else
           """
@@ -128,15 +159,16 @@ defmodule OpenAPI.Processor.Operation do
           ## Resources
 
             * [Documentation](#{external_docs.url})
+
           """
         end
       end
 
-    if options || resources do
-      "#{summary}#{description}#{options}#{resources}\n"
-    else
-      "#{summary}#{description}"
-    end
+    String.replace(
+      "#{summary}#{description}#{options}#{body_params}#{resources}",
+      "\n\n\n",
+      "\n\n"
+    )
   end
 
   @doc """
