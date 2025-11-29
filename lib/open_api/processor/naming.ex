@@ -554,6 +554,8 @@ defmodule OpenAPI.Processor.Naming do
 
   @doc false
   def segment_identifier(input) do
+    raise_for_invalid_identifier(input)
+
     [first_segment | segments] =
       String.split(input, ~r/[^A-Za-z0-9]+|([A-Z]?[a-z]+[0-9]?+)/,
         include_captures: true,
@@ -567,6 +569,19 @@ defmodule OpenAPI.Processor.Naming do
       String.replace(segment, ~r/[^A-Za-z0-9]+$/, "")
     end)
     |> Enum.reject(&(&1 == ""))
+  end
+
+  defp raise_for_invalid_identifier(input) do
+    if String.match?(input, ~r/^[^A-Za-z]+$/) do
+      raise ArgumentError, """
+      Identifier #{input} cannot be normalized
+
+      This may mean that the description contains a schema or operation ID with only
+      non-alphabetical characters or numbers. Please check the OpenAPI description and
+      consider renaming the offending schema or operation using the `naming.rename`
+      configuration.
+      """
+    end
   end
 
   @doc """

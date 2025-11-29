@@ -33,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fix**: Fix warnings related to struct update syntax in Elixir 1.19.
 - **Fix**: Fix an issue where refs were not handled for `requestBody` schemas
   Thanks [@mjquinlan2000](https://github.com/aj-foster/open-api-generator/pull/91)!
+- **Fix**: Raise an error if a schema has a name that is incompatible with Elixir module names (for example, all numbers).
+  Thanks [@ericphanson](https://github.com/aj-foster/open-api-generator/issues/74)!
 
 - **Chore**: GitHub Action runner version has been updated.
 - **Chore**: `.tool-versions` updated to latest Erlang + Elixir

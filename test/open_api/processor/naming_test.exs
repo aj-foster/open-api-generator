@@ -144,6 +144,16 @@ defmodule OpenAPI.Processor.NamingTest do
       assert Naming.normalize_identifier("OpenAPISpec") == "open_api_spec"
       assert Naming.normalize_identifier("OpenAPISpec", :camel) == "OpenAPISpec"
     end
+
+    test "raises for numerical identifiers" do
+      assert_raise ArgumentError, fn ->
+        Naming.normalize_identifier("123")
+      end
+
+      assert_raise ArgumentError, fn ->
+        Naming.normalize_identifier("123", :camel)
+      end
+    end
   end
 
   describe "raw_schema_module_and_type/3" do
