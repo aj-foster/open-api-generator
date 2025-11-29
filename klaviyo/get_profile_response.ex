@@ -1,0 +1,17 @@
+defmodule GetProfileResponse do
+  @moduledoc """
+  Provides struct and type for a GetProfileResponse
+  """
+
+  @type t :: %__MODULE__{data: GetProfileResponseData.t()}
+
+  defstruct [:data]
+
+  @doc false
+  @spec __fields__(atom) :: keyword
+  def __fields__(type \\ :t)
+
+  def __fields__(:t) do
+    [data: {GetProfileResponseData, :t}]
+  end
+end
