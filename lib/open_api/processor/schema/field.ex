@@ -5,6 +5,7 @@ defmodule OpenAPI.Processor.Schema.Field do
   This struct is created by the Processor to hold only the data necessary for rendering fields
   and their types. It has the following fields:
 
+    * `default`: Default value for the field, if any
     * `name`: Name of the field in its parent schema
     * `nullable`: Whether the field is defined as nullable
     * `private`: Whether the field was added via the `output.extra_fields` configuration
@@ -16,6 +17,7 @@ defmodule OpenAPI.Processor.Schema.Field do
 
   @typedoc "Processed field data used by the renderer"
   @type t :: %__MODULE__{
+          default: any,
           name: String.t(),
           nullable: boolean,
           private: boolean,
@@ -23,7 +25,8 @@ defmodule OpenAPI.Processor.Schema.Field do
           type: Type.t()
         }
 
-  defstruct name: nil,
+  defstruct default: nil,
+            name: nil,
             nullable: false,
             private: false,
             required: false,

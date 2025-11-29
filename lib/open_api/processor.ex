@@ -449,6 +449,12 @@ defmodule OpenAPI.Processor do
 
     for {field_name, field_spec} <- properties, reduce: {state, []} do
       {state, fields} ->
+        default =
+          case field_spec do
+            %SchemaSpec{default: default} -> default
+            {:ref, _} -> nil
+          end
+
         nullable? =
           case field_spec do
             %SchemaSpec{nullable: nullable?} -> nullable?
@@ -477,6 +483,7 @@ defmodule OpenAPI.Processor do
           end
 
         field = %Field{
+          default: default,
           name: field_name,
           nullable: nullable?,
           private: false,

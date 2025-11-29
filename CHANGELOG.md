@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Add**: Option `ignore` can now accept `:deprecated`, `:deprecated_schemas`, and `:deprecated_operations` to optionally ignore portions of the API description that have been marked as deprecated.
 - **Add**: Add request body content type and description to the docstring of an operation.
   Thanks [@wakeless](https://github.com/aj-foster/open-api-generator/pull/89)!
+- **Add**: Keep information about default field values through the processing phase.
+  Thanks [@jaeyson](https://github.com/aj-foster/open-api-generator/issues/87)!
 
 - **Fix**: Module name generation when field name has `.` in it.
   Thanks [@bulld0zer](https://github.com/aj-foster/open-api-generator/pull/76)!
