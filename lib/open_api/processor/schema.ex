@@ -121,7 +121,7 @@ defmodule OpenAPI.Processor.Schema do
 
   @doc false
   @spec put_output_format(t, format) :: t
-  def put_output_format(schema, format) do
+  def put_output_format(%__MODULE__{} = schema, format) do
     %__MODULE__{schema | output_format: format}
   end
 end

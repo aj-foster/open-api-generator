@@ -94,7 +94,7 @@ defmodule OpenAPI.Reader.State do
   @doc false
   @spec with_path(t, yaml, Spec.path_segment(), decoder) ::
           {t, term}
-  def with_path(state, yaml, path_segment, decoder) do
+  def with_path(%__MODULE__{} = state, yaml, path_segment, decoder) do
     %__MODULE__{
       base_file_path: original_base_file_path,
       current_file_path: original_current_file_path,
@@ -108,7 +108,7 @@ defmodule OpenAPI.Reader.State do
         last_ref_path: [path_segment | original_last_ref_path]
     }
 
-    {state, result} = decoder.(state, yaml)
+    {%__MODULE__{} = state, result} = decoder.(state, yaml)
 
     state = %__MODULE__{
       state
@@ -122,7 +122,7 @@ defmodule OpenAPI.Reader.State do
 
   @doc false
   @spec with_ref(t, yaml, decoder) :: {t, term}
-  def with_ref(state, %{"$ref" => ref}, decoder) do
+  def with_ref(%__MODULE__{} = state, %{"$ref" => ref}, decoder) do
     [new_file, new_ref_path] = String.split(ref, "#")
     new_file = Path.join(state.current_file, new_file)
     new_ref_path_segments = String.split(new_ref_path, "/", trim: true)
@@ -146,14 +146,14 @@ defmodule OpenAPI.Reader.State do
       if stored_yaml do
         {state, stored_yaml}
       else
-        state = OpenAPI.Reader.ensure_file(state, new_file)
+        %__MODULE__{} = state = OpenAPI.Reader.ensure_file(state, new_file)
         yaml = get_in(state.files[new_file], new_ref_path_segments)
         state = %__MODULE__{state | refs: Map.put(state.refs, new_ref, yaml)}
 
         {state, yaml}
       end
 
-    {state, result} = decoder.(state, yaml)
+    {%__MODULE__{} = state, result} = decoder.(state, yaml)
 
     state = %__MODULE__{
       state
@@ -168,7 +168,7 @@ defmodule OpenAPI.Reader.State do
 
   @doc false
   @spec with_schema_ref(t, yaml, decoder) :: {t, term}
-  def with_schema_ref(state, %{"$ref" => ref}, _decoder) do
+  def with_schema_ref(%__MODULE__{} = state, %{"$ref" => ref}, _decoder) do
     [relative_file, path_string] = String.split(ref, "#")
     absolute_file = Path.join(state.current_file, relative_file)
     path_segments = String.split(path_string, "/", trim: true)
@@ -180,8 +180,8 @@ defmodule OpenAPI.Reader.State do
     {%__MODULE__{state | schema_specs_by_path: schema_specs_by_path}, target_ref}
   end
 
-  def with_schema_ref(state, yaml, decoder) do
-    {state, schema} = decoder.(state, yaml)
+  def with_schema_ref(%__MODULE__{} = state, yaml, decoder) do
+    {%__MODULE__{} = state, schema} = decoder.(state, yaml)
 
     ref_full_path = {schema."$oag_last_ref_file", schema."$oag_last_ref_path"}
     schema_specs_by_path = Map.put(state.schema_specs_by_path, ref_full_path, schema)

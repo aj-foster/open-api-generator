@@ -64,16 +64,16 @@ defmodule OpenAPI.Spec do
 
   @doc false
   @spec decode(State.t(), String.t()) :: State.t()
-  def decode(state, filename) do
+  def decode(%State{} = state, filename) do
     yaml = state.files[filename]
 
     spec_version = Map.fetch!(yaml, "openapi")
-    {state, info} = decode_info(state, yaml)
-    {state, servers} = decode_servers(state, yaml)
-    {state, components} = decode_components(state, yaml)
-    {state, paths} = decode_paths(state, yaml)
-    {state, tags} = decode_tags(state, yaml)
-    {state, external_docs} = decode_external_docs(state, yaml)
+    {%State{} = state, info} = decode_info(state, yaml)
+    {%State{} = state, servers} = decode_servers(state, yaml)
+    {%State{} = state, components} = decode_components(state, yaml)
+    {%State{} = state, paths} = decode_paths(state, yaml)
+    {%State{} = state, tags} = decode_tags(state, yaml)
+    {%State{} = state, external_docs} = decode_external_docs(state, yaml)
 
     spec = %__MODULE__{
       openapi: spec_version,
@@ -134,7 +134,7 @@ defmodule OpenAPI.Spec do
   defp decode_tags(state, _yaml), do: {state, []}
 
   @spec decode_external_docs(State.t(), State.yaml()) :: {State.t(), ExternalDocumentation.t()}
-  defp decode_external_docs(state, %{"externalDocs" => docs}) do
+  defp decode_external_docs(%State{} = state, %{"externalDocs" => docs}) do
     with_path(state, docs, "externalDocs", &ExternalDocumentation.decode/2)
   end
 
