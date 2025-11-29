@@ -88,7 +88,7 @@ defmodule OpenAPI.Processor.State do
   Add a schema spec to the processor state and generate a reference for it
   """
   @spec put_schema_spec(t, SchemaSpec.t()) :: {t, reference}
-  def put_schema_spec(state, schema_spec) do
+  def put_schema_spec(%__MODULE__{} = state, schema_spec) do
     %SchemaSpec{
       "$oag_last_ref_file": last_ref_file,
       "$oag_last_ref_path": last_ref_path
@@ -127,7 +127,7 @@ defmodule OpenAPI.Processor.State do
   Add a processed schema to the processor state by its reference only if is is not already present
   """
   @spec put_new_schema(t, reference, Schema.t()) :: t
-  def put_new_schema(state, ref, schema) do
+  def put_new_schema(%__MODULE__{} = state, ref, schema) do
     %__MODULE__{state | schemas_by_ref: Map.put_new(state.schemas_by_ref, ref, schema)}
   end
 
@@ -135,7 +135,7 @@ defmodule OpenAPI.Processor.State do
   Add a processed schema to the processor state by its reference
   """
   @spec put_schema(t, reference, Schema.t()) :: t
-  def put_schema(state, ref, schema) do
+  def put_schema(%__MODULE__{} = state, ref, schema) do
     %__MODULE__{state | schemas_by_ref: Map.put(state.schemas_by_ref, ref, schema)}
   end
 end

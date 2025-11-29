@@ -36,7 +36,7 @@ defmodule OpenAPI.Processor do
   please share your use-case with the maintainers; a plugin might be warranted.
   """
   @spec run(OpenAPI.State.t()) :: OpenAPI.State.t()
-  def run(state) do
+  def run(%OpenAPI.State{} = state) do
     %State{operations: operations, schemas_by_ref: schemas_by_ref} =
       state
       |> State.new()
@@ -337,11 +337,11 @@ defmodule OpenAPI.Processor do
       state ->
         function_name = implementation.operation_function_name(state, operation_spec)
 
-        {state, request_body} =
+        {%State{} = state, request_body} =
           implementation.operation_request_body(state, operation_spec)
           |> process_request_body(state, module_name, function_name)
 
-        {state, response_body} =
+        {%State{} = state, response_body} =
           implementation.operation_response_body(state, operation_spec)
           |> process_response_body(state, module_name, function_name)
 
@@ -505,7 +505,7 @@ defmodule OpenAPI.Processor do
     %State{implementation: implementation} = state
 
     case :queue.out(to_process) do
-      {{:value, schema}, to_process} ->
+      {{:value, %Schema{} = schema}, to_process} ->
         case implementation.schema_format(state, schema) do
           :unknown ->
             to_process = :queue.in(schema, to_process)
@@ -526,7 +526,7 @@ defmodule OpenAPI.Processor do
   defp record_schema_module_and_type(state) do
     %State{implementation: implementation, schemas_by_ref: schemas_by_ref} = state
 
-    for {_ref, schema} <- schemas_by_ref, reduce: state do
+    for {_ref, %Schema{} = schema} <- schemas_by_ref, reduce: state do
       state ->
         {module, type} = implementation.schema_module_and_type(state, schema)
         schema = %Schema{schema | module_name: module, type_name: type}

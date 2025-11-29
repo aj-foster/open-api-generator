@@ -12,7 +12,7 @@ defmodule OpenAPI.Renderer do
   alias OpenAPI.Renderer.State
 
   @spec run(OpenAPI.State.t()) :: OpenAPI.State.t()
-  def run(state) do
+  def run(%OpenAPI.State{} = state) do
     %State{files: files_by_module} =
       state
       |> State.new()
@@ -396,9 +396,9 @@ defmodule OpenAPI.Renderer do
       %State{files: files_by_module} = state ->
         file =
           file
-          |> then(&%File{&1 | ast: implementation.render(state, &1)})
-          |> then(&%File{&1 | contents: implementation.format(state, &1)})
-          |> then(&%File{&1 | location: implementation.location(state, &1)})
+          |> then(&%{&1 | ast: implementation.render(state, &1)})
+          |> then(&%{&1 | contents: implementation.format(state, &1)})
+          |> then(&%{&1 | location: implementation.location(state, &1)})
 
         if file.contents != "" do
           implementation.write(state, file)

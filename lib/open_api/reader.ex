@@ -95,7 +95,7 @@ defmodule OpenAPI.Reader do
 
   @doc "Run the reading phase of the code generator"
   @spec run(OpenAPI.State.t()) :: OpenAPI.State.t()
-  def run(state) do
+  def run(%OpenAPI.State{} = state) do
     reader_result =
       state
       |> Config.new()
@@ -121,7 +121,7 @@ defmodule OpenAPI.Reader do
   end
 
   @spec read_file(State.t(), String.t()) :: State.yaml()
-  defp read_file(state, relative_filename) do
+  defp read_file(%State{} = state, relative_filename) do
     filename = Path.absname(relative_filename) |> Path.expand()
 
     if File.exists?(filename) do
@@ -137,7 +137,7 @@ defmodule OpenAPI.Reader do
   defp decode_all(%State{files: files} = state) do
     files
     |> Map.keys()
-    |> Enum.reduce(state, fn relative_filename, state ->
+    |> Enum.reduce(state, fn relative_filename, %State{} = state ->
       state = %State{
         state
         | base_file: relative_filename,
