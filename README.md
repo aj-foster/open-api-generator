@@ -25,7 +25,6 @@ Think: the friendliness of your favorite hand-crafted client library applied to 
 
 For more on how this is accomplished, see **Configuration** below and the [configuration guide](guides/configuration.md).
 
-
 ## Installation
 
 This library is available on Hex.pm.
@@ -34,7 +33,7 @@ Add the dependency in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:oapi_generator, "~> 0.2.0", only: :dev, runtime: false}
+    {:oapi_generator, "~> 0.3.0", only: :dev, runtime: false}
   ]
 end
 ```
@@ -42,7 +41,6 @@ end
 Then install the dependency using `mix deps.get`.
 Most libraries only need access to the `mix api.gen` task in a development environment.
 If your use case requires calling the generator in production or testing, be sure to modify or remove `only: :dev` and `runtime: false` as appropriate.
-
 
 ## Configuration
 
@@ -70,18 +68,17 @@ It will create modules namespaced with `Example.` and save files in `lib/example
 
 Some the options supported by the generator out-of-the-box include:
 
-* Defining which module executes the requests
-* Ignoring schemas and operations
-* Renaming schemas
-* Grouping schemas into module namespaces
-* Merging schemas to create a struct with multiple typespecs
-* Writing schemas and operation modules to different locations
-* Introducing additional schema fields
-* Adding custom `use` statements to generated modules
-* Overriding function return types
+- Defining which module executes the requests
+- Ignoring schemas and operations
+- Renaming schemas
+- Grouping schemas into module namespaces
+- Merging schemas to create a struct with multiple typespecs
+- Writing schemas and operation modules to different locations
+- Introducing additional schema fields
+- Adding custom `use` statements to generated modules
+- Overriding function return types
 
 For more information, see the [configuration guide](guides/configuration.md).
-
 
 ## Plugins
 
@@ -89,7 +86,6 @@ If the available configuration isn't enough, client library authors can also rei
 Most of the crucial parts of the processing and rendering of code are implemented as default callbacks for a behaviour.
 These can be overridden for additional flexibility.
 See the [plugins guide](guides/plugins.md) for additional information.
-
 
 ## Usage
 
@@ -103,14 +99,12 @@ By default, all of the operation functions end in a call to `client.request/1`, 
 As a library author, you create this module and define the `request/1` function.
 You can use any HTTP client and handle errors in whatever way best suits your project.
 
-
 ## Further Reading
 
-* [Code of Conduct](CODE_OF_CONDUCT.md)
-* [Contribution Guidelines](CONTRIBUTING.md)
-* [License](LICENSE)
-* [OpenAPI Specification](https://spec.openapis.org/oas/latest.html)
-
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Contribution Guidelines](CONTRIBUTING.md)
+- [License](LICENSE)
+- [OpenAPI Specification](https://spec.openapis.org/oas/latest.html)
 
 ## Sponsorship
 

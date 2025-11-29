@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## 0.3.0 (2025-11-29)
+
 - **Breaking**: Officially drop support for Elixir 1.14 (and lower) and Erlang/OTP 23 (and lower).
   Elixir 1.15+ and Erlang/OTP 24+ are supported.
 - **Breaking**: Operation modules are now renamed using the same `naming.rename` configuration as schema modules.
