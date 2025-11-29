@@ -118,7 +118,9 @@ defmodule OpenAPI.Spec.Path.Operation do
 
   @spec decode_request_body(map, map) :: {map, RequestBody.t() | nil}
   def decode_request_body(state, %{"requestBody" => request_body}) do
-    with_path(state, request_body, "requestBody", &RequestBody.decode/2)
+    with_path(state, request_body, "requestBody", fn state, request_body ->
+      with_ref(state, request_body, &RequestBody.decode/2)
+    end)
   end
 
   def decode_request_body(state, _yaml), do: {state, nil}

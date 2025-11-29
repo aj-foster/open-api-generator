@@ -44,15 +44,5 @@ defmodule OpenAPI.Spec.RequestBody do
     end)
   end
 
-  defp decode_content(state, %{"$ref" => _} = yaml) do
-    with_ref(state, yaml, fn state, yaml ->
-      if Map.has_key?(yaml, "content") do
-        decode_content(state, yaml)
-      else
-        {state, %{}}
-      end
-    end)
-  end
-
   defp decode_content(state, _yaml), do: {state, %{}}
 end
