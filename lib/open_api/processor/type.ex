@@ -119,6 +119,11 @@ defmodule OpenAPI.Processor.Type do
 
   # Arrays
   #
+  def from_schema(state, %Schema{type: "array", items: false} = schema) do
+    Logger.warning("Unknown array item type: #{inspect(schema)}")
+    {state, {:array, :unknown}}
+  end
+
   def from_schema(state, %Schema{type: "array", items: items}) do
     {state, type} = from_schema(state, items)
     {state, {:array, type}}

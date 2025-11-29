@@ -277,7 +277,11 @@ defmodule OpenAPI.Spec.Schema do
 
   defp decode_not(state, _schema), do: {state, nil}
 
-  @spec decode_items(map, map) :: {map, t | nil}
+  @spec decode_items(map, map) :: {map | false, t | nil}
+  defp decode_items(state, %{"items" => value})
+       when is_boolean(value),
+       do: {state, false}
+
   defp decode_items(state, %{"items" => schema}) do
     with_path(state, schema, "items", fn state, schema ->
       with_schema_ref(state, schema, &decode/2)

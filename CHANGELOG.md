@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_Nothing yet._
+- **Fix**: Handle `items: false`, an edge case when `prefixItems` is provided.
+  Thanks [@varunbpatil](https://github.com/aj-foster/open-api-generator/issues/68)!
 
 ## 0.3.0 (2025-11-29)
 
