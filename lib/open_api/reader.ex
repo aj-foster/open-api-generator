@@ -151,12 +151,10 @@ defmodule OpenAPI.Reader do
 
   @spec ensure_file(map, String.t()) :: map
   def ensure_file(state, file) do
-    filename = Path.absname(file) |> Path.expand()
-
-    if Map.has_key?(state.files, filename) do
+    if Map.has_key?(state.files, file) do
       state
     else
-      read_file(state, filename)
+      read_file(state, file)
     end
   end
 end
