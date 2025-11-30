@@ -493,6 +493,29 @@ defmodule OpenAPI.Renderer.Operation do
   Render the spec of an operation function
 
   Default implementation of `c:OpenAPI.Renderer.render_operation_spec/2`.
+
+  This implementation constructs one or more `@spec` or `@callback` annotations for the operation
+  function, depending on the configuration setting for `output.types.specs`.
+
+  ## Configuration
+
+  Use `output.types.specs` to modify the format of the output specs. Possible values are:
+
+    * `:spec`: A single `@spec` including the `opts` argument (default)
+    * `:spec_comprehensive`: Two `@spec`s, one with and one without the `opts` argument
+    * `:callback`: A single `@callback` including the `opts` argument
+    * `:callback_comprehensive`: Two `@callback`s, one with and one without the `opts` argument
+    * `false`: Disables output of specs entirely
+
+  For example, the following configuration will output two `@spec`s for every operation:
+
+      config :oapi_generator, default: [
+        output: [
+          types: [
+            specs: :spec_comprehensive
+          ]
+        ]
+      ]
   """
   @spec render_spec(State.t(), Operation.t()) :: Macro.t()
   def render_spec(state, operation) do
@@ -522,11 +545,43 @@ defmodule OpenAPI.Renderer.Operation do
 
     opts = quote(do: opts :: keyword)
 
-    arguments = path_parameters ++ Enum.reject([request_body, opts], &is_nil/1)
+    arguments = path_parameters ++ if(request_body, do: [request_body], else: [])
+    arguments_with_opts = arguments ++ [opts]
     return_type = render_return_type(state, responses)
 
-    quote do
-      @spec unquote(name)(unquote_splicing(arguments)) :: unquote(return_type)
+    cond do
+      config(state)[:types][:specs] == false ->
+        []
+
+      config(state)[:types][:specs] == :callback ->
+        quote do
+          @callback unquote(name)(unquote_splicing(arguments_with_opts)) :: unquote(return_type)
+        end
+
+      config(state)[:types][:specs] == :callback_comprehensive ->
+        [
+          quote do
+            @callback unquote(name)(unquote_splicing(arguments)) :: unquote(return_type)
+          end,
+          quote do
+            @callback unquote(name)(unquote_splicing(arguments_with_opts)) :: unquote(return_type)
+          end
+        ]
+
+      config(state)[:types][:specs] == :spec_comprehensive ->
+        [
+          quote do
+            @spec unquote(name)(unquote_splicing(arguments)) :: unquote(return_type)
+          end,
+          quote do
+            @spec unquote(name)(unquote_splicing(arguments_with_opts)) :: unquote(return_type)
+          end
+        ]
+
+      :else ->
+        quote do
+          @spec unquote(name)(unquote_splicing(arguments_with_opts)) :: unquote(return_type)
+        end
     end
   end
 

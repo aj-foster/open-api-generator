@@ -313,6 +313,14 @@ Remember that all configuration values must be contained within a profile.
   By default, the error type is a union of all possible error responses for the operation.
   See `OpenAPI.Renderer.Operation.render_spec/2` for more information.
 
+- `output.types.specs`: Format of type specifications to use for operation functions.
+  The default is `:spec`, which outputs a single `@spec` including all arguments and `opts`.
+  Use `:spec_comprehensive` to output two `@spec`, one with and one without the optional `opts` parameter.
+  Use `:callback` to instead output a `@callback` (useful for some mocking libraries).
+  Similarly, `:callback_comprehensive` outputs two `@callback`s, one with and one without the optional `opts` parameter.
+  Use the special value `false` to disable spec output altogether.
+  See `OpenAPI.Renderer.Operation.render_spec/2` for more information.
+
 - `reader.additional_files`: List of paths to supplemental root files of an API description.
   Defaults to an empty list.
   See `OpenAPI.Reader` for more information.

@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   This is a breaking change because it introduces new type patterns `{:boolean | :integer | :number, _}` and `:string`.
   Thank you [@McSym28](https://github.com/aj-foster/open-api-generator/pull/66)!
 
+- **Add**: Configuration `output.types.specs` controls the output of `@spec` or `@callback` annotations for operation functions.
+  The default value (`:spec`) preserves historical behavior.
+  See `OpenAPI.Renderer.Operation.render_spec/2` for more information.
+
 - **Fix**: Handle `items: false`, an edge case when `prefixItems` is provided.
   Thanks [@varunbpatil](https://github.com/aj-foster/open-api-generator/issues/68)!
 - **Fix**: Improve handling of references for `additionalProperties` and `items`.
