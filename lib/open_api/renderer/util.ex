@@ -130,7 +130,7 @@ defmodule OpenAPI.Renderer.Util do
   Collapse nested unions and replace references with {module, type} identifiers
 
   This function renders most types exactly as they are expressed internally
-  (ex. `{:string, :generic}`), however it transforms certain union types to be more human-readable
+  (ex. `:string`), however it transforms certain union types to be more human-readable
   and it replaces schema references with the equivalent `{Module, :type}`.
   """
   @spec to_readable_type(State.t(), Type.t()) :: term

@@ -24,6 +24,9 @@ defmodule OpenAPI.Processor.Format do
     schema_spec = Map.fetch!(schema_specs_by_ref, ref)
 
     case {schema, schema_spec} do
+      {_, %SchemaSpec{"$oag_last_ref_path": []}} ->
+        :struct
+
       {_, %SchemaSpec{"$oag_last_ref_path": ["components", "schemas", _name]}} ->
         :struct
 
