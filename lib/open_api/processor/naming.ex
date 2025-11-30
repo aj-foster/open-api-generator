@@ -604,6 +604,18 @@ defmodule OpenAPI.Processor.Naming do
   def raw_schema_module_and_type(state, schema, schema_spec)
 
   def raw_schema_module_and_type(_state, _schema, %SchemaSpec{
+        "$oag_last_ref_file": filename,
+        "$oag_last_ref_path": []
+      }) do
+    module =
+      filename
+      |> Path.basename(Path.extname(filename))
+      |> normalize_identifier(:camel)
+
+    {module, "t"}
+  end
+
+  def raw_schema_module_and_type(_state, _schema, %SchemaSpec{
         "$oag_last_ref_path": ["components", "schemas", schema_name]
       }) do
     module = normalize_identifier(schema_name, :camel)
