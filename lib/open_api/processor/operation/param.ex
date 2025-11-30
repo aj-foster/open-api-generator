@@ -48,7 +48,7 @@ defmodule OpenAPI.Processor.Operation.Param do
   defp location(%Parameter{in: "query"}), do: :query
 
   @spec value_type(State.t(), Parameter.t()) :: {State.t(), Type.t()}
-  defp value_type(state, %Parameter{schema: nil}), do: {state, {:string, :generic}}
+  defp value_type(state, %Parameter{schema: nil}), do: {state, :string}
 
   defp value_type(state, %Parameter{schema: schema_or_ref}) do
     Type.from_schema(state, schema_or_ref)
