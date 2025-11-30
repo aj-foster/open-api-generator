@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Breaking**: If a primitive type has a format specifier, it is now included as `{type, format}` (for example, `{:integer, "int32"}`).
+  Otherwise, the plain type is used (for example, `:string`).
+  This is a breaking change because it introduces new type patterns `{:boolean | :integer | :number, _}` and `:string`.
+  Thank you [@McSym28](https://github.com/aj-foster/open-api-generator/pull/66)!
+
 - **Fix**: Handle `items: false`, an edge case when `prefixItems` is provided.
   Thanks [@varunbpatil](https://github.com/aj-foster/open-api-generator/issues/68)!
 - **Fix**: Improve handling of references for `additionalProperties` and `items`.
