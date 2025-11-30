@@ -123,8 +123,33 @@ defmodule OpenAPI.Reader.State do
   @doc false
   @spec with_ref(t, yaml, decoder) :: {t, term}
   def with_ref(%__MODULE__{} = state, %{"$ref" => ref}, decoder) do
-    [new_file, new_ref_path] = String.split(ref, "#")
-    new_file = Path.join(state.current_file, new_file)
+    [new_file, new_ref_path] =
+      case String.split(ref, "#") do
+        [""] ->
+          [state.current_file, ""]
+
+        [file] ->
+          new_file =
+            state.current_file
+            |> Path.dirname()
+            |> Path.join(file)
+            |> Path.expand()
+
+          [new_file, ""]
+
+        ["", path] ->
+          [state.current_file, path]
+
+        [file, path] ->
+          new_file =
+            state.current_file
+            |> Path.dirname()
+            |> Path.join(file)
+            |> Path.expand()
+
+          [new_file, path]
+      end
+
     new_ref_path_segments = String.split(new_ref_path, "/", trim: true)
 
     %__MODULE__{
@@ -136,7 +161,9 @@ defmodule OpenAPI.Reader.State do
 
     state = %__MODULE__{
       state
-      | last_ref_file: new_file,
+      | current_file: new_file,
+        current_file_path: new_ref_path_segments,
+        last_ref_file: new_file,
         last_ref_path: Enum.reverse(new_ref_path_segments)
     }
 
@@ -147,7 +174,7 @@ defmodule OpenAPI.Reader.State do
         {state, stored_yaml}
       else
         %__MODULE__{} = state = OpenAPI.Reader.ensure_file(state, new_file)
-        yaml = get_in(state.files[new_file], new_ref_path_segments)
+        yaml = get_in_or_root(state.files[new_file], new_ref_path_segments)
         state = %__MODULE__{state | refs: Map.put(state.refs, new_ref, yaml)}
 
         {state, yaml}
@@ -168,24 +195,18 @@ defmodule OpenAPI.Reader.State do
 
   @doc false
   @spec with_schema_ref(t, yaml, decoder) :: {t, term}
-  def with_schema_ref(%__MODULE__{} = state, %{"$ref" => ref}, _decoder) do
-    [relative_file, path_string] = String.split(ref, "#")
-    absolute_file = Path.join(state.current_file, relative_file)
-    path_segments = String.split(path_string, "/", trim: true)
-
-    source_ref_full_path = {state.last_ref_file, Enum.reverse(state.last_ref_path)}
-    target_ref = {:ref, {absolute_file, path_segments}}
-
-    schema_specs_by_path = Map.put(state.schema_specs_by_path, source_ref_full_path, target_ref)
-    {%__MODULE__{state | schema_specs_by_path: schema_specs_by_path}, target_ref}
-  end
-
   def with_schema_ref(%__MODULE__{} = state, yaml, decoder) do
-    {%__MODULE__{} = state, schema} = decoder.(state, yaml)
+    with_ref(state, yaml, fn state, yaml ->
+      {%__MODULE__{} = state, schema} = decoder.(state, yaml)
 
-    ref_full_path = {schema."$oag_last_ref_file", schema."$oag_last_ref_path"}
-    schema_specs_by_path = Map.put(state.schema_specs_by_path, ref_full_path, schema)
+      ref_full_path = {schema."$oag_last_ref_file", schema."$oag_last_ref_path"}
+      schema_specs_by_path = Map.put(state.schema_specs_by_path, ref_full_path, schema)
 
-    {%__MODULE__{state | schema_specs_by_path: schema_specs_by_path}, schema}
+      {%__MODULE__{state | schema_specs_by_path: schema_specs_by_path}, schema}
+    end)
   end
+
+  @spec get_in_or_root(map, [Spec.path_segment()]) :: any
+  defp get_in_or_root(map, []), do: map
+  defp get_in_or_root(map, path), do: get_in(map, path)
 end
