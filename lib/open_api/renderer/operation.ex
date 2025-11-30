@@ -32,6 +32,7 @@ defmodule OpenAPI.Renderer.Operation do
       ]
 
   """
+  require Logger
   alias OpenAPI.Processor.Operation
   alias OpenAPI.Processor.Operation.Param
   alias OpenAPI.Processor.Schema
@@ -392,7 +393,6 @@ defmodule OpenAPI.Renderer.Operation do
       module_name: module_name,
       request_body: request_body,
       request_method: request_method,
-      request_path: request_path,
       request_path_parameters: path_params,
       request_query_parameters: query_params,
       responses: responses
@@ -424,14 +424,9 @@ defmodule OpenAPI.Renderer.Operation do
       end
 
     url =
-      String.replace(request_path, ~r/\{([[:word:]]+)\}/, "#\{\\1\}")
-      |> then(&"\"#{&1}\"")
-      |> Code.string_to_quoted!()
-      |> then(fn url ->
-        quote do
-          {:url, unquote(url)}
-        end
-      end)
+      quote do
+        {:url, unquote(render_url(state, operation))}
+      end
 
     method =
       quote do
@@ -487,6 +482,43 @@ defmodule OpenAPI.Renderer.Operation do
         unquote_splicing(request_details)
       })
     end
+  end
+
+  defp render_url(_state, operation) do
+    %Operation{request_path: path, request_path_parameters: path_params} = operation
+    param_map = Map.new(path_params, fn %Param{name: name} = param -> {"{#{name}}", param} end)
+
+    String.split(path, "/")
+    |> Enum.map(fn
+      path_segment ->
+        if param = Map.get(param_map, path_segment) do
+          %Param{name: name} = param
+
+          case param do
+            %Param{style: :simple, value_type: primitive}
+            when primitive in [:boolean, :integer, :number] ->
+              quote do: "#{unquote(Util.identifier(name))}"
+
+            %Param{style: :simple, value_type: {:string, _}} ->
+              quote do: "#{unquote(Util.identifier(name))}"
+
+            %Param{style: :simple, value_type: {:array, primitive}}
+            when primitive in [:boolean, :integer, :number] ->
+              quote do: "#{Enum.join(unquote(Util.identifier(name)), ",")}"
+
+            %Param{style: :simple, value_type: {:array, {:string, _}}} ->
+              quote do: "#{Enum.join(unquote(Util.identifier(name)), ",")}"
+
+            _else ->
+              Logger.warning("Path param style not implemented for type: #{inspect(param)}")
+              quote do: "#{unquote(Util.identifier(name))}"
+          end
+        else
+          path_segment
+        end
+    end)
+    |> Enum.intersperse("/")
+    |> Util.collapse_binary()
   end
 
   @doc """
