@@ -1,0 +1,44 @@
+defmodule Affinda.WorkspaceCollectionsExtractor do
+  @moduledoc """
+  Provides struct and type for a WorkspaceCollectionsExtractor
+  """
+
+  @type t :: %__MODULE__{
+          baseExtractor: Affinda.BaseExtractor.t() | nil,
+          category: String.t() | nil,
+          createdDt: DateTime.t() | nil,
+          identifier: String.t(),
+          isCustom: boolean | nil,
+          name: String.t(),
+          namePlural: String.t(),
+          validatable: boolean
+        }
+
+  defstruct [
+    :baseExtractor,
+    :category,
+    :createdDt,
+    :identifier,
+    :isCustom,
+    :name,
+    :namePlural,
+    :validatable
+  ]
+
+  @doc false
+  @spec __fields__(atom) :: keyword
+  def __fields__(type \\ :t)
+
+  def __fields__(:t) do
+    [
+      baseExtractor: {Affinda.BaseExtractor, :t},
+      category: :string,
+      createdDt: {:string, "date-time"},
+      identifier: :string,
+      isCustom: :boolean,
+      name: :string,
+      namePlural: :string,
+      validatable: :boolean
+    ]
+  end
+end
