@@ -169,7 +169,7 @@ defmodule Example.MySchema do
 
   def __fields__(:t) do
     [
-      example: {:string, :generic}
+      example: :string
     ]
   end
 end
@@ -235,88 +235,88 @@ config :oapi_generator, default: [
 
 Remember that all configuration values must be contained within a profile.
 
-* `ignore`: List of patterns (string or regular expression) representing operations or schemas to ignore during code generation.
+- `ignore`: List of patterns (string or regular expression) representing operations or schemas to ignore during code generation.
   Include the special atom `:deprecated` to ignore all deprecated schemas and operations, `:deprecated_schemas` to ignore deprecated schemas, and `:deprecated_operations` to ignore deprecated operations.
   Defaults to an empty list of patterns.
   See `OpenAPI.Processor.Ignore` for more information.
 
-* `naming.default_operation_module`: Module into which operation functions will be rendered if a module cannot be determined based on their operation ID or tags.
+- `naming.default_operation_module`: Module into which operation functions will be rendered if a module cannot be determined based on their operation ID or tags.
   The configuration should not include the base module configured in `output.base_module`.
   Defaults to `Operations`.
   See `OpenAPI.Processor.Naming.operation_modules/2` for more information.
 
-* `naming.group`: List of module namespaces to use while naming operations and schemas.
+- `naming.group`: List of module namespaces to use while naming operations and schemas.
   Defaults to an empty list of modules.
   See `OpenAPI.Processor.Naming.group_schema/2` for more information.
 
-* `naming.merge`: List of tuples containing patterns and replacements to use when merging schema modules.
+- `naming.merge`: List of tuples containing patterns and replacements to use when merging schema modules.
   Defaults to an empty list of merges.
   See `OpenAPI.Processor.Naming.merge_schema/2` for more information.
 
-* `naming.operation_use_tags`: Whether to use tags when determining module names for operations.
+- `naming.operation_use_tags`: Whether to use tags when determining module names for operations.
   Defaults to `true`.
   See `OpenAPI.Processor.Naming.operation_modules/2` for more information.
 
-* `naming.rename`: List of tuples containing patterns and replacements to use when renaming modules.
+- `naming.rename`: List of tuples containing patterns and replacements to use when renaming modules.
   Defaults to an empty list of replacements.
   See `OpenAPI.Processor.Naming.rename_schema/2` for more information.
 
-* `output.base_module`: Base module of the generated code.
+- `output.base_module`: Base module of the generated code.
   This is often the name of the library you intend to create, and it acts as a prefix for all rendered modules.
   Defaults to `nil`, or no module prefix.
   See `OpenAPI.Renderer.Module.render/2` for more information.
 
-* `output.default_client`: Default client to use in operation modules.
+- `output.default_client`: Default client to use in operation modules.
   Every operation function calls a dynamic module to perform requests, and this configuration determines the default value.
   Defaults to `[output.base_module].Client`.
   See `OpenAPI.Renderer.Module.render_default_client/2` for more information.
 
-* `output.extra_fields`: Additional fields to add to all schema struct definitions and their typespecs, expressed as a keyword list of types.
+- `output.extra_fields`: Additional fields to add to all schema struct definitions and their typespecs, expressed as a keyword list of types.
   This can be useful for private data the library wishes to add to all outputted data.
   Defaults to an empty list of fields.
   See `OpenAPI.Renderer.Schema` for more information.
 
-* `output.field_casing`: Either `:camel`, `:snake`, or `nil` (default) to output schema field names as `camelCase`, `snake_case`, or leave the fields name as-is from the API description.
+- `output.field_casing`: Either `:camel`, `:snake`, or `nil` (default) to output schema field names as `camelCase`, `snake_case`, or leave the fields name as-is from the API description.
   Changing the field casing is likely to be a breaking change for clients, unless the API description consistently uses the same casing.
   Setting this field may be necessary if field names require normalization (ex. if a field begins with a number).
 
-* `output.location`: Base filesystem location for all rendered files.
+- `output.location`: Base filesystem location for all rendered files.
   This is often a directory like `lib` to follow Elixir conventions.
   Defaults to the current working directory.
   See `OpenAPI.Renderer.Module.filename/2` for more information.
 
-* `output.operation_call.request`: Format of the `request` key in the body of an operation function.
+- `output.operation_call.request`: Format of the `request` key in the body of an operation function.
   By default, the possible request body schemas are formatted as a `:list` of tuples with the content type and the schema.
   A value of `:map` will cause a map to be output instead.
   See `OpenAPI.Renderer.Operation.render_function/2` for more information.
 
-* `output.operation_subdirectory`: Subdirectory to use for all rendered files containing operations.
+- `output.operation_subdirectory`: Subdirectory to use for all rendered files containing operations.
   This is an optional way to colocate generated operation modules in a single directory away from other parts of the client library.
   Defaults to the same location as `output.location`.
   See `OpenAPI.Renderer.Module.filename/2` for more information.
 
-* `output.operation_use`: Module to include as a `use` statement at the top of every module containing operations.
+- `output.operation_use`: Module to include as a `use` statement at the top of every module containing operations.
   Defaults to no used module.
   See `OpenAPI.Renderer.Module.render_using/2` for more information.
 
-* `output.schema_subdirectory`: Subdirectory to use for all rendered files containing only schemas.
+- `output.schema_subdirectory`: Subdirectory to use for all rendered files containing only schemas.
   This is an optional way to colocate generated schema modules in a single directory away from other parts of the client library.
   Defaults to the same location as `output.location`.
   See `OpenAPI.Renderer.Module.filename/2` for more information.
 
-* `output.schema_use`: Module to include as a `use` statement at the top of every module containing only schemas.
+- `output.schema_use`: Module to include as a `use` statement at the top of every module containing only schemas.
   Defaults to no used module.
   See `OpenAPI.Renderer.Module.render_using/2` for more information.
 
-* `output.types.error`: Type to override the error return type of all operation functions.
+- `output.types.error`: Type to override the error return type of all operation functions.
   This is useful when the client intends to normalize errors from the API.
   By default, the error type is a union of all possible error responses for the operation.
   See `OpenAPI.Renderer.Operation.render_spec/2` for more information.
 
-* `reader.additional_files`: List of paths to supplemental root files of an API description.
+- `reader.additional_files`: List of paths to supplemental root files of an API description.
   Defaults to an empty list.
   See `OpenAPI.Reader` for more information.
 
-* `reader.file`: Path to the root file of an API description.
+- `reader.file`: Path to the root file of an API description.
   This option is often supplied to the `mix api.gen` mix task instead.
   See `OpenAPI.Reader` for more information.
