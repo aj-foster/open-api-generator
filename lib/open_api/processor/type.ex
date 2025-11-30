@@ -139,7 +139,11 @@ defmodule OpenAPI.Processor.Type do
 
   def from_schema(state, %Schema{type: types} = schema) when is_list(types) do
     types
-    |> Enum.map(&%Schema{schema | type: &1})
+    |> Enum.map(fn
+      {:ref, ref} -> {:ref, ref}
+      "object" -> %Schema{schema | type: "object"}
+      type -> %Schema{schema | type: type}
+    end)
     |> then(&create_union(state, &1))
   end
 
@@ -151,12 +155,17 @@ defmodule OpenAPI.Processor.Type do
   # Objects
   #
   def from_schema(state, %Schema{additional_properties: true, properties: properties})
-      when map_size(properties) == 0 do
+      when is_nil(properties) or map_size(properties) == 0 do
     {state, :map}
   end
 
   def from_schema(state, %Schema{additional_properties: %Schema{}, properties: properties})
-      when map_size(properties) == 0 do
+      when is_nil(properties) or map_size(properties) == 0 do
+    {state, :map}
+  end
+
+  def from_schema(state, %Schema{additional_properties: {:ref, _path}, properties: properties})
+      when is_nil(properties) or map_size(properties) == 0 do
     {state, :map}
   end
 
