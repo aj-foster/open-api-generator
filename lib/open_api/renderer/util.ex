@@ -6,6 +6,7 @@ defmodule OpenAPI.Renderer.Util do
 
     * `c:OpenAPI.Renderer.format/2`
     * `c:OpenAPI.Renderer.write/2`
+    * `c:OpenAPI.Renderer.render_type/2`
 
   It also contains several helpers for working with ASTs, including the addition of formatting
   metadata necessary to create consistent code.
@@ -189,6 +190,8 @@ defmodule OpenAPI.Renderer.Util do
   @doc """
   Render an internal type as a typespec
 
+  Default implementation of `c:OpenAPI.Renderer.render_type/2`.
+
   To the best of its ability, this function constructs an accurate typespec for the internal
   type given. Note that this is somewhat lossy; for example, many distinct types of strings will
   map to the `String.t()` type.
@@ -203,39 +206,45 @@ defmodule OpenAPI.Renderer.Util do
 
   # Primitives
   def to_type(_state, :boolean), do: quote(do: boolean)
+  def to_type(_state, {:boolean, _format}), do: quote(do: boolean)
   def to_type(_state, :integer), do: quote(do: integer)
+  def to_type(_state, {:integer, _format}), do: quote(do: integer)
   def to_type(_state, :number), do: quote(do: number)
+  def to_type(_state, {:number, _format}), do: quote(do: number)
   def to_type(_state, :null), do: quote(do: nil)
 
   # Strings
-  def to_type(_state, {:string, :binary}), do: quote(do: binary)
-  def to_type(_state, {:string, :date}), do: quote(do: Date.t())
-  def to_type(_state, {:string, :date_time}), do: quote(do: DateTime.t())
-  def to_type(_state, {:string, :time}), do: quote(do: Time.t())
-  def to_type(_state, {:string, _}), do: quote(do: String.t())
+  def to_type(_state, :string), do: quote(do: String.t())
+  def to_type(_state, {:string, "binary"}), do: quote(do: binary)
+  def to_type(_state, {:string, "date"}), do: quote(do: Date.t())
+  def to_type(_state, {:string, "date-time"}), do: quote(do: DateTime.t())
+  def to_type(_state, {:string, "time"}), do: quote(do: Time.t())
+  def to_type(_state, {:string, _format}), do: quote(do: String.t())
 
   # Complex Types
-  def to_type(state, {:array, type}) do
-    inner_type = to_type(state, type)
+  def to_type(%State{implementation: implementation} = state, {:array, type}) do
+    inner_type = implementation.render_type(state, type)
     quote(do: [unquote(inner_type)])
   end
 
   def to_type(_state, {:const, literal}) when is_binary(literal), do: quote(do: String.t())
   def to_type(_state, {:const, literal}), do: quote(do: unquote(literal))
 
-  def to_type(state, {:enum, literals}) do
-    to_type(state, {:union, Enum.map(literals, &{:const, &1})})
+  def to_type(%State{implementation: implementation} = state, {:enum, literals}) do
+    implementation.render_type(state, {:union, Enum.map(literals, &{:const, &1})})
   end
 
   def to_type(_state, {:union, []}), do: quote(do: nil)
-  def to_type(state, {:union, [type]}), do: to_type(state, type)
 
-  def to_type(state, {:union, types}) do
+  def to_type(%State{implementation: implementation} = state, {:union, [type]}),
+    do: implementation.render_type(state, type)
+
+  def to_type(%State{implementation: implementation} = state, {:union, types}) do
     types
     |> unwrap_unions()
     |> unwrap_enums()
     |> List.flatten()
-    |> Enum.map(&to_type(state, &1))
+    |> Enum.map(&implementation.render_type(state, &1))
     |> Enum.sort(&should_appear_in_this_order?/2)
     |> Enum.dedup()
     |> Enum.reduce(fn type, expression ->

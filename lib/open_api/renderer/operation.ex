@@ -496,6 +496,8 @@ defmodule OpenAPI.Renderer.Operation do
   """
   @spec render_spec(State.t(), Operation.t()) :: Macro.t()
   def render_spec(state, operation) do
+    %State{implementation: implementation} = state
+
     %Operation{
       function_name: name,
       request_body: request_body,
@@ -505,13 +507,17 @@ defmodule OpenAPI.Renderer.Operation do
 
     path_parameters =
       for %Param{name: name, value_type: type} <- path_params do
-        quote(do: unquote({String.to_atom(name), [], nil}) :: unquote(Util.to_type(state, type)))
+        quote(
+          do:
+            unquote({String.to_atom(name), [], nil}) ::
+              unquote(implementation.render_type(state, type))
+        )
       end
 
     request_body =
       if length(request_body) > 0 do
         body_type = {:union, Enum.map(request_body, fn {_content_type, type} -> type end)}
-        quote(do: body :: unquote(Util.to_type(state, body_type)))
+        quote(do: body :: unquote(implementation.render_type(state, body_type)))
       end
 
     opts = quote(do: opts :: keyword)
@@ -527,6 +533,8 @@ defmodule OpenAPI.Renderer.Operation do
   defp render_return_type(_state, []), do: quote(do: :ok)
 
   defp render_return_type(state, responses) do
+    %State{implementation: implementation} = state
+
     {success, error} =
       responses
       |> Enum.reject(fn {_status, schemas} -> map_size(schemas) == 0 end)
@@ -539,7 +547,7 @@ defmodule OpenAPI.Renderer.Operation do
           success
           |> Enum.map(fn {_state, schemas} -> Map.values(schemas) end)
           |> List.flatten()
-          |> then(&Util.to_type(state, {:union, &1}))
+          |> then(&implementation.render_type(state, {:union, &1}))
 
         quote(do: {:ok, unquote(type)})
       else
@@ -548,14 +556,14 @@ defmodule OpenAPI.Renderer.Operation do
 
     error =
       if error_type = config(state)[:types][:error] do
-        quote(do: {:error, unquote(Util.to_type(state, error_type))})
+        quote(do: {:error, unquote(implementation.render_type(state, error_type))})
       else
         if length(error) > 0 do
           type =
             error
             |> Enum.map(fn {_state, schemas} -> Map.values(schemas) end)
             |> List.flatten()
-            |> then(&Util.to_type(state, {:union, &1}))
+            |> then(&implementation.render_type(state, {:union, &1}))
 
           quote(do: {:error, unquote(type)})
         else

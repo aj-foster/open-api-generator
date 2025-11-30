@@ -9,47 +9,22 @@ defmodule OpenAPI.Processor.Type do
   @type literal :: binary | boolean | number | nil
 
   @typedoc """
-  Special cases of the string type
-
-  `binary` represents binary data that may be encoded, while `generic` represents a generic string
-  without a formatting constraint.
-  """
-  @type string_format ::
-          :generic
-          | :binary
-          | :date
-          | :date_time
-          | :duration
-          | :email
-          | :hostname
-          | :idn_email
-          | :idn_hostname
-          | :iri
-          | :iri_reference
-          | :ipv4
-          | :ipv6
-          | :json_pointer
-          | :password
-          | :regex
-          | :relative_json_pointer
-          | :time
-          | :uri
-          | :uri_reference
-          | :uri_template
-          | :uuid
-
-  @typedoc """
   Basic type
 
   These types represent a subset of the six primitive values defined by JSON schema (omitting
   object and array, which are represented in `t:t/0`.) Note that both `integer` and `number` are
-  acceptable types, with the latter covering both integer and decimal numbers.
+  acceptable types, with the latter covering both integer and decimal numbers. Types may include
+  a format string, which provides additional information about how the value is represented.
   """
   @type primitive ::
           :boolean
+          | {:boolean, format :: String.t()}
           | :integer
+          | {:integer, format :: String.t()}
           | :number
-          | {:string, string_format}
+          | {:number, format :: String.t()}
+          | :string
+          | {:string, format :: String.t()}
           | :null
 
   @typedoc """
@@ -111,9 +86,9 @@ defmodule OpenAPI.Processor.Type do
     end
   end
 
-  def from_schema(state, %Schema{type: "boolean"}), do: {state, :boolean}
-  def from_schema(state, %Schema{type: "integer"}), do: {state, :integer}
-  def from_schema(state, %Schema{type: "number"}), do: {state, :number}
+  def from_schema(state, %Schema{type: "boolean"} = schema), do: {state, boolean_type(schema)}
+  def from_schema(state, %Schema{type: "integer"} = schema), do: {state, integer_type(schema)}
+  def from_schema(state, %Schema{type: "number"} = schema), do: {state, number_type(schema)}
   def from_schema(state, %Schema{type: "null"}), do: {state, :null}
   def from_schema(state, %Schema{type: "string"} = schema), do: {state, string_type(schema)}
 
@@ -180,31 +155,21 @@ defmodule OpenAPI.Processor.Type do
     {state, :unknown}
   end
 
-  @spec string_type(Schema.t()) :: {:string, string_format}
-  defp string_type(%Schema{format: "date"}), do: {:string, :date}
-  defp string_type(%Schema{format: "date-time"}), do: {:string, :date_time}
-  defp string_type(%Schema{format: "duration"}), do: {:string, :duration}
-  defp string_type(%Schema{format: "email"}), do: {:string, :email}
-  defp string_type(%Schema{format: "hostname"}), do: {:string, :hostname}
-  defp string_type(%Schema{format: "idn-email"}), do: {:string, :idn_email}
-  defp string_type(%Schema{format: "idn-hostname"}), do: {:string, :idn_hostname}
-  defp string_type(%Schema{format: "ipv4"}), do: {:string, :ipv4}
-  defp string_type(%Schema{format: "ipv6"}), do: {:string, :ipv6}
-  defp string_type(%Schema{format: "iri"}), do: {:string, :iri}
-  defp string_type(%Schema{format: "iri-reference"}), do: {:string, :iri_reference}
-  defp string_type(%Schema{format: "json-pointer"}), do: {:string, :json_pointer}
-  defp string_type(%Schema{format: "password"}), do: {:string, :password}
-  defp string_type(%Schema{format: "regex"}), do: {:string, :regex}
+  @spec boolean_type(Schema.t()) :: {:boolean, String.t()}
+  defp boolean_type(%Schema{format: format}) when is_binary(format), do: {:boolean, format}
+  defp boolean_type(_schema), do: :boolean
 
-  defp string_type(%Schema{format: "relative-json-pointer"}),
-    do: {:string, :relative_json_pointer}
+  @spec integer_type(Schema.t()) :: {:integer, String.t()}
+  defp integer_type(%Schema{format: format}) when is_binary(format), do: {:integer, format}
+  defp integer_type(_schema), do: :integer
 
-  defp string_type(%Schema{format: "time"}), do: {:string, :time}
-  defp string_type(%Schema{format: "uri"}), do: {:string, :uri}
-  defp string_type(%Schema{format: "uri-reference"}), do: {:string, :uri_reference}
-  defp string_type(%Schema{format: "uri-template"}), do: {:string, :uri_template}
-  defp string_type(%Schema{format: "uuid"}), do: {:string, :uuid}
-  defp string_type(_schema), do: {:string, :generic}
+  @spec number_type(Schema.t()) :: {:number, String.t()}
+  defp number_type(%Schema{format: format}) when is_binary(format), do: {:number, format}
+  defp number_type(_schema), do: :number
+
+  @spec string_type(Schema.t()) :: {:string, String.t()}
+  defp string_type(%Schema{format: format}) when is_binary(format), do: {:string, format}
+  defp string_type(_schema), do: :string
 
   @spec create_intersection(State.t(), Schema.t(), [Schema.t()]) :: {State.t(), t}
   defp create_intersection(state, schema_spec, types) do
