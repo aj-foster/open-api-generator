@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Fix**: Handle `items: false`, an edge case when `prefixItems` is provided.
   Thanks [@varunbpatil](https://github.com/aj-foster/open-api-generator/issues/68)!
+- **Fix**: Improve handling of references for `additionalProperties` and `items`.
 
 ## 0.3.0 (2025-11-29)
 
