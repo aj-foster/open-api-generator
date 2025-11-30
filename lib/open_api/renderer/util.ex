@@ -206,28 +206,20 @@ defmodule OpenAPI.Renderer.Util do
 
   # Primitives
   def to_type(_state, :boolean), do: quote(do: boolean)
-
-  def to_type(%State{implementation: implementation} = state, {:boolean, _}),
-    do: implementation.render_type(state, :boolean)
-
+  def to_type(_state, {:boolean, _format}), do: quote(do: boolean)
   def to_type(_state, :integer), do: quote(do: integer)
-
-  def to_type(%State{implementation: implementation} = state, {:integer, _}),
-    do: implementation.render_type(state, :integer)
-
+  def to_type(_state, {:integer, _format}), do: quote(do: integer)
   def to_type(_state, :number), do: quote(do: number)
-
-  def to_type(%State{implementation: implementation} = state, {:number, _}),
-    do: implementation.render_type(state, :number)
-
+  def to_type(_state, {:number, _format}), do: quote(do: number)
   def to_type(_state, :null), do: quote(do: nil)
 
   # Strings
-  def to_type(_state, {:string, :binary}), do: quote(do: binary)
-  def to_type(_state, {:string, :date}), do: quote(do: Date.t())
-  def to_type(_state, {:string, :date_time}), do: quote(do: DateTime.t())
-  def to_type(_state, {:string, :time}), do: quote(do: Time.t())
-  def to_type(_state, {:string, _}), do: quote(do: String.t())
+  def to_type(_state, :string), do: quote(do: String.t())
+  def to_type(_state, {:string, "binary"}), do: quote(do: binary)
+  def to_type(_state, {:string, "date"}), do: quote(do: Date.t())
+  def to_type(_state, {:string, "date-time"}), do: quote(do: DateTime.t())
+  def to_type(_state, {:string, "time"}), do: quote(do: Time.t())
+  def to_type(_state, {:string, _format}), do: quote(do: String.t())
 
   # Complex Types
   def to_type(%State{implementation: implementation} = state, {:array, type}) do
