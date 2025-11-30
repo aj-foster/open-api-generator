@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fix**: Handle `items: false`, an edge case when `prefixItems` is provided.
   Thanks [@varunbpatil](https://github.com/aj-foster/open-api-generator/issues/68)!
 - **Fix**: Improve handling of references for `additionalProperties` and `items`.
+- **Fix**: Dramatically improved support for descriptions that split schemas across multiple files.
+  As a side effect, referenced schemas that are nullable now reflect that in the generated types.
+  Thanks [@doughsay](https://github.com/aj-foster/open-api-generator/issues/65)!
 
 ## 0.3.0 (2025-11-29)
 
