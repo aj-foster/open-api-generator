@@ -1,0 +1,17 @@
+defmodule Klaviyo.DataPrivacyCreateDeletionJobQueryResourceObjectAttributesProfile do
+  @moduledoc """
+  Provides struct and type for a DataPrivacyCreateDeletionJobQueryResourceObjectAttributesProfile
+  """
+
+  @type t :: %__MODULE__{data: Klaviyo.DataPrivacyProfileQueryResourceObject.t()}
+
+  defstruct [:data]
+
+  @doc false
+  @spec __fields__(atom) :: keyword
+  def __fields__(type \\ :t)
+
+  def __fields__(:t) do
+    [data: {Klaviyo.DataPrivacyProfileQueryResourceObject, :t}]
+  end
+end
