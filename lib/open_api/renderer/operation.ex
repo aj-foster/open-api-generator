@@ -560,6 +560,15 @@ defmodule OpenAPI.Renderer.Operation do
     quote do: "#{Enum.join(unquote(Util.identifier(name)), ",")}"
   end
 
+  # Beyond the scope of our warning.
+  defp render_url_param(%Param{
+         name: name,
+         style: :simple,
+         value_type: {:union, _types}
+       }) do
+    quote do: "#{unquote(Util.identifier(name))}"
+  end
+
   defp render_url_param(%Param{name: name} = param) do
     Logger.warning("""
     URL contains a parameter #{name} that uses an unsupported style:
