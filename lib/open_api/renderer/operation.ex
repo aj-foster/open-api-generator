@@ -511,6 +511,22 @@ defmodule OpenAPI.Renderer.Operation do
   defp render_url_param(%Param{
          name: name,
          style: :simple,
+         value_type: {:const, _value}
+       }) do
+    quote do: "#{unquote(Util.identifier(name))}"
+  end
+
+  defp render_url_param(%Param{
+         name: name,
+         style: :simple,
+         value_type: {:enum, _values}
+       }) do
+    quote do: "#{unquote(Util.identifier(name))}"
+  end
+
+  defp render_url_param(%Param{
+         name: name,
+         style: :simple,
          value_type: primitive
        })
        when primitive in @primitives do
