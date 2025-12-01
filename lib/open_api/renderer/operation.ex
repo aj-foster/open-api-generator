@@ -32,6 +32,7 @@ defmodule OpenAPI.Renderer.Operation do
       ]
 
   """
+  require Logger
   alias OpenAPI.Processor.Operation
   alias OpenAPI.Processor.Operation.Param
   alias OpenAPI.Processor.Schema
@@ -392,7 +393,6 @@ defmodule OpenAPI.Renderer.Operation do
       module_name: module_name,
       request_body: request_body,
       request_method: request_method,
-      request_path: request_path,
       request_path_parameters: path_params,
       request_query_parameters: query_params,
       responses: responses
@@ -424,14 +424,9 @@ defmodule OpenAPI.Renderer.Operation do
       end
 
     url =
-      String.replace(request_path, ~r/\{([[:word:]]+)\}/, "#\{\\1\}")
-      |> then(&"\"#{&1}\"")
-      |> Code.string_to_quoted!()
-      |> then(fn url ->
-        quote do
-          {:url, unquote(url)}
-        end
-      end)
+      quote do
+        {:url, unquote(render_url(state, operation))}
+      end
 
     method =
       quote do
@@ -487,6 +482,78 @@ defmodule OpenAPI.Renderer.Operation do
         unquote_splicing(request_details)
       })
     end
+  end
+
+  defp render_url(_state, operation) do
+    %Operation{request_path: path, request_path_parameters: path_params} = operation
+    param_map = Map.new(path_params, fn %Param{name: name} = param -> {"{#{name}}", param} end)
+
+    String.split(path, "/")
+    |> Enum.map(fn path_segment ->
+      if param = Map.get(param_map, path_segment) do
+        render_url_param(param)
+      else
+        path_segment
+      end
+    end)
+    |> Enum.intersperse("/")
+    |> Util.collapse_binary()
+  end
+
+  @primitives [:boolean, :integer, :number, :string]
+
+  # This is a limited meta-implementation of Level 1 URI templates as defined in
+  # RFC 6570 (https://datatracker.ietf.org/doc/html/rfc6570#section-3.2.2).
+  #
+  @spec render_url_param(Param.t()) :: Macro.t()
+  defp render_url_param(param)
+
+  defp render_url_param(%Param{
+         name: name,
+         style: :simple,
+         value_type: primitive
+       })
+       when primitive in @primitives do
+    quote do: "#{unquote(Util.identifier(name))}"
+  end
+
+  defp render_url_param(%Param{
+         name: name,
+         style: :simple,
+         value_type: {primitive, _format}
+       })
+       when primitive in @primitives do
+    quote do: "#{unquote(Util.identifier(name))}"
+  end
+
+  defp render_url_param(%Param{
+         name: name,
+         style: :simple,
+         value_type: {:array, primitive}
+       })
+       when primitive in @primitives do
+    quote do: "#{Enum.join(unquote(Util.identifier(name)), ",")}"
+  end
+
+  defp render_url_param(%Param{
+         name: name,
+         style: :simple,
+         value_type: {:array, {primitive, _format}}
+       })
+       when primitive in @primitives do
+    quote do: "#{Enum.join(unquote(Util.identifier(name)), ",")}"
+  end
+
+  defp render_url_param(%Param{name: name} = param) do
+    Logger.warning("""
+    URL contains a parameter #{name} that uses an unsupported style:
+
+    #{inspect(param)}
+
+    The parameter will be rendered using its default `to_string/1` implementation.
+    """)
+
+    quote do: "#{unquote(Util.identifier(name))}"
   end
 
   @doc """

@@ -39,6 +39,30 @@ defmodule OpenAPI.Renderer.Util do
   end
 
   @doc """
+  Collapse a list of binary expressions into a single binary
+
+  This utility is useful when several individual double-quoted strings are concatenated. Instead
+  of creating a large `<<...>>` expression, this function will produce an AST that is formatted
+  as a single double-quoted string (when possible).
+  """
+  @spec collapse_binary(Macro.t()) :: Macro.t()
+  def collapse_binary(nodes) do
+    nodes =
+      nodes
+      |> Enum.map(fn
+        {:<<>>, _meta, args} ->
+          {:<<>>, _meta, args} = collapse_binary(args)
+          args
+
+        other_node ->
+          other_node
+      end)
+      |> List.flatten()
+
+    {:<<>>, [], nodes}
+  end
+
+  @doc """
   Convert an AST into formatted code as a string
 
   Default implementation of `c:OpenAPI.Renderer.format/2`.
@@ -91,6 +115,14 @@ defmodule OpenAPI.Renderer.Util do
 
     {ast_node, _acc} = Macro.traverse(ast_node, nil, pre, post)
     ast_node
+  end
+
+  @doc """
+  Unquote the given string as an identifier (rather than a string literal or atom)
+  """
+  @spec identifier(String.t()) :: Macro.t()
+  def identifier(value) do
+    {String.to_atom(value), [], nil}
   end
 
   @doc """
