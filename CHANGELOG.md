@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fix**: Dramatically improved support for descriptions that split schemas across multiple files.
   As a side effect, referenced schemas that are nullable now reflect that in the generated types.
   Thanks [@doughsay](https://github.com/aj-foster/open-api-generator/issues/65)!
+- **Fix**: If an array type is given as a path parameter, it is now joined correctly using `,`.
+  Thanks [@sharonlinto](https://github.com/aj-foster/open-api-generator/issues/59)!
 
 ## 0.3.0 (2025-11-29)
 

@@ -1,0 +1,35 @@
+openapi: 3.0.2
+info:
+  title: Test api
+  version: "0.1"
+servers:
+  - url: /v1
+paths:
+  /projects/{projectID}/something/{somethingID}/blahs:
+    get:
+      description: Returns the list of blahs for something.
+      operationId: listBlahsForSomething
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/projectID"
+        - name: somethingID
+          in: path
+          required: true
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/somethingID"
+            minItems: 1
+          explode: false
+          style: simple
+components:
+  schemas:
+    projectID:
+      type: string
+      format: uuid
+    somethingID:
+      type: string
+      format: uuid
