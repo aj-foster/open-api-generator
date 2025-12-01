@@ -1,0 +1,35 @@
+defmodule Sentry.EventDetailedMeta do
+  @moduledoc """
+  Provides struct and type for a EventDetailedMeta
+  """
+
+  @type t :: %__MODULE__{
+          context: String.t() | nil,
+          contexts: String.t() | nil,
+          entries: map | nil,
+          message: String.t() | nil,
+          packages: String.t() | nil,
+          sdk: String.t() | nil,
+          tags: map | nil,
+          user: String.t() | nil
+        }
+
+  defstruct [:context, :contexts, :entries, :message, :packages, :sdk, :tags, :user]
+
+  @doc false
+  @spec __fields__(atom) :: keyword
+  def __fields__(type \\ :t)
+
+  def __fields__(:t) do
+    [
+      context: :string,
+      contexts: :string,
+      entries: :map,
+      message: :string,
+      packages: :string,
+      sdk: :string,
+      tags: :map,
+      user: :string
+    ]
+  end
+end
