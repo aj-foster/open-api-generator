@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## 0.4.0 (2025-11-30)
+
 - **Breaking**: If a primitive type has a format specifier, it is now included as `{type, format}` (for example, `{:integer, "int32"}`).
   Otherwise, the plain type is used (for example, `:string`).
   This is a breaking change because it introduces new type patterns `{:boolean | :integer | :number, _}` and `:string`.
