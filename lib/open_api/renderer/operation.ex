@@ -489,36 +489,71 @@ defmodule OpenAPI.Renderer.Operation do
     param_map = Map.new(path_params, fn %Param{name: name} = param -> {"{#{name}}", param} end)
 
     String.split(path, "/")
-    |> Enum.map(fn
-      path_segment ->
-        if param = Map.get(param_map, path_segment) do
-          %Param{name: name} = param
-
-          case param do
-            %Param{style: :simple, value_type: primitive}
-            when primitive in [:boolean, :integer, :number] ->
-              quote do: "#{unquote(Util.identifier(name))}"
-
-            %Param{style: :simple, value_type: {:string, _}} ->
-              quote do: "#{unquote(Util.identifier(name))}"
-
-            %Param{style: :simple, value_type: {:array, primitive}}
-            when primitive in [:boolean, :integer, :number] ->
-              quote do: "#{Enum.join(unquote(Util.identifier(name)), ",")}"
-
-            %Param{style: :simple, value_type: {:array, {:string, _}}} ->
-              quote do: "#{Enum.join(unquote(Util.identifier(name)), ",")}"
-
-            _else ->
-              Logger.warning("Path param style not implemented for type: #{inspect(param)}")
-              quote do: "#{unquote(Util.identifier(name))}"
-          end
-        else
-          path_segment
-        end
+    |> Enum.map(fn path_segment ->
+      if param = Map.get(param_map, path_segment) do
+        render_url_param(param)
+      else
+        path_segment
+      end
     end)
     |> Enum.intersperse("/")
     |> Util.collapse_binary()
+  end
+
+  @primitives [:boolean, :integer, :number, :string]
+
+  # This is a limited meta-implementation of Level 1 URI templates as defined in
+  # RFC 6570 (https://datatracker.ietf.org/doc/html/rfc6570#section-3.2.2).
+  #
+  @spec render_url_param(Param.t()) :: Macro.t()
+  defp render_url_param(param)
+
+  defp render_url_param(%Param{
+         name: name,
+         style: :simple,
+         value_type: primitive
+       })
+       when primitive in @primitives do
+    quote do: "#{unquote(Util.identifier(name))}"
+  end
+
+  defp render_url_param(%Param{
+         name: name,
+         style: :simple,
+         value_type: {primitive, _format}
+       })
+       when primitive in @primitives do
+    quote do: "#{unquote(Util.identifier(name))}"
+  end
+
+  defp render_url_param(%Param{
+         name: name,
+         style: :simple,
+         value_type: {:array, primitive}
+       })
+       when primitive in @primitives do
+    quote do: "#{Enum.join(unquote(Util.identifier(name)), ",")}"
+  end
+
+  defp render_url_param(%Param{
+         name: name,
+         style: :simple,
+         value_type: {:array, {primitive, _format}}
+       })
+       when primitive in @primitives do
+    quote do: "#{Enum.join(unquote(Util.identifier(name)), ",")}"
+  end
+
+  defp render_url_param(%Param{name: name} = param) do
+    Logger.warning("""
+    URL contains a parameter #{name} that uses an unsupported style:
+
+    #{inspect(param)}
+
+    The parameter will be rendered using its default `to_string/1` implementation.
+    """)
+
+    quote do: "#{unquote(Util.identifier(name))}"
   end
 
   @doc """
