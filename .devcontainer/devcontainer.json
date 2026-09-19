@@ -1,0 +1,27 @@
+{
+  "name": "OpenAPI Generator",
+  "image": "hexpm/elixir:1.20.2-erlang-29.0.2-debian-trixie-20260623",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": "true",
+      "username": "vscode",
+      "userUid": "1000",
+      "userGid": "1000",
+      "upgradePackages": "false"
+    },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "overrideFeatureInstallOrder": [
+    "ghcr.io/devcontainers/features/common-utils"
+  ],
+  "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && mix local.hex --force && mix local.rebar --force && mix deps.get",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "expertlsp.expert",
+        "pgourlain.erlang"
+      ]
+    }
+  },
+  "remoteUser": "vscode"
+}
