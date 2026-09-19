@@ -1,0 +1,17 @@
+defmodule Klaviyo.CatalogVariantUpdateQuery do
+  @moduledoc """
+  Provides struct and type for a CatalogVariantUpdateQuery
+  """
+
+  @type t :: %__MODULE__{data: Klaviyo.CatalogVariantUpdateQueryResourceObject.t()}
+
+  defstruct [:data]
+
+  @doc false
+  @spec __fields__(atom) :: keyword
+  def __fields__(type \\ :t)
+
+  def __fields__(:t) do
+    [data: {Klaviyo.CatalogVariantUpdateQueryResourceObject, :t}]
+  end
+end
