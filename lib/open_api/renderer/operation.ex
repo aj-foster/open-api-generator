@@ -682,6 +682,11 @@ defmodule OpenAPI.Renderer.Operation do
   defp render_return_type(state, responses) do
     %State{implementation: implementation} = state
 
+    has_undocumented_errors =
+      Enum.any?(responses, fn {status, schemas} ->
+        status >= 400 and map_size(schemas) == 0
+      end)
+
     {success, error} =
       responses
       |> Enum.reject(fn {_status, schemas} -> map_size(schemas) == 0 end)
@@ -705,13 +710,17 @@ defmodule OpenAPI.Renderer.Operation do
       if error_type = config(state)[:types][:error] do
         quote(do: {:error, unquote(implementation.render_type(state, error_type))})
       else
-        if length(error) > 0 do
-          type =
-            error
-            |> Enum.map(fn {_state, schemas} -> Map.values(schemas) end)
-            |> List.flatten()
-            |> then(&implementation.render_type(state, {:union, &1}))
+        fallback = config(state)[:types][:error_fallback]
 
+        error_types =
+          error
+          |> Enum.flat_map(fn {_status, schemas} -> Map.values(schemas) end)
+          |> then(fn types ->
+            if has_undocumented_errors && fallback, do: types ++ [fallback], else: types
+          end)
+
+        if length(error_types) > 0 do
+          type = implementation.render_type(state, {:union, error_types})
           quote(do: {:error, unquote(type)})
         else
           quote(do: :error)

@@ -313,6 +313,14 @@ Remember that all configuration values must be contained within a profile.
   By default, the error type is a union of all possible error responses for the operation.
   See `OpenAPI.Renderer.Operation.render_spec/2` for more information.
 
+- `output.types.error_fallback`: Type to append to the error union when undocumented error responses exist.
+  Some OpenAPI specs define error status codes (4xx, 5xx) without response schemas.
+  These undocumented errors are excluded from typespecs by default, creating a mismatch between
+  the typespec and possible runtime values. This option adds a fallback type to the union.
+  Example: `{:string, :generic}` adds `String.t()` to handle undocumented errors.
+  Has no effect when `output.types.error` is set (which overrides all error types).
+  See `OpenAPI.Renderer.Operation.render_spec/2` for more information.
+
 - `output.types.specs`: Format of type specifications to use for operation functions.
   The default is `:spec`, which outputs a single `@spec` including all arguments and `opts`.
   Use `:spec_comprehensive` to output two `@spec`, one with and one without the optional `opts` parameter.
