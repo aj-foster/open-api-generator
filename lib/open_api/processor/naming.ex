@@ -48,19 +48,19 @@ defmodule OpenAPI.Processor.Naming do
   """
   @doc default_implementation: true
   @spec operation_function(State.t(), OperationSpec.t()) :: atom
-  def operation_function(_state, %OperationSpec{operation_id: id}) when not is_nil(id) do
+  def operation_function(state, %OperationSpec{operation_id: id}) when not is_nil(id) do
     id
     |> String.split("/", trim: true)
     |> List.last()
-    |> normalize_identifier()
+    |> normalize_identifier(state)
     |> String.to_atom()
   end
 
-  def operation_function(_state, operation_spec) do
+  def operation_function(state, operation_spec) do
     %OperationSpec{"$oag_path": path, "$oag_path_method": method} = operation_spec
 
     "#{path}_#{method}"
-    |> normalize_identifier()
+    |> normalize_identifier(state)
     |> String.to_atom()
   end
 
@@ -125,8 +125,7 @@ defmodule OpenAPI.Processor.Naming do
       if length(modules) > 0 do
         modules
         |> Enum.map(fn module ->
-          normalize_identifier(module, :camel)
-          |> do_rename_schema(state)
+          normalize_identifier(module, state, :camel)
         end)
         |> Module.concat()
       end
@@ -137,8 +136,7 @@ defmodule OpenAPI.Processor.Naming do
           tag
           |> String.split("/", trim: true)
           |> Enum.map(fn module ->
-            normalize_identifier(module, :camel)
-            |> do_rename_schema(state)
+            normalize_identifier(module, state, :camel)
           end)
           |> Module.concat()
         end)
@@ -230,7 +228,6 @@ defmodule OpenAPI.Processor.Naming do
     {module, type} =
       raw_schema_module_and_type(state, schema, schema_spec)
       |> merge_schema(state)
-      |> rename_schema(state)
       |> group_schema(state)
 
     if is_nil(module) do
@@ -402,15 +399,11 @@ defmodule OpenAPI.Processor.Naming do
   use capture expressions (ex. `~r/(Api)([A-Z]|$)/`) and replacements that reference those
   captures (ex. `"API\\\\2"`). See `String.replace/3` for more information.
   """
-  @spec rename_schema(raw_module_and_type, State.t()) :: raw_module_and_type
-  def rename_schema(raw_module_and_type, state)
-  def rename_schema({nil, type}, _state), do: {nil, type}
+  @spec rename_schema(module, State.t()) :: module
+  def rename_schema(raw_module, state)
+  def rename_schema(nil, _state), do: nil
 
-  def rename_schema({module, type}, state) do
-    {do_rename_schema(module, state), type}
-  end
-
-  defp do_rename_schema(module, state) do
+  def rename_schema(module, state) do
     replacements = config(state)[:rename] || []
 
     Enum.reduce(replacements, module, fn {pattern, replacement}, module ->
@@ -505,21 +498,22 @@ defmodule OpenAPI.Processor.Naming do
 
   ## Example
 
-      iex> normalize_identifier("get-/customer/purchases/{date}_byId")
+      iex> normalize_identifier("get-/customer/purchases/{date}_byId", %OpenAPI.Processor.State{})
       "get_customer_purchases_date_by_id"
 
-      iex> normalize_identifier("openAPISpec", :camel)
+      iex> normalize_identifier("openAPISpec", %OpenAPI.Processor.State{}, :camel)
       "OpenAPISpec"
 
-      iex> normalize_identifier("get-/customer/purchases/{date}_byId", :lower_camel)
+      iex> normalize_identifier("get-/customer/purchases/{date}_byId", %OpenAPI.Processor.State{}, :lower_camel)
       "getCustomerPurchasesDateById"
 
   """
-  @spec normalize_identifier(String.t(), :camel | :lower_camel | :snake) :: String.t()
-  def normalize_identifier(input, casing \\ :snake)
+  @spec normalize_identifier(String.t(), State.t(), :camel | :lower_camel | :snake) :: String.t()
+  def normalize_identifier(input, state, casing \\ :snake)
 
-  def normalize_identifier(input, :camel) do
+  def normalize_identifier(input, state, :camel) do
     input
+    |> rename_schema(state)
     |> segment_identifier()
     |> Enum.map(fn segment ->
       if String.match?(segment, ~r/^[A-Z]+$/) do
@@ -531,8 +525,8 @@ defmodule OpenAPI.Processor.Naming do
     |> Enum.join()
   end
 
-  def normalize_identifier(input, :lower_camel) do
-    [first_segment | segments] = segment_identifier(input)
+  def normalize_identifier(input, state, :lower_camel) do
+    [first_segment | segments] = input |> rename_schema(state) |> segment_identifier()
 
     segments =
       Enum.map(segments, fn segment ->
@@ -546,8 +540,9 @@ defmodule OpenAPI.Processor.Naming do
     Enum.join([first_segment | segments])
   end
 
-  def normalize_identifier(input, :snake) do
+  def normalize_identifier(input, state, :snake) do
     input
+    |> rename_schema(state)
     |> segment_identifier()
     |> Enum.map_join("_", &String.downcase/1)
   end
@@ -603,33 +598,33 @@ defmodule OpenAPI.Processor.Naming do
           {module :: String.t() | nil, type :: String.t()}
   def raw_schema_module_and_type(state, schema, schema_spec)
 
-  def raw_schema_module_and_type(_state, _schema, %SchemaSpec{
+  def raw_schema_module_and_type(state, _schema, %SchemaSpec{
         "$oag_last_ref_file": filename,
         "$oag_last_ref_path": []
       }) do
     module =
       filename
       |> Path.basename(Path.extname(filename))
-      |> normalize_identifier(:camel)
+      |> normalize_identifier(state, :camel)
 
     {module, "t"}
   end
 
-  def raw_schema_module_and_type(_state, _schema, %SchemaSpec{
+  def raw_schema_module_and_type(state, _schema, %SchemaSpec{
         "$oag_last_ref_path": ["components", "schemas", schema_name]
       }) do
-    module = normalize_identifier(schema_name, :camel)
+    module = normalize_identifier(schema_name, state, :camel)
     {module, "t"}
   end
 
-  def raw_schema_module_and_type(_state, _schema, %SchemaSpec{
+  def raw_schema_module_and_type(state, _schema, %SchemaSpec{
         "$oag_last_ref_path": ["components", "schemas", schema_name, "items"]
       }) do
-    module = normalize_identifier(schema_name, :camel)
+    module = normalize_identifier(schema_name, state, :camel)
     {module, "t"}
   end
 
-  def raw_schema_module_and_type(_state, _schema, %SchemaSpec{
+  def raw_schema_module_and_type(state, _schema, %SchemaSpec{
         "$oag_last_ref_path": [
           "components",
           "responses",
@@ -639,7 +634,7 @@ defmodule OpenAPI.Processor.Naming do
           "schema"
         ]
       }) do
-    module = normalize_identifier(schema_name, :camel)
+    module = normalize_identifier(schema_name, state, :camel)
     type = Enum.join([readable_content_type(content_type), "resp"], "_")
 
     {module, type}
@@ -674,9 +669,9 @@ defmodule OpenAPI.Processor.Naming do
     {inspect(op_module), type}
   end
 
-  def raw_schema_module_and_type(_state, _schema, %SchemaSpec{title: schema_title})
+  def raw_schema_module_and_type(state, _schema, %SchemaSpec{title: schema_title})
       when is_binary(schema_title) do
-    module = normalize_identifier(schema_title, :camel)
+    module = normalize_identifier(schema_title, state, :camel)
     {module, "t"}
   end
 
@@ -697,7 +692,7 @@ defmodule OpenAPI.Processor.Naming do
           {inspect(parent_module), to_string(parent_type)}
       end
 
-    module = Enum.join([parent_module, normalize_identifier(field_name, :camel)])
+    module = Enum.join([parent_module, normalize_identifier(field_name, state, :camel)])
     {module, parent_type}
   end
 
@@ -718,7 +713,7 @@ defmodule OpenAPI.Processor.Naming do
           {inspect(parent_module), to_string(parent_type)}
       end
 
-    type = Enum.join([parent_type, normalize_identifier(field_name, :snake)], "_")
+    type = Enum.join([parent_type, normalize_identifier(field_name, state, :snake)], "_")
     {parent_module, type}
   end
 
