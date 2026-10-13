@@ -142,7 +142,7 @@ defmodule OpenAPI.Renderer.Module do
     operations = implementation.render_operations(state, file)
     schema = implementation.render_schema(state, file)
 
-    if length(schema) > 0 or length(operations) > 0 do
+    if schema != [] or operations != [] do
       moduledoc = implementation.render_moduledoc(state, file)
       using = implementation.render_using(state, file)
       default_client = implementation.render_default_client(state, file)
@@ -231,7 +231,7 @@ defmodule OpenAPI.Renderer.Module do
     schema_use = config(state)[:schema_use]
 
     Util.clean_list([
-      if length(operations) > 0 && operation_use do
+      if operations != [] && operation_use do
         quote do: use(unquote(operation_use))
       end,
       if struct_schema_count > 0 && schema_use do
@@ -307,6 +307,6 @@ defmodule OpenAPI.Renderer.Module do
 
   @spec plural(list, String.t()) :: String.t()
   defp plural(list, word)
-  defp plural(list, word) when length(list) == 1, do: word
+  defp plural([_], word), do: word
   defp plural(_list, word), do: word <> "s"
 end

@@ -63,6 +63,7 @@ defmodule OpenAPI.Spec.Schema do
           deprecated: boolean
         }
 
+  # credo:disable-for-next-line Credo.Check.Warning.StructFieldAmount
   defstruct [
     :"$oag_base_file",
     :"$oag_base_file_path",
@@ -217,14 +218,7 @@ defmodule OpenAPI.Spec.Schema do
       all_of
       |> Enum.with_index()
       |> Enum.reverse()
-      |> Enum.reduce({state, []}, fn {schema_or_ref, index}, {state, list} ->
-        {state, element} =
-          with_path(state, schema_or_ref, index, fn state, schema_or_ref ->
-            with_schema_ref(state, schema_or_ref, &decode/2)
-          end)
-
-        {state, [element | list]}
-      end)
+      |> Enum.reduce({state, []}, &decode_schema_list_entry/2)
     end)
   end
 
@@ -236,14 +230,7 @@ defmodule OpenAPI.Spec.Schema do
       one_of
       |> Enum.with_index()
       |> Enum.reverse()
-      |> Enum.reduce({state, []}, fn {schema_or_ref, index}, {state, list} ->
-        {state, element} =
-          with_path(state, schema_or_ref, index, fn state, schema_or_ref ->
-            with_schema_ref(state, schema_or_ref, &decode/2)
-          end)
-
-        {state, [element | list]}
-      end)
+      |> Enum.reduce({state, []}, &decode_schema_list_entry/2)
     end)
   end
 
@@ -255,18 +242,20 @@ defmodule OpenAPI.Spec.Schema do
       any_of
       |> Enum.with_index()
       |> Enum.reverse()
-      |> Enum.reduce({state, []}, fn {schema_or_ref, index}, {state, list} ->
-        {state, element} =
-          with_path(state, schema_or_ref, index, fn state, schema_or_ref ->
-            with_schema_ref(state, schema_or_ref, &decode/2)
-          end)
-
-        {state, [element | list]}
-      end)
+      |> Enum.reduce({state, []}, &decode_schema_list_entry/2)
     end)
   end
 
   defp decode_any_of(state, _schema), do: {state, nil}
+
+  defp decode_schema_list_entry({schema_or_ref, index}, {state, list}) do
+    {state, element} =
+      with_path(state, schema_or_ref, index, fn state, schema_or_ref ->
+        with_schema_ref(state, schema_or_ref, &decode/2)
+      end)
+
+    {state, [element | list]}
+  end
 
   @spec decode_not(map, map) :: {map, t | nil}
   defp decode_not(state, %{"not" => schema}) do
@@ -293,19 +282,20 @@ defmodule OpenAPI.Spec.Schema do
   @spec decode_properties(map, map) :: {map, %{optional(String.t()) => t}}
   defp decode_properties(state, %{"properties" => properties}) do
     with_path(state, properties, "properties", fn state, properties ->
-      Enum.reduce(properties, {state, %{}}, fn
-        {key, schema}, {state, properties} ->
-          {state, property} =
-            with_path(state, schema, key, fn state, schema ->
-              with_schema_ref(state, schema, &decode/2)
-            end)
-
-          {state, Map.put(properties, key, property)}
-      end)
+      Enum.reduce(properties, {state, %{}}, &decode_property_entry/2)
     end)
   end
 
   defp decode_properties(state, _schema), do: {state, %{}}
+
+  defp decode_property_entry({key, schema}, {state, properties}) do
+    {state, property} =
+      with_path(state, schema, key, fn state, schema ->
+        with_schema_ref(state, schema, &decode/2)
+      end)
+
+    {state, Map.put(properties, key, property)}
+  end
 
   @spec decode_additional_properties(map, map) :: {map, t | boolean}
   defp decode_additional_properties(state, %{"additionalProperties" => value})

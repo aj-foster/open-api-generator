@@ -3,8 +3,8 @@ defmodule OpenAPI.Spec.Path.Operation do
   import OpenAPI.Reader.State
 
   alias OpenAPI.Spec
-  alias OpenAPI.Spec.Path.Parameter
   alias OpenAPI.Spec.ExternalDocumentation
+  alias OpenAPI.Spec.Path.Parameter
   alias OpenAPI.Spec.RequestBody
   alias OpenAPI.Spec.Response
   alias OpenAPI.Spec.Server
@@ -103,18 +103,20 @@ defmodule OpenAPI.Spec.Path.Operation do
       parameters
       |> Enum.with_index()
       |> Enum.reverse()
-      |> Enum.reduce({state, []}, fn {parameter, index}, {state, list} ->
-        {state, element} =
-          with_path(state, parameter, index, fn state, parameter ->
-            with_ref(state, parameter, &Parameter.decode/2)
-          end)
-
-        {state, [element | list]}
-      end)
+      |> Enum.reduce({state, []}, &decode_single_parameter/2)
     end)
   end
 
   def decode_parameters(state, _yaml), do: {state, []}
+
+  defp decode_single_parameter({parameter, index}, {state, list}) do
+    {state, element} =
+      with_path(state, parameter, index, fn state, parameter ->
+        with_ref(state, parameter, &Parameter.decode/2)
+      end)
+
+    {state, [element | list]}
+  end
 
   @spec decode_request_body(map, map) :: {map, RequestBody.t() | nil}
   def decode_request_body(state, %{"requestBody" => request_body}) do
@@ -128,26 +130,28 @@ defmodule OpenAPI.Spec.Path.Operation do
   @spec decode_responses(map, map) :: {map, %{optional(String.t()) => t}}
   defp decode_responses(state, %{"responses" => responses}) do
     with_path(state, responses, "responses", fn state, responses ->
-      Enum.reduce(responses, {state, %{}}, fn {key, response}, {state, responses} ->
-        {state, property} =
-          with_path(state, response, key, fn state, response ->
-            with_ref(state, response, &Response.decode/2)
-          end)
-
-        key =
-          cond do
-            is_integer(key) -> key
-            key == "default" -> :default
-            String.match?(key, ~r/^[1-5]XX$/) -> key
-            :else -> String.to_integer(key)
-          end
-
-        {state, Map.put(responses, key, property)}
-      end)
+      Enum.reduce(responses, {state, %{}}, &decode_single_response/2)
     end)
   end
 
   defp decode_responses(state, _schema), do: {state, %{}}
+
+  defp decode_single_response({key, response}, {state, responses}) do
+    {state, property} =
+      with_path(state, response, key, fn state, response ->
+        with_ref(state, response, &Response.decode/2)
+      end)
+
+    key = normalize_response_key(key)
+    {state, Map.put(responses, key, property)}
+  end
+
+  defp normalize_response_key(key) when is_integer(key), do: key
+  defp normalize_response_key("default"), do: :default
+
+  defp normalize_response_key(key) do
+    if String.match?(key, ~r/^[1-5]XX$/), do: key, else: String.to_integer(key)
+  end
 
   @spec decode_servers(map, map) :: {map, [Server.t()]}
   defp decode_servers(state, %{"servers" => servers}) when is_list(servers) do

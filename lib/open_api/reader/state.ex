@@ -10,8 +10,8 @@ defmodule OpenAPI.Reader.State do
 
   alias OpenAPI.Reader.Config
   alias OpenAPI.Spec
-  alias OpenAPI.Spec.Schema
   alias OpenAPI.Spec.Path.Parameter
+  alias OpenAPI.Spec.Schema
 
   @typedoc "Decode function for raw Yaml"
   @type decoder :: decoder(term)

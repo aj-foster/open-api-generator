@@ -36,6 +36,7 @@ defmodule OpenAPI.Processor.Operation do
           function_name: atom,
           module_name: atom,
           request_body: request_body,
+          request_header_parameters: [Param.t()],
           request_method: atom,
           request_path: String.t(),
           request_path_parameters: [Param.t()],
@@ -48,6 +49,7 @@ defmodule OpenAPI.Processor.Operation do
     :function_name,
     :module_name,
     :request_body,
+    :request_header_parameters,
     :request_method,
     :request_path,
     :request_path_parameters,
@@ -101,74 +103,81 @@ defmodule OpenAPI.Processor.Operation do
       summary: summary
     } = operation
 
-    summary =
-      if summary do
-        "#{summary}\n"
-      else
-        "#{request_method} `#{request_path}`\n"
-      end
-
+    summary = docstring_summary(summary, request_method, request_path)
     description = if description not in [nil, ""], do: "\n#{description}\n"
-
-    options =
-      if length(query_params) > 0 do
-        for %Param{description: description, name: name} <- query_params,
-            into: "\n## Options\n\n" do
-          if description do
-            description = String.replace(description, "\n", "\n    ")
-            "  * `#{name}`: #{description}\n"
-          else
-            "  * `#{name}`\n"
-          end
-        end <> "\n"
-      end
-
-    body_params =
-      if request_body do
-        %RequestBodySpec{
-          description: description,
-          content: content
-        } = request_body
-
-        content_types =
-          content
-          |> Map.keys()
-          |> Enum.map(&"`#{&1}`")
-          |> Enum.join(", ")
-
-        if description do
-          "\n## Request Body\n\n**Content Types**: #{content_types}\n\n#{description}\n"
-        else
-          "\n## Request Body\n\n**Content Types**: #{content_types}\n"
-        end
-      end
-
-    resources =
-      if external_docs && external_docs.url do
-        if external_docs.description do
-          """
-
-          ## Resources
-
-            * [#{external_docs.description}](#{external_docs.url})
-
-          """
-        else
-          """
-
-          ## Resources
-
-            * [Documentation](#{external_docs.url})
-
-          """
-        end
-      end
+    options = docstring_options(query_params)
+    body_params = docstring_body_params(request_body)
+    resources = docstring_resources(external_docs)
 
     String.replace(
       "#{summary}#{description}#{options}#{body_params}#{resources}",
       "\n\n\n",
       "\n\n"
     )
+  end
+
+  @spec docstring_summary(String.t() | nil, String.t(), String.t()) :: String.t()
+  defp docstring_summary(nil, request_method, request_path),
+    do: "#{request_method} `#{request_path}`\n"
+
+  defp docstring_summary(summary, _request_method, _request_path),
+    do: "#{summary}\n"
+
+  @spec docstring_options([Param.t()]) :: String.t() | nil
+  defp docstring_options([]), do: nil
+
+  defp docstring_options(query_params) do
+    for %Param{description: description, name: name} <- query_params,
+        into: "\n## Options\n\n" do
+      format_param_doc(name, description)
+    end <> "\n"
+  end
+
+  defp format_param_doc(name, nil), do: "  * `#{name}`\n"
+
+  defp format_param_doc(name, description) do
+    description = String.replace(description, "\n", "\n    ")
+    "  * `#{name}`: #{description}\n"
+  end
+
+  @spec docstring_body_params(RequestBodySpec.t() | nil) :: String.t() | nil
+  defp docstring_body_params(nil), do: nil
+
+  defp docstring_body_params(%RequestBodySpec{description: description, content: content}) do
+    content_types =
+      content
+      |> Map.keys()
+      |> Enum.map_join(", ", &"`#{&1}`")
+
+    if description do
+      "\n## Request Body\n\n**Content Types**: #{content_types}\n\n#{description}\n"
+    else
+      "\n## Request Body\n\n**Content Types**: #{content_types}\n"
+    end
+  end
+
+  @spec docstring_resources(map | nil) :: String.t() | nil
+  defp docstring_resources(nil), do: nil
+  defp docstring_resources(%{url: nil}), do: nil
+
+  defp docstring_resources(%{url: url, description: description}) when is_binary(description) do
+    """
+
+    ## Resources
+
+      * [#{description}](#{url})
+
+    """
+  end
+
+  defp docstring_resources(%{url: url}) do
+    """
+
+    ## Resources
+
+      * [Documentation](#{url})
+
+    """
   end
 
   @doc """

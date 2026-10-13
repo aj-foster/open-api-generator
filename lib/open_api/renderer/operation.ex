@@ -296,6 +296,7 @@ defmodule OpenAPI.Renderer.Operation do
         def my_operation(path_param, body, opts \\ []) do
           client = opts[:client] || @default_client
           query = Keyword.take(opts, [:query_param])
+          headers = Keyword.take(opts, [:"x-header"])
 
           client.request(%{
             args: [path_param: path_param, body: body],
@@ -304,6 +305,7 @@ defmodule OpenAPI.Renderer.Operation do
             body: body,
             method: :post,
             query: query,
+            headers: headers,
             request: [{"application/json", :map}],
             response: [{200, :map}, {404, {Example.NotFoundError, :t}}],
             opts: opts
@@ -324,7 +326,7 @@ defmodule OpenAPI.Renderer.Operation do
         {String.to_atom(name), [], nil}
       end
 
-    body_argument = unless length(request_body) == 0, do: quote(do: body)
+    body_argument = unless request_body == [], do: quote(do: body)
     opts_argument = quote do: opts \\ []
 
     arguments = Util.clean_list([path_parameter_arguments, body_argument, opts_argument])
@@ -335,9 +337,10 @@ defmodule OpenAPI.Renderer.Operation do
       end
 
     query = render_query(operation)
+    headers = render_headers(operation)
     call = render_call(state, operation)
 
-    operation_body = Util.clean_list([client, query, call])
+    operation_body = Util.clean_list([client, query, headers, call])
 
     quote do
       def unquote(name)(unquote_splicing(arguments)) do
@@ -362,7 +365,7 @@ defmodule OpenAPI.Renderer.Operation do
   def render_query(operation) do
     %Operation{request_query_parameters: query_params} = operation
 
-    if length(query_params) > 0 do
+    if query_params != [] do
       params =
         query_params
         |> Enum.sort_by(& &1.name)
@@ -370,6 +373,34 @@ defmodule OpenAPI.Renderer.Operation do
 
       quote do
         query = Keyword.take(opts, unquote(params))
+      end
+    end
+  end
+
+  @doc """
+  Render code to handle header params in the body of an operation function
+
+  This function is called by the default implementation of
+  `c:OpenAPI.Renderer.render_operation_function/2` (see `render_function/2`). It returns code
+  similar to this:
+
+      headers = Keyword.take(opts, [:"x-header"])
+
+  **Warning**: This function is public for the benefit of plugin implementers who wish to
+  replicate portions of the default implementation. It is subject to change.
+  """
+  @spec render_headers(Operation.t()) :: Macro.t() | nil
+  def render_headers(operation) do
+    %Operation{request_header_parameters: header_params} = operation
+
+    if header_params != [] do
+      params =
+        header_params
+        |> Enum.sort_by(& &1.name)
+        |> Enum.map(fn %Param{name: name} -> String.to_atom(name) end)
+
+      quote do
+        headers = Keyword.take(opts, unquote(params))
       end
     end
   end
@@ -392,6 +423,7 @@ defmodule OpenAPI.Renderer.Operation do
       function_name: function_name,
       module_name: module_name,
       request_body: request_body,
+      request_header_parameters: header_params,
       request_method: request_method,
       request_path_parameters: path_params,
       request_query_parameters: query_params,
@@ -404,7 +436,7 @@ defmodule OpenAPI.Renderer.Operation do
         {arg_as_atom, {arg_as_atom, [], nil}}
       end
 
-    body_arg = unless length(request_body) == 0, do: {:body, {:body, [], nil}}
+    body_arg = unless request_body == [], do: {:body, {:body, [], nil}}
     args = Util.clean_list([path_param_args, body_arg])
 
     args =
@@ -434,16 +466,23 @@ defmodule OpenAPI.Renderer.Operation do
       end
 
     body =
-      if length(request_body) > 0 do
+      if request_body != [] do
         quote do
           {:body, body}
         end
       end
 
     query =
-      if length(query_params) > 0 do
+      if query_params != [] do
         quote do
           {:query, query}
+        end
+      end
+
+    headers =
+      if header_params != [] do
+        quote do
+          {:headers, headers}
         end
       end
 
@@ -451,7 +490,7 @@ defmodule OpenAPI.Renderer.Operation do
       render_call_request_info(state, request_body, config(state)[:operation_call][:request])
 
     responses =
-      if length(responses) > 0 do
+      if responses != [] do
         items =
           responses
           |> Enum.sort_by(fn {status_or_default, _schemas} -> status_or_default end)
@@ -474,7 +513,7 @@ defmodule OpenAPI.Renderer.Operation do
       end
 
     request_details =
-      [args, call, url, body, method, query, request, responses, options]
+      [args, call, url, body, method, query, headers, request, responses, options]
       |> Enum.reject(&is_nil/1)
 
     quote do
@@ -630,7 +669,7 @@ defmodule OpenAPI.Renderer.Operation do
       end
 
     request_body =
-      if length(request_body) > 0 do
+      if request_body != [] do
         body_type = {:union, Enum.map(request_body, fn {_content_type, type} -> type end)}
         quote(do: body :: unquote(implementation.render_type(state, body_type)))
       end
@@ -684,12 +723,13 @@ defmodule OpenAPI.Renderer.Operation do
 
     {success, error} =
       responses
-      |> Enum.reject(fn {_status, schemas} -> map_size(schemas) == 0 end)
-      |> Enum.reject(fn {status, _schemas} -> status >= 300 and status < 400 end)
+      |> Enum.reject(fn {status, schemas} ->
+        map_size(schemas) == 0 or (status >= 300 and status < 400)
+      end)
       |> Enum.split_with(fn {status, _schemas} -> status < 300 end)
 
     ok =
-      if length(success) > 0 do
+      if success != [] do
         type =
           success
           |> Enum.map(fn {_state, schemas} -> Map.values(schemas) end)
@@ -701,24 +741,28 @@ defmodule OpenAPI.Renderer.Operation do
         quote(do: :ok)
       end
 
-    error =
-      if error_type = config(state)[:types][:error] do
-        quote(do: {:error, unquote(implementation.render_type(state, error_type))})
-      else
-        if length(error) > 0 do
-          type =
-            error
-            |> Enum.map(fn {_state, schemas} -> Map.values(schemas) end)
-            |> List.flatten()
-            |> then(&implementation.render_type(state, {:union, &1}))
-
-          quote(do: {:error, unquote(type)})
-        else
-          quote(do: :error)
-        end
-      end
+    error = render_error_type(state, error, implementation)
 
     {:|, [], [ok, error]}
+  end
+
+  defp render_error_type(state, error, implementation) do
+    cond do
+      error_type = config(state)[:types][:error] ->
+        quote(do: {:error, unquote(implementation.render_type(state, error_type))})
+
+      error != [] ->
+        type =
+          error
+          |> Enum.map(fn {_state, schemas} -> Map.values(schemas) end)
+          |> List.flatten()
+          |> then(&implementation.render_type(state, {:union, &1}))
+
+        quote(do: {:error, unquote(type)})
+
+      true ->
+        quote(do: :error)
+    end
   end
 
   #

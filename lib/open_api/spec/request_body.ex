@@ -33,16 +33,18 @@ defmodule OpenAPI.Spec.RequestBody do
   @spec decode_content(map, map) :: {map, %{optional(String.t()) => Media.t()}}
   defp decode_content(state, %{"content" => content}) do
     with_path(state, content, "content", fn state, content ->
-      Enum.reduce(content, {state, %{}}, fn {key, content_item}, {state, content} ->
-        {state, content_item} =
-          with_path(state, content_item, key, fn state, content_item ->
-            with_ref(state, content_item, &Media.decode/2)
-          end)
-
-        {state, Map.put(content, key, content_item)}
-      end)
+      Enum.reduce(content, {state, %{}}, &decode_content_entry/2)
     end)
   end
 
   defp decode_content(state, _yaml), do: {state, %{}}
+
+  defp decode_content_entry({key, content_item}, {state, content}) do
+    {state, content_item} =
+      with_path(state, content_item, key, fn state, content_item ->
+        with_ref(state, content_item, &Media.decode/2)
+      end)
+
+    {state, Map.put(content, key, content_item)}
+  end
 end

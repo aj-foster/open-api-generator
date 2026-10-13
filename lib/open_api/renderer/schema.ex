@@ -100,7 +100,7 @@ defmodule OpenAPI.Renderer.Schema do
       |> Enum.sort_by(& &1.type_name)
 
     types_and_struct =
-      if length(non_operation_schemas) > 0 do
+      if non_operation_schemas != [] do
         types = implementation.render_schema_types(state, non_operation_schemas)
         struct = implementation.render_schema_struct(state, non_operation_schemas)
 
@@ -110,7 +110,7 @@ defmodule OpenAPI.Renderer.Schema do
       end
 
     field_function =
-      if length(output_schemas) > 0 do
+      if output_schemas != [] do
         implementation.render_schema_field_function(state, output_schemas)
       else
         []

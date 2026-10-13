@@ -122,10 +122,11 @@ defmodule OpenAPI.Processor.Naming do
       end
 
     id_name =
-      if length(modules) > 0 do
+      if modules != [] do
         modules
         |> Enum.map(fn module ->
-          normalize_identifier(module, :camel)
+          module
+          |> normalize_identifier(:camel)
           |> do_rename_schema(state)
         end)
         |> Module.concat()
@@ -133,15 +134,7 @@ defmodule OpenAPI.Processor.Naming do
 
     tag_names =
       if config[:operation_use_tags] != false do
-        Enum.map(tags, fn tag ->
-          tag
-          |> String.split("/", trim: true)
-          |> Enum.map(fn module ->
-            normalize_identifier(module, :camel)
-            |> do_rename_schema(state)
-          end)
-          |> Module.concat()
-        end)
+        Enum.map(tags, &tag_to_module(&1, state))
       else
         []
       end
@@ -151,12 +144,24 @@ defmodule OpenAPI.Processor.Naming do
       |> Enum.reject(&is_nil/1)
       |> Enum.uniq()
 
-    if length(all_names) > 0 do
+    if all_names != [] do
       all_names
     else
       default = config[:default_operation_module] || Operations
       [default]
     end
+  end
+
+  @spec tag_to_module(String.t(), State.t()) :: module
+  defp tag_to_module(tag, state) do
+    tag
+    |> String.split("/", trim: true)
+    |> Enum.map(fn segment ->
+      segment
+      |> normalize_identifier(:camel)
+      |> do_rename_schema(state)
+    end)
+    |> Module.concat()
   end
 
   @doc """
@@ -521,14 +526,13 @@ defmodule OpenAPI.Processor.Naming do
   def normalize_identifier(input, :camel) do
     input
     |> segment_identifier()
-    |> Enum.map(fn segment ->
+    |> Enum.map_join(fn segment ->
       if String.match?(segment, ~r/^[A-Z]+$/) do
         segment
       else
         String.capitalize(segment)
       end
     end)
-    |> Enum.join()
   end
 
   def normalize_identifier(input, :lower_camel) do

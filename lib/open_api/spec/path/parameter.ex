@@ -83,34 +83,38 @@ defmodule OpenAPI.Spec.Path.Parameter do
   @spec decode_content(map, map) :: {map, %{optional(String.t()) => Media.t()}}
   def decode_content(state, %{"content" => content}) do
     with_path(state, content, "content", fn state, content ->
-      Enum.reduce(content, {state, %{}}, fn {key, content_item}, {state, content} ->
-        {state, content_item} =
-          with_path(state, content_item, key, fn state, content_item ->
-            with_ref(state, content_item, &Media.decode/2)
-          end)
-
-        {state, Map.put(content, key, content_item)}
-      end)
+      Enum.reduce(content, {state, %{}}, &decode_content_entry/2)
     end)
   end
 
   def decode_content(state, _yaml), do: {state, %{}}
 
+  defp decode_content_entry({key, content_item}, {state, content}) do
+    {state, content_item} =
+      with_path(state, content_item, key, fn state, content_item ->
+        with_ref(state, content_item, &Media.decode/2)
+      end)
+
+    {state, Map.put(content, key, content_item)}
+  end
+
   @spec decode_examples(map, map) :: {map, %{optional(String.t()) => Example.t()}}
   def decode_examples(state, %{"examples" => examples}) do
     with_path(state, examples, "examples", fn state, examples ->
-      Enum.reduce(examples, {state, %{}}, fn {key, example}, {state, examples} ->
-        {state, example} =
-          with_path(state, example, key, fn state, example ->
-            with_ref(state, example, &Example.decode/2)
-          end)
-
-        {state, Map.put(examples, key, example)}
-      end)
+      Enum.reduce(examples, {state, %{}}, &decode_example_entry/2)
     end)
   end
 
   def decode_examples(state, _yaml), do: {state, %{}}
+
+  defp decode_example_entry({key, example}, {state, examples}) do
+    {state, example} =
+      with_path(state, example, key, fn state, example ->
+        with_ref(state, example, &Example.decode/2)
+      end)
+
+    {state, Map.put(examples, key, example)}
+  end
 
   @spec decode_schema(map, map) :: {map, Schema.t() | nil}
   def decode_schema(state, %{"schema" => schema}) do

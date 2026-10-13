@@ -133,18 +133,20 @@ defmodule OpenAPI.Spec.Path.Item do
       parameters
       |> Enum.with_index()
       |> Enum.reverse()
-      |> Enum.reduce({state, []}, fn {parameter, index}, {state, list} ->
-        {state, element} =
-          with_path(state, parameter, index, fn state, parameter ->
-            with_ref(state, parameter, &Parameter.decode/2)
-          end)
-
-        {state, [element | list]}
-      end)
+      |> Enum.reduce({state, []}, &decode_single_parameter/2)
     end)
   end
 
   def decode_parameters(state, _yaml), do: {state, []}
+
+  defp decode_single_parameter({parameter, index}, {state, list}) do
+    {state, element} =
+      with_path(state, parameter, index, fn state, parameter ->
+        with_ref(state, parameter, &Parameter.decode/2)
+      end)
+
+    {state, [element | list]}
+  end
 
   @spec decode_servers(map, map) :: {map, [Server.t()]}
   defp decode_servers(state, %{"servers" => servers}) when is_list(servers) do
@@ -164,19 +166,37 @@ defmodule OpenAPI.Spec.Path.Item do
   defp decode_servers(state, _yaml), do: {state, [%Server{url: "/"}]}
 
   def merge(item_one, item_two) do
+    merge_metadata(item_one, item_two)
+    |> merge_operations(item_one, item_two)
+    |> merge_collections(item_one, item_two)
+  end
+
+  defp merge_metadata(item_one, item_two) do
     %__MODULE__{
       summary: item_two.summary || item_one.summary,
-      description: item_two.description || item_one.description,
-      get: item_two.get || item_one.get,
-      put: item_two.put || item_one.put,
-      post: item_two.post || item_one.post,
-      delete: item_two.delete || item_one.delete,
-      options: item_two.options || item_one.options,
-      head: item_two.head || item_one.head,
-      patch: item_two.patch || item_one.patch,
-      trace: item_two.trace || item_one.trace,
-      servers: Enum.uniq_by(item_two.servers ++ item_one.servers, & &1.url),
-      parameters: Enum.uniq_by(item_two.parameters ++ item_one.parameters, &{&1.name, &1.in})
+      description: item_two.description || item_one.description
+    }
+  end
+
+  defp merge_operations(item, item_one, item_two) do
+    %{
+      item
+      | get: item_two.get || item_one.get,
+        put: item_two.put || item_one.put,
+        post: item_two.post || item_one.post,
+        delete: item_two.delete || item_one.delete,
+        options: item_two.options || item_one.options,
+        head: item_two.head || item_one.head,
+        patch: item_two.patch || item_one.patch,
+        trace: item_two.trace || item_one.trace
+    }
+  end
+
+  defp merge_collections(item, item_one, item_two) do
+    %{
+      item
+      | servers: Enum.uniq_by(item_two.servers ++ item_one.servers, & &1.url),
+        parameters: Enum.uniq_by(item_two.parameters ++ item_one.parameters, &{&1.name, &1.in})
     }
   end
 end

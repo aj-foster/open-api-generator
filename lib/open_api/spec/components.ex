@@ -60,82 +60,92 @@ defmodule OpenAPI.Spec.Components do
   @spec decode_examples(map, map) :: {map, %{optional(String.t()) => Example.t()}}
   defp decode_examples(state, %{"examples" => examples}) do
     with_path(state, examples, "examples", fn state, examples ->
-      Enum.reduce(examples, {state, %{}}, fn {key, example}, {state, examples} ->
-        {state, example} =
-          with_path(state, example, key, fn state, example ->
-            with_ref(state, example, &Example.decode/2)
-          end)
-
-        {state, Map.put(examples, key, example)}
-      end)
+      Enum.reduce(examples, {state, %{}}, &decode_example_entry/2)
     end)
   end
 
   defp decode_examples(state, _yaml), do: {state, %{}}
 
+  defp decode_example_entry({key, example}, {state, examples}) do
+    {state, example} =
+      with_path(state, example, key, fn state, example ->
+        with_ref(state, example, &Example.decode/2)
+      end)
+
+    {state, Map.put(examples, key, example)}
+  end
+
   @spec decode_parameters(map, map) :: {map, %{optional(String.t()) => Parameter.t()}}
   defp decode_parameters(state, %{"parameters" => yaml}) do
     with_path(state, yaml, "parameters", fn state, yaml ->
-      Enum.reduce(yaml, {state, %{}}, fn {name, parameter_or_ref}, {state, parameters} ->
-        {state, schema} =
-          with_path(state, parameter_or_ref, name, fn state, parameter_or_ref ->
-            with_ref(state, parameter_or_ref, &Parameter.decode/2)
-          end)
-
-        {state, Map.put(parameters, name, schema)}
-      end)
+      Enum.reduce(yaml, {state, %{}}, &decode_parameter_entry/2)
     end)
   end
 
   defp decode_parameters(state, _yaml), do: {state, %{}}
 
+  defp decode_parameter_entry({name, parameter_or_ref}, {state, parameters}) do
+    {state, schema} =
+      with_path(state, parameter_or_ref, name, fn state, parameter_or_ref ->
+        with_ref(state, parameter_or_ref, &Parameter.decode/2)
+      end)
+
+    {state, Map.put(parameters, name, schema)}
+  end
+
   @spec decode_request_bodies(map, map) :: {map, %{optional(String.t()) => RequestBody.t()}}
   defp decode_request_bodies(state, %{"requestBodies" => yaml}) do
     with_path(state, yaml, "requestBodies", fn state, yaml ->
-      Enum.reduce(yaml, {state, %{}}, fn {name, request_body_or_ref}, {state, request_bodies} ->
-        {state, schema} =
-          with_path(state, request_body_or_ref, name, fn state, request_body_or_ref ->
-            with_ref(state, request_body_or_ref, &RequestBody.decode/2)
-          end)
-
-        {state, Map.put(request_bodies, name, schema)}
-      end)
+      Enum.reduce(yaml, {state, %{}}, &decode_request_body_entry/2)
     end)
   end
 
   defp decode_request_bodies(state, _yaml), do: {state, %{}}
 
+  defp decode_request_body_entry({name, request_body_or_ref}, {state, request_bodies}) do
+    {state, schema} =
+      with_path(state, request_body_or_ref, name, fn state, request_body_or_ref ->
+        with_ref(state, request_body_or_ref, &RequestBody.decode/2)
+      end)
+
+    {state, Map.put(request_bodies, name, schema)}
+  end
+
   @spec decode_responses(map, map) :: {map, %{optional(String.t()) => RequestBody.t()}}
   defp decode_responses(state, %{"responses" => yaml}) do
     with_path(state, yaml, "responses", fn state, yaml ->
-      Enum.reduce(yaml, {state, %{}}, fn {name, response_or_ref}, {state, responses} ->
-        {state, schema} =
-          with_path(state, response_or_ref, name, fn state, response_or_ref ->
-            with_ref(state, response_or_ref, &Response.decode/2)
-          end)
-
-        {state, Map.put(responses, name, schema)}
-      end)
+      Enum.reduce(yaml, {state, %{}}, &decode_response_entry/2)
     end)
   end
 
   defp decode_responses(state, _yaml), do: {state, %{}}
 
+  defp decode_response_entry({name, response_or_ref}, {state, responses}) do
+    {state, schema} =
+      with_path(state, response_or_ref, name, fn state, response_or_ref ->
+        with_ref(state, response_or_ref, &Response.decode/2)
+      end)
+
+    {state, Map.put(responses, name, schema)}
+  end
+
   @spec decode_schemas(map, map) :: {map, %{optional(String.t()) => Schema.t()}}
   defp decode_schemas(state, %{"schemas" => yaml}) do
     with_path(state, yaml, "schemas", fn state, yaml ->
-      Enum.reduce(yaml, {state, %{}}, fn {name, schema_or_ref}, {state, schemas} ->
-        {state, schema} =
-          with_path(state, schema_or_ref, name, fn state, schema_or_ref ->
-            with_schema_ref(state, schema_or_ref, &Schema.decode/2)
-          end)
-
-        {state, Map.put(schemas, name, schema)}
-      end)
+      Enum.reduce(yaml, {state, %{}}, &decode_schema_entry/2)
     end)
   end
 
   defp decode_schemas(state, _yaml), do: {state, %{}}
+
+  defp decode_schema_entry({name, schema_or_ref}, {state, schemas}) do
+    {state, schema} =
+      with_path(state, schema_or_ref, name, fn state, schema_or_ref ->
+        with_schema_ref(state, schema_or_ref, &Schema.decode/2)
+      end)
+
+    {state, Map.put(schemas, name, schema)}
+  end
 
   @doc false
   @spec merge(t, t) :: t

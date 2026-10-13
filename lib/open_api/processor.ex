@@ -18,6 +18,7 @@ defmodule OpenAPI.Processor do
   implemented as optional callbacks.
   """
   alias OpenAPI.Processor.Format
+  alias OpenAPI.Processor.Naming
   alias OpenAPI.Processor.Operation
   alias OpenAPI.Processor.Operation.Param
   alias OpenAPI.Processor.Schema
@@ -27,6 +28,8 @@ defmodule OpenAPI.Processor do
   alias OpenAPI.Spec
   alias OpenAPI.Spec.Path.Operation, as: OperationSpec
   alias OpenAPI.Spec.Schema, as: SchemaSpec
+
+  @typep seen_refs :: %{reference() => true}
 
   @doc """
   Run the processing phase of the code generator
@@ -328,6 +331,7 @@ defmodule OpenAPI.Processor do
 
     path_params = Enum.filter(all_params, &(&1.location == :path))
     query_params = Enum.filter(all_params, &(&1.location == :query))
+    header_params = Enum.filter(all_params, &(&1.location == :header))
 
     docstring = implementation.operation_docstring(state, operation_spec, query_params)
     module_names = implementation.operation_module_names(state, operation_spec)
@@ -350,6 +354,7 @@ defmodule OpenAPI.Processor do
           function_name: function_name,
           module_name: module_name,
           request_body: request_body,
+          request_header_parameters: header_params,
           request_method: request_method,
           request_path: request_path,
           request_path_parameters: path_params,
@@ -369,16 +374,7 @@ defmodule OpenAPI.Processor do
     |> Enum.reduce({state, []}, fn {content_type, schema_spec}, {state, request_body} ->
       context = {:request, op_module_name, op_function_name, content_type}
       {state, type} = Type.from_schema(state, schema_spec)
-
-      state =
-        Type.reduce(type, state, fn t, state ->
-          if is_reference(t) do
-            schema = Map.fetch!(state.schema_specs_by_ref, t)
-            process_schema(state, t, schema, context)
-          else
-            state
-          end
-        end)
+      state = process_schema_refs(state, type, context)
 
       {state, [{content_type, type} | request_body]}
     end)
@@ -391,38 +387,64 @@ defmodule OpenAPI.Processor do
     |> Enum.sort_by(fn {status_code, _schema} -> status_code end, :desc)
     |> Enum.reduce({state, []}, fn {status_code, schema_specs}, {state, response_body} ->
       {state, schema_types} =
-        schema_specs
-        |> Enum.reverse()
-        |> Enum.reduce({state, %{}}, fn {content_type, schema_spec}, {state, schema_types} ->
-          context = {:response, op_module_name, op_function_name, status_code, content_type}
-          {state, type} = Type.from_schema(state, schema_spec)
-
-          state =
-            Type.reduce(type, state, fn t, state ->
-              if is_reference(t) do
-                schema = Map.fetch!(state.schema_specs_by_ref, t)
-                process_schema(state, t, schema, context)
-              else
-                state
-              end
-            end)
-
-          {state, Map.put(schema_types, content_type, type)}
-        end)
+        process_response_schema_specs(
+          schema_specs,
+          state,
+          op_module_name,
+          op_function_name,
+          status_code
+        )
 
       {state, [{status_code, schema_types} | response_body]}
     end)
   end
 
-  @spec process_schema(State.t(), reference, SchemaSpec.t(), tuple, MapSet.t()) :: State.t()
-  defp process_schema(state, ref, schema_spec, context, seen_refs \\ MapSet.new()) do
+  @spec process_response_schema_specs(
+          [{String.t(), SchemaSpec.t()}],
+          State.t(),
+          String.t(),
+          atom,
+          integer | :default
+        ) :: {State.t(), %{String.t() => Type.t()}}
+  defp process_response_schema_specs(
+         schema_specs,
+         state,
+         op_module_name,
+         op_function_name,
+         status_code
+       ) do
+    schema_specs
+    |> Enum.reverse()
+    |> Enum.reduce({state, %{}}, fn {content_type, schema_spec}, {state, schema_types} ->
+      context = {:response, op_module_name, op_function_name, status_code, content_type}
+      {state, type} = Type.from_schema(state, schema_spec)
+      state = process_schema_refs(state, type, context)
+
+      {state, Map.put(schema_types, content_type, type)}
+    end)
+  end
+
+  @spec process_schema_refs(State.t(), Type.t(), tuple, seen_refs()) :: State.t()
+  defp process_schema_refs(state, type, context, seen_refs \\ %{}) do
+    Type.reduce(type, state, fn t, state ->
+      if is_reference(t) do
+        schema = Map.fetch!(state.schema_specs_by_ref, t)
+        process_schema(state, t, schema, context, seen_refs)
+      else
+        state
+      end
+    end)
+  end
+
+  @spec process_schema(State.t(), reference, SchemaSpec.t(), tuple, seen_refs()) :: State.t()
+  defp process_schema(state, ref, schema_spec, context, seen_refs) do
     schema_spec = SchemaSpec.add_context(schema_spec, context)
 
-    if MapSet.member?(seen_refs, ref) do
+    if Map.has_key?(seen_refs, ref) do
       state
     else
       %State{implementation: implementation, schemas_by_ref: schemas_by_ref} = state
-      seen_refs = MapSet.put(seen_refs, ref)
+      seen_refs = Map.put(seen_refs, ref, true)
 
       cond do
         implementation.ignore_schema?(state, schema_spec) ->
@@ -442,56 +464,59 @@ defmodule OpenAPI.Processor do
     end
   end
 
-  @spec process_schema_fields(State.t(), SchemaSpec.t(), reference, MapSet.t()) ::
+  @spec process_schema_fields(State.t(), SchemaSpec.t(), reference, seen_refs()) ::
           {State.t(), [Field.t()]}
   defp process_schema_fields(state, schema_spec, parent_ref, seen_refs) do
     %SchemaSpec{properties: properties, required: required} = schema_spec
 
     for {field_name, field_spec} <- properties, reduce: {state, []} do
       {state, fields} ->
-        default =
-          case field_spec do
-            %SchemaSpec{default: default} -> default
-            {:ref, _} -> nil
-          end
+        field = build_field(state, field_name, field_spec, required, parent_ref, seen_refs)
+        {elem(field, 0), [elem(field, 1) | fields]}
+    end
+  end
 
-        nullable? =
-          case field_spec do
-            %SchemaSpec{nullable: nullable?} -> nullable?
-            {:ref, _} -> false
-          end
+  @spec build_field(
+          State.t(),
+          String.t(),
+          SchemaSpec.t() | Spec.ref(),
+          [String.t()] | nil,
+          reference,
+          seen_refs()
+        ) ::
+          {State.t(), Field.t()}
+  defp build_field(state, field_name, field_spec, required, parent_ref, seen_refs) do
+    default = field_default(field_spec)
+    nullable? = field_nullable(field_spec)
+    required? = is_list(required) and field_name in required
+    context = {:field, parent_ref, field_name}
+    {state, type} = Type.from_schema(state, field_spec)
+    state = process_schema_refs(state, type, context, seen_refs)
+    field_name = apply_field_casing(state, field_name)
 
-        required? = is_list(required) and field_name in required
-        context = {:field, parent_ref, field_name}
-        {state, type} = Type.from_schema(state, field_spec)
+    field = %Field{
+      default: default,
+      name: field_name,
+      nullable: nullable?,
+      private: false,
+      required: required?,
+      type: type
+    }
 
-        state =
-          Type.reduce(type, state, fn t, state ->
-            if is_reference(t) do
-              schema = Map.fetch!(state.schema_specs_by_ref, t)
-              process_schema(state, t, schema, context, seen_refs)
-            else
-              state
-            end
-          end)
+    {state, field}
+  end
 
-        field_name =
-          case config(state)[:field_casing] do
-            :camel -> OpenAPI.Processor.Naming.normalize_identifier(field_name, :lower_camel)
-            :snake -> OpenAPI.Processor.Naming.normalize_identifier(field_name, :snake)
-            _else -> field_name
-          end
+  defp field_default(%SchemaSpec{default: default}), do: default
+  defp field_default({:ref, _}), do: nil
 
-        field = %Field{
-          default: default,
-          name: field_name,
-          nullable: nullable?,
-          private: false,
-          required: required?,
-          type: type
-        }
+  defp field_nullable(%SchemaSpec{nullable: nullable?}), do: nullable?
+  defp field_nullable({:ref, _}), do: false
 
-        {state, [field | fields]}
+  defp apply_field_casing(state, field_name) do
+    case config(state)[:field_casing] do
+      :camel -> Naming.normalize_identifier(field_name, :lower_camel)
+      :snake -> Naming.normalize_identifier(field_name, :snake)
+      _else -> field_name
     end
   end
 

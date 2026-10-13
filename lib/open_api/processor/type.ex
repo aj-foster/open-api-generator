@@ -1,4 +1,16 @@
 defmodule OpenAPI.Processor.Type do
+  @moduledoc """
+  Internal type model used between the processor and renderer phases
+
+  The generator does not move directly from OpenAPI schema definitions to rendered Elixir
+  typespecs. Instead, it first normalizes schemas into the intermediate representation defined in
+  this module. That representation is then consumed throughout the processor and renderer,
+  including public callbacks intended for plugin implementers.
+
+  Most users of generated clients will never interact with these types directly. They are
+  primarily useful when customizing the generator or when reading the intermediate state returned
+  by `OpenAPI.run/2`.
+  """
   require Logger
 
   alias OpenAPI.Processor.State
@@ -59,7 +71,7 @@ defmodule OpenAPI.Processor.Type do
   encounters an object schema as a sub-field of the given schema, it will potentially modify the
   processor state in order to stash a new reference.
   """
-  @spec from_schema(%State{}, Schema.t() | Spec.ref()) :: {State.t(), t}
+  @spec from_schema(State.t(), Schema.t() | Spec.ref()) :: {State.t(), t}
   def from_schema(state, schema)
 
   # Schema references

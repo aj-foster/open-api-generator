@@ -41,34 +41,38 @@ defmodule OpenAPI.Spec.Schema.Media do
   @spec decode_encoding(map, map) :: {map, %{optional(String.t()) => Example.t()}}
   defp decode_encoding(state, %{"encoding" => encoding}) do
     with_path(state, encoding, "encoding", fn state, encoding ->
-      Enum.reduce(encoding, {state, %{}}, fn {key, encoding_item}, {state, encoding} ->
-        {state, encoding_item} =
-          with_path(state, encoding_item, key, fn state, encoding_item ->
-            with_ref(state, encoding_item, &Encoding.decode/2)
-          end)
-
-        {state, Map.put(encoding, key, encoding_item)}
-      end)
+      Enum.reduce(encoding, {state, %{}}, &decode_encoding_entry/2)
     end)
   end
 
   defp decode_encoding(state, _yaml), do: {state, %{}}
 
+  defp decode_encoding_entry({key, encoding_item}, {state, encoding}) do
+    {state, encoding_item} =
+      with_path(state, encoding_item, key, fn state, encoding_item ->
+        with_ref(state, encoding_item, &Encoding.decode/2)
+      end)
+
+    {state, Map.put(encoding, key, encoding_item)}
+  end
+
   @spec decode_examples(map, map) :: {map, %{optional(String.t()) => Example.t()}}
   defp decode_examples(state, %{"examples" => examples}) do
     with_path(state, examples, "examples", fn state, examples ->
-      Enum.reduce(examples, {state, %{}}, fn {key, example}, {state, examples} ->
-        {state, example} =
-          with_path(state, example, key, fn state, example ->
-            with_ref(state, example, &Example.decode/2)
-          end)
-
-        {state, Map.put(examples, key, example)}
-      end)
+      Enum.reduce(examples, {state, %{}}, &decode_example_entry/2)
     end)
   end
 
   defp decode_examples(state, _yaml), do: {state, %{}}
+
+  defp decode_example_entry({key, example}, {state, examples}) do
+    {state, example} =
+      with_path(state, example, key, fn state, example ->
+        with_ref(state, example, &Example.decode/2)
+      end)
+
+    {state, Map.put(examples, key, example)}
+  end
 
   @spec decode_schema(map, map) :: {map, Schema.t() | nil}
   defp decode_schema(state, %{"schema" => schema}) do
